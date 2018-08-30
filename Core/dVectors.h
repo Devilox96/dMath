@@ -59,7 +59,7 @@ struct dVector3D {
         y *= NumP;
         z *= NumP;
     }
-    template <typename T> friend dVector3D operator*(const dVector3D& VecP, const T NumP);
+    template <typename T> friend dVector3D operator*(const dVector3D& VecP, T NumP);
     //---Multiplying---//
 
     //---Division---//
@@ -71,7 +71,7 @@ struct dVector3D {
         y /= NumP;
         z /= NumP;
     }
-    template <typename T> friend dVector3D operator/(const dVector3D& VecP, const T NumP);
+    template <typename T> friend dVector3D operator/(const dVector3D& VecP, T NumP);
     //---Division---//
 
     //---Equality---//
@@ -114,59 +114,59 @@ struct dVector2D {
     }
     void operator+=(const dVector2D& VectP);
     dVector2D operator+(const dVector2D& VecP) {
-        return dVector2D(this -> x + VecP.x,
-                         this -> y + VecP.y);
+        return dVector2D(x + VecP.x,
+                         y + VecP.y);
     }
     //---Addition---//
 
     //---Subtraction---//
     dVector2D operator-() {
-        return dVector2D(-this -> x, -this -> y);
+        return dVector2D(-x, -y);
     }
     void operator-=(const dVector2D& VectP);
     dVector2D operator-(const dVector2D& VecP) {
-        return dVector2D(this -> x - VecP.x,
-                         this -> y - VecP.y);
+        return dVector2D(x - VecP.x,
+                         y - VecP.y);
     }
     //---Subtraction---//
 
     //---Multiplying---//
     double operator*(const dVector2D& VectP) {
-        return this -> x * VectP.x + this -> y * VectP.y;
+        return x * VectP.x + y * VectP.y;
     }
     template <typename T> dVector2D operator*(const T NumP) {
-        return dVector2D(this -> x * NumP, this -> y * NumP);
+        return dVector2D(x * NumP, y * NumP);
     }
     template <typename T> void operator*=(const T NumP) {
-        this -> x *= NumP;
-        this -> y *= NumP;
+        x *= NumP;
+        y *= NumP;
     }
-    template <typename T> friend dVector2D operator*(const dVector2D& VecP, const T NumP);
+    template <typename T> friend dVector2D operator*(const dVector2D& VecP, T NumP);
     //---Multiplying---//
 
     //---Division---//
     template <typename T> dVector2D operator/(const T NumP) {
-        return dVector2D(this -> x / NumP, this -> y / NumP);
+        return dVector2D(x / NumP, y / NumP);
     }
     template <typename T> void operator/=(const T NumP) {
-        this -> x /= NumP;
-        this -> y /= NumP;
+        x /= NumP;
+        y /= NumP;
     }
-    template <typename T> friend dVector2D operator/(const dVector2D& VecP, const T NumP);
+    template <typename T> friend dVector2D operator/(const dVector2D& VecP, T NumP);
     //---Division---//
 
     //---Equality---//
-    dVector2D& operator=(const dVector2D& VectP);
+    dVector2D& operator=(const dVector2D& VectP) = default;
     bool operator==(const dVector2D& VectP);
     bool operator!=(const dVector2D& VectP);
     //---Equality---//
 
     //---Absolute value---//
     double Abs() {
-        return sqrt(pow(this -> x, 2) + pow(this -> y, 2));
+        return sqrt(pow(x, 2) + pow(y, 2));
     }
     double Abs_2() {
-        return pow(this -> x, 2) + pow(this -> y, 2);
+        return pow(x, 2) + pow(y, 2);
     }
     //---Absolute value---//
 
@@ -195,60 +195,60 @@ struct dQuaternion {
     }
 	void operator+=(const dQuaternion& QuatP);
     dQuaternion operator+(const dQuaternion& QuatP) {
-        return dQuaternion(this -> w + QuatP.w, this -> x + QuatP.x, this -> y + QuatP.y, this -> z + QuatP.z);
+        return dQuaternion(w + QuatP.w, x + QuatP.x, y + QuatP.y, z + QuatP.z);
     }
     //---Addition---//
 
     //---Subtraction---//
     dQuaternion operator-() {
-        return dQuaternion(-this -> w, -this -> x, -this -> y, -this -> z);
+        return dQuaternion(-w, -x, -y, -z);
     }
     void operator-=(const dQuaternion& QuatP);
 	dQuaternion operator-(const dQuaternion& QuatP) {
-        return dQuaternion(this -> w - QuatP.w, this -> x - QuatP.x, this -> y - QuatP.y, this -> z - QuatP.z);
+        return dQuaternion(w - QuatP.w, x - QuatP.x, y - QuatP.y, z - QuatP.z);
     }
     //---Subtraction---//
 
     //---Multiplying---//
 	dQuaternion operator*(const dQuaternion& QuatP);
     template <typename T> dQuaternion operator*(const T NumP) {
-        return dQuaternion(this -> w * NumP, this -> x * NumP, this -> y * NumP, this -> z * NumP);
+        return dQuaternion(w * NumP, x * NumP, y * NumP, z * NumP);
     }
 	void operator*=(const dQuaternion& QuatP);
     template <typename T> void operator*=(const T NumP) {
-        this -> w *= NumP;
-        this -> x *= NumP;
-        this -> y *= NumP;
-        this -> z *= NumP;
+        w *= NumP;
+        x *= NumP;
+        y *= NumP;
+        z *= NumP;
     }
-    template <typename T> friend dQuaternion operator*(const dQuaternion& QuatP, const T NumP);
+    template <typename T> friend dQuaternion operator*(const dQuaternion& QuatP, T NumP);
     //---Multiplying---//
 
     //---Division---//
 	template <typename T> dQuaternion operator/(const T NumP) {
-        return dQuaternion(this -> w / NumP, this -> x / NumP, this -> y / NumP, this -> z / NumP);
+        return dQuaternion(w / NumP, x / NumP, y / NumP, z / NumP);
     }
     template <typename T> void operator/=(const T NumP) {
-        this -> w /= NumP;
-        this -> x /= NumP;
-        this -> y /= NumP;
-        this -> z /= NumP;
+        w /= NumP;
+        x /= NumP;
+        y /= NumP;
+        z /= NumP;
     }
-    template <typename T> friend dQuaternion operator/(const dQuaternion& QuatP, const T NumP);
+    template <typename T> friend dQuaternion operator/(const dQuaternion& QuatP, T NumP);
     //---Division---//
 
     //---Equality---//
-	dQuaternion& operator=(const dQuaternion& QuatP);
+	dQuaternion& operator=(const dQuaternion& QuatP) = default;
 	bool operator==(const dQuaternion& QuatP);
 	bool operator!=(const dQuaternion& QuatP);
     //---Equality---//
 
 	dQuaternion Conjugation() {
-        return dQuaternion(this -> w, -(this -> x), -(this -> y), -(this -> z));
+        return dQuaternion(w, -x, -y, -z);
     }
 	void Reciprocal();
 	double Abs() {
-        return sqrt(pow(this -> w, 2) + pow(this -> x, 2) + pow(this -> y, 2) + pow(this -> z, 2));
+        return sqrt(pow(w, 2) + pow(x, 2) + pow(y, 2) + pow(z, 2));
     }
 };
 
@@ -281,12 +281,12 @@ public:
     dVectorND operator+(const dVectorND& VectP) const {
         dVectorND TempVecL(Num);
 
-        if (this -> Num != VectP.Num) {
+        if (Num != VectP.Num) {
             return TempVecL;
         }
 
         for (unsigned long i = 0; i < Num; i++) {
-            TempVecL.Vec[i] = this -> Vec[i] + VectP.Vec[i];
+            TempVecL.Vec[i] = Vec[i] + VectP.Vec[i];
         }
 
         return TempVecL;
@@ -298,7 +298,7 @@ public:
         dVectorND TempVecL(Num);
 
         for (unsigned long i = 0; i < Num; i++) {
-            TempVecL.Vec[i] = -this -> Vec[i];
+            TempVecL.Vec[i] = -Vec[i];
         }
 
         return TempVecL;
@@ -323,12 +323,12 @@ public:
     double operator*(const dVectorND& VectP) {
         double ResL = 0.0;
 
-        if (this -> Num != VectP.Num) {
+        if (Num != VectP.Num) {
             return ResL;
         }
 
         for (unsigned long i = 0; i < Num; i++) {
-            ResL += this -> Vec[i] * VectP.Vec[i];
+            ResL += Vec[i] * VectP.Vec[i];
         }
 
         return ResL;
@@ -337,14 +337,14 @@ public:
         dVectorND TempVecL(Num);
 
         for (unsigned long i = 0; i < Num; i++) {
-            TempVecL.Vec[i] = this -> Vec[i] * NumP;
+            TempVecL.Vec[i] = Vec[i] * NumP;
         }
 
         return TempVecL;
     }
     template <typename T> void operator*=(const T NumP) {
         for (unsigned long i = 0; i < Num; i++) {
-            this -> Vec[i] *= NumP;
+            Vec[i] *= NumP;
         }
     }
     template <typename T> friend dVectorND operator*(const dVectorND& VectP, const T NumP);
@@ -355,14 +355,14 @@ public:
         dVectorND TempVecL(Num);
 
         for (unsigned long i = 0; i < Num; i++) {
-            TempVecL.Vec[i] = this -> Vec[i] / NumP;
+            TempVecL.Vec[i] = Vec[i] / NumP;
         }
 
         return TempVecL;
     }
     template <typename T> void operator/=(const T NumP) {
         for (unsigned long i = 0; i < Num; i++) {
-            this -> Vec[i] /= NumP;
+            Vec[i] /= NumP;
         }
     }
     template <typename T> friend dVectorND operator/(const dVectorND& VectP, const T NumP);
@@ -379,7 +379,7 @@ public:
         double ResL = 0.0;
 
         for (unsigned long i = 0; i < Num; i++) {
-            ResL += pow(this -> Vec[i], 2);
+            ResL += pow(Vec[i], 2);
         }
 
         return sqrt(ResL);
@@ -388,7 +388,7 @@ public:
         double ResL = 0.0;
 
         for (unsigned long i = 0; i < Num; i++) {
-            ResL += pow(this -> Vec[i], 2);
+            ResL += pow(Vec[i], 2);
         }
 
         return ResL;
