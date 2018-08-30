@@ -1,53 +1,41 @@
 #include "dVectors.h"
 //----------------------------------//
-dVector3D :: dVector3D(double xP, double yP, double zP) {
+dVector3D::dVector3D(double xP, double yP, double zP) {
 	x = xP;
 	y = yP;
 	z = zP;
 }
-dVector3D :: dVector3D() {
+dVector3D::dVector3D() {
 	x = 0.0;
 	y = 0.0;
 	z = 0.0;
 }
 //----------------------------------//
-void dVector3D :: operator+=(const dVector3D& VectP) {
+void dVector3D::operator+=(const dVector3D& VectP) {
 	this -> x += VectP.x;
 	this -> y += VectP.y;
 	this -> z += VectP.z;
 }
-void dVector3D :: operator-=(const dVector3D& VectP) {
+void dVector3D::operator-=(const dVector3D& VectP) {
 	this -> x -= VectP.x;
 	this -> y -= VectP.y;
 	this -> z -= VectP.z;
 }
-dVector3D& dVector3D :: operator=(const dVector3D& VectP) {
-    this -> x = VectP.x;
-    this -> y = VectP.y;
-    this -> z = VectP.z;
-
-	return *this;
+//dVector3D& dVector3D::operator=(const dVector3D& VectP) {
+//    this -> x = VectP.x;
+//    this -> y = VectP.y;
+//    this -> z = VectP.z;
+//
+//	return *this;
+//}
+bool dVector3D::operator==(const dVector3D& VectP) {
+	return std::tie(x, y, z) == std::tie(VectP.x, VectP.y, VectP.z);
 }
-bool dVector3D :: operator==(const dVector3D& VectP) {
-	if (this -> x == VectP.x &&
-		this -> y == VectP.y &&
-		this -> z == VectP.z) {
-		return true;
-	} else {
-		return false;
-	}
-}
-bool dVector3D :: operator!=(const dVector3D& VectP) {
-	if (this -> x == VectP.x &&
-		this -> y == VectP.y &&
-		this -> z == VectP.z) {
-		return false;
-	} else {
-		return true;
-	}
+bool dVector3D::operator!=(const dVector3D& VectP) {
+	return !(std::tie(x, y, z) == std::tie(VectP.x, VectP.y, VectP.z));
 }
 //----------------------------------//
-dVector3D dVector3D :: Norm() {
+dVector3D dVector3D::Norm() {
 	dVector3D TempL;
 	double AbsL;
 	
@@ -59,7 +47,7 @@ dVector3D dVector3D :: Norm() {
 	
 	return TempL;
 }
-double dVector3D :: Greatest() {
+double dVector3D::Greatest() {
     if (this -> x >= this -> y  &&
         this -> x >= this -> z) {
         return this -> x;
@@ -71,7 +59,7 @@ double dVector3D :: Greatest() {
         return this -> z;
     }
 }
-double dVector3D :: Least() {
+double dVector3D::Least() {
     if (this -> x <= this -> y  &&
         this -> x <= this -> z) {
         return this -> x;
@@ -85,30 +73,30 @@ double dVector3D :: Least() {
 }
 //--------------------------------------------------------------------//
 //--------------------------------------------------------------------//
-dVector2D :: dVector2D(double xP, double yP) {
+dVector2D::dVector2D(double xP, double yP) {
 	x = xP;
 	y = yP;
 }
-dVector2D :: dVector2D() {
+dVector2D::dVector2D() {
 	x = 0.0;
 	y = 0.0;
 }
 //----------------------------------//
-void dVector2D :: operator+=(const dVector2D& VectP) {
+void dVector2D::operator+=(const dVector2D& VectP) {
 	this -> x += VectP.x;
 	this -> y += VectP.y;
 }
-void dVector2D :: operator-=(const dVector2D& VectP) {
+void dVector2D::operator-=(const dVector2D& VectP) {
 	this -> x -= VectP.x;
 	this -> y -= VectP.y;
 }
-dVector2D& dVector2D :: operator=(const dVector2D& VectP) {
+dVector2D& dVector2D::operator=(const dVector2D& VectP) {
 	this -> x = VectP.x;
 	this -> y = VectP.y;
 	
 	return *this;
 }
-bool dVector2D :: operator==(const dVector2D& VectP) {
+bool dVector2D::operator==(const dVector2D& VectP) {
 	if (this -> x == VectP.x &&
 		this -> y == VectP.y) {
 		return true;
@@ -116,7 +104,7 @@ bool dVector2D :: operator==(const dVector2D& VectP) {
 		return false;
 	}
 }
-bool dVector2D :: operator!=(const dVector2D& VectP) {
+bool dVector2D::operator!=(const dVector2D& VectP) {
 	if (this -> x == VectP.x &&
 		this -> y == VectP.y) {
 		return false;
@@ -125,7 +113,7 @@ bool dVector2D :: operator!=(const dVector2D& VectP) {
 	}
 }
 //----------------------------------//
-dVector2D dVector2D :: Norm() {
+dVector2D dVector2D::Norm() {
 	dVector2D TempL;
 	double AbsL;
 	
@@ -136,14 +124,14 @@ dVector2D dVector2D :: Norm() {
 	
 	return TempL;
 }
-double dVector2D :: Greatest() {
+double dVector2D::Greatest() {
     if (this -> x >= this -> y) {
         return this -> x;
     } else if (this -> y >= this -> x) {
         return this -> y;
     }
 }
-double dVector2D :: Least() {
+double dVector2D::Least() {
     if (this -> x <= this -> y) {
         return this -> x;
     } else if (this -> y <= this -> x) {
@@ -152,32 +140,32 @@ double dVector2D :: Least() {
 }
 //--------------------------------------------------------------------//
 //--------------------------------------------------------------------//
-dQuaternion :: dQuaternion() {
+dQuaternion::dQuaternion() {
 	w = 0.0;
 	x = 0.0;
 	y = 0.0;
 	z = 0.0;
 }
-dQuaternion :: dQuaternion(double wP, double xP, double yP, double zP) {
+dQuaternion::dQuaternion(double wP, double xP, double yP, double zP) {
 	w = wP;
 	x = xP;
 	y = yP;
 	z = zP;
 }
 //----------------------------------//
-void dQuaternion :: operator+=(const dQuaternion& QuatP) {
+void dQuaternion::operator+=(const dQuaternion& QuatP) {
 	this -> w += QuatP.w;
 	this -> x += QuatP.x;
 	this -> y += QuatP.y;
 	this -> z += QuatP.z;
 }
-void dQuaternion :: operator-=(const dQuaternion& QuatP) {
+void dQuaternion::operator-=(const dQuaternion& QuatP) {
 	this -> w -= QuatP.w;
 	this -> x -= QuatP.x;
 	this -> y -= QuatP.y;
 	this -> z -= QuatP.z;
 }
-dQuaternion dQuaternion :: operator*(const dQuaternion& QuatP) {
+dQuaternion dQuaternion::operator*(const dQuaternion& QuatP) {
 	dQuaternion QuatL(0.0, 0.0, 0.0, 0.0);
 	
 	QuatL.w = 	this -> w * QuatP.w -
@@ -199,7 +187,7 @@ dQuaternion dQuaternion :: operator*(const dQuaternion& QuatP) {
 	
 	return QuatL;
 }
-void dQuaternion :: operator*=(const dQuaternion& QuatP) {
+void dQuaternion::operator*=(const dQuaternion& QuatP) {
 	dQuaternion QuatL(0.0, 0.0, 0.0, 0.0);
 	
 	QuatL.w = 	this -> w * QuatP.w -
@@ -224,13 +212,13 @@ void dQuaternion :: operator*=(const dQuaternion& QuatP) {
 	this -> y = QuatL.y;
 	this -> z = QuatL.z;
 }
-dQuaternion& dQuaternion :: operator=(const dQuaternion& QuatP) {
+dQuaternion& dQuaternion::operator=(const dQuaternion& QuatP) {
 	this -> w = QuatP.w;
 	this -> x = QuatP.x;
 	this -> y = QuatP.y;
 	this -> z = QuatP.z;
 }
-bool dQuaternion :: operator==(const dQuaternion& QuatP) {
+bool dQuaternion::operator==(const dQuaternion& QuatP) {
 	if (this -> w == QuatP.w &&
 		this -> x == QuatP.x &&
 		this -> y == QuatP.y &&
@@ -240,7 +228,7 @@ bool dQuaternion :: operator==(const dQuaternion& QuatP) {
 		return false;
 	}
 }
-bool dQuaternion :: operator!=(const dQuaternion& QuatP) {
+bool dQuaternion::operator!=(const dQuaternion& QuatP) {
 	if (this -> w == QuatP.w &&
 		this -> x == QuatP.x &&
 		this -> y == QuatP.y &&
@@ -251,7 +239,7 @@ bool dQuaternion :: operator!=(const dQuaternion& QuatP) {
 	}
 }
 //----------------------------------//
-void dQuaternion :: Reciprocal() {
+void dQuaternion::Reciprocal() {
 	dQuaternion QuatL(0.0, 0.0, 0.0, 0.0);
 	int NormL;
 	
@@ -285,13 +273,13 @@ dVector3D dVecCrossProd(const dVector3D& VectOneP, const dVector3D& VectTwoP) {
 	return VectL;
 }
 //--------------------------------------------------------------------//
-dVectorND :: dVectorND(std :: initializer_list <double> CoordsP) {
+dVectorND::dVectorND(std::initializer_list <double> CoordsP) {
     for (double CoordI : CoordsP) {
         Vec.emplace_back(CoordI);
         Num++;
     }
 }
-dVectorND :: dVectorND(unsigned long NumP) {
+dVectorND::dVectorND(unsigned long NumP) {
     for (unsigned long i = 0; i < NumP; i++) {
         Vec.emplace_back(0.0);
     }
@@ -301,7 +289,11 @@ dVectorND ::~dVectorND() {
     Vec.clear();
 }
 //----------------------------------//
-void dVectorND :: operator+=(const dVectorND& VectP) {
+void dVectorND::Resize(unsigned long NumP) {
+	Vec.resize(NumP);
+}
+//----------------------------------//
+void dVectorND::operator+=(const dVectorND& VectP) {
     if (this -> Num != VectP.Num) {
         return;
     }
@@ -310,7 +302,7 @@ void dVectorND :: operator+=(const dVectorND& VectP) {
         this -> Vec[i] += VectP.Vec[i];
     }
 }
-void dVectorND :: operator-=(const dVectorND& VectP) {
+void dVectorND::operator-=(const dVectorND& VectP) {
     if (this -> Num != VectP.Num) {
         return;
     }
@@ -319,7 +311,7 @@ void dVectorND :: operator-=(const dVectorND& VectP) {
         this -> Vec[i] -= VectP.Vec[i];
     }
 }
-dVectorND& dVectorND :: operator=(const dVectorND& VectP) {
+dVectorND& dVectorND::operator=(const dVectorND& VectP) {
     if (this -> Num != VectP.Num) {
         return *this;
     }
@@ -330,7 +322,7 @@ dVectorND& dVectorND :: operator=(const dVectorND& VectP) {
 
     return *this;
 }
-bool dVectorND :: operator==(const dVectorND& VectP) {
+bool dVectorND::operator==(const dVectorND& VectP) {
     if (this -> Num != VectP.Num) {
         return false;
     }
@@ -343,7 +335,7 @@ bool dVectorND :: operator==(const dVectorND& VectP) {
 
     return true;
 }
-bool dVectorND :: operator!=(const dVectorND& VectP) {
+bool dVectorND::operator!=(const dVectorND& VectP) {
     if (this -> Num != VectP.Num) {
         return true;
     }
@@ -357,7 +349,7 @@ bool dVectorND :: operator!=(const dVectorND& VectP) {
     return false;
 }
 //----------------------------------//
-dVectorND dVectorND :: Norm() {
+dVectorND dVectorND::Norm() {
     double SumL = 0.0;
     dVectorND VecL(Num);
 
@@ -373,7 +365,7 @@ dVectorND dVectorND :: Norm() {
 
     return VecL;
 }
-double dVectorND :: Greatest() {
+double dVectorND::Greatest() {
     double GreatestL = this -> Vec[0];
 
     for (unsigned long i = 1; i < Num; i++) {
@@ -384,7 +376,7 @@ double dVectorND :: Greatest() {
 
     return GreatestL;
 }
-double dVectorND :: Least() {
+double dVectorND::Least() {
     double LeastL = this -> Vec[0];
 
     for (unsigned long i = 1; i < Num; i++) {

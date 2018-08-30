@@ -18,6 +18,7 @@
 #include <cmath>
 #include <vector>
 #include <initializer_list>
+#include <tuple>
 //----------------------------------//
 struct dVector3D {
 	double x, y, z;
@@ -32,9 +33,7 @@ struct dVector3D {
     }
 	void operator+=(const dVector3D& VectP);
     dVector3D operator+(const dVector3D& VecP) {
-        return dVector3D(this -> x + VecP.x,
-                         this -> y + VecP.y,
-                         this -> z + VecP.z);
+        return dVector3D(x + VecP.x, y + VecP.y, z + VecP.z);
     }
     //---Addition---//
 
@@ -44,51 +43,49 @@ struct dVector3D {
     }
 	void operator-=(const dVector3D& VectP);
     dVector3D operator-(const dVector3D& VecP) {
-        return dVector3D(this -> x - VecP.x,
-                         this -> y - VecP.y,
-                         this -> z - VecP.z);
+        return dVector3D(x - VecP.x, y - VecP.y, z - VecP.z);
     }
     //---Subtraction---//
 
     //---Multiplying---//
     double operator*(const dVector3D& VectP) {
-        return this -> x * VectP.x + this -> y * VectP.y + this -> z * VectP.z;
+        return x * VectP.x + y * VectP.y + z * VectP.z;
     }
     template <typename T> dVector3D operator*(const T NumP) {
-        return dVector3D(this -> x * NumP, this -> y * NumP, this -> z * NumP);
+        return dVector3D(x * NumP, y * NumP, z * NumP);
     }
     template <typename T> void operator*=(const T NumP) {
-        this -> x *= NumP;
-        this -> y *= NumP;
-        this -> z *= NumP;
+        x *= NumP;
+        y *= NumP;
+        z *= NumP;
     }
     template <typename T> friend dVector3D operator*(const dVector3D& VecP, const T NumP);
     //---Multiplying---//
 
     //---Division---//
     template <typename T> dVector3D operator/(const T NumP) {
-        return dVector3D(this -> x / NumP, this -> y / NumP, this -> z / NumP);
+        return dVector3D(x / NumP, y / NumP, z / NumP);
     }
     template <typename T> void operator/=(const T NumP) {
-        this -> x /= NumP;
-        this -> y /= NumP;
-        this -> z /= NumP;
+        x /= NumP;
+        y /= NumP;
+        z /= NumP;
     }
     template <typename T> friend dVector3D operator/(const dVector3D& VecP, const T NumP);
     //---Division---//
 
     //---Equality---//
-	dVector3D& operator=(const dVector3D& VectP);
+	dVector3D& operator=(const dVector3D& VectP) = default;
 	bool operator==(const dVector3D& VectP);
 	bool operator!=(const dVector3D& VectP);
     //---Equality---//
 
     //---Absolute value---//
 	double Abs() {
-        return sqrt(pow(this -> x, 2) + pow(this -> y, 2) + pow(this -> z, 2));
+        return sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
     }
     double Abs_2() {
-        return pow(this -> x, 2) + pow(this -> y, 2) + pow(this -> z, 2);
+        return pow(x, 2) + pow(y, 2) + pow(z, 2);
     }
     //---Absolute value---//
 
@@ -269,16 +266,19 @@ private:
     std :: vector <double> Vec;
     unsigned long Num = 0;
 public:
+    dVectorND() = default;
     dVectorND(std :: initializer_list <double> CoordsP);
     explicit dVectorND(unsigned long NumP);
     ~dVectorND();
+
+    void Resize(unsigned long NumP);
     
     //---Addition---//
     dVectorND operator+() {
         return *this;
     }
     void operator+=(const dVectorND& VectP);
-    dVectorND operator+(const dVectorND& VectP) {
+    dVectorND operator+(const dVectorND& VectP) const {
         dVectorND TempVecL(Num);
 
         if (this -> Num != VectP.Num) {
@@ -304,7 +304,7 @@ public:
         return TempVecL;
     }
     void operator-=(const dVectorND& VectP);
-    dVectorND operator-(const dVectorND& VectP) {
+    dVectorND operator-(const dVectorND& VectP) const {
         dVectorND TempVecL(Num);
 
         if (Num != VectP.Num) {
@@ -400,6 +400,13 @@ public:
     double Least();
 
     //---Access---//
+    double operator[](unsigned long NumP) const {
+        if (NumP < Vec.size()) {
+            return Vec[NumP];
+        } else {
+            return Vec[0];
+        }
+    }
     double Get(unsigned long NumP) {
         return Vec[NumP];
     }

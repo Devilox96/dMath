@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 //-----------------------------//
-#include "dVectors.h"
+#include "dVectors.h" //---dMath/Core/dVectors.h---//
 //-----------------------------//
 struct dRungeKuttaParam {
     double Step = 0.1;
@@ -13,16 +13,8 @@ struct dRungeKuttaParam {
     dVector3D ZeroDerInit;
     dVector3D FirstDerInit;
 
-    virtual dVector3D Func(double ArgP, dVector3D ZeroDerInitP) {
-        std :: cout << "dRungeKuttaParam: No function!" << std :: endl;
-
-        return dVector3D();
-    }
-    virtual dVector3D Func(double ArgP, dVector3D ZeroDerInitP, dVector3D FirstDerInitP) {
-        std :: cout << "dRungeKuttaParam: No function!" << std :: endl;
-
-        return dVector3D();
-    }
+    virtual dVector3D Func(double ArgP, dVector3D ZeroDerInitP) = 0;
+    virtual dVector3D Func(double ArgP, dVector3D ZeroDerInitP, dVector3D FirstDerInitP) = 0;
 };
 //-----------------------------//
 void dRungeKutta4th_1(dRungeKuttaParam& ParamP);
