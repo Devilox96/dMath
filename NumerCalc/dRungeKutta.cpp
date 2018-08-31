@@ -1,12 +1,12 @@
 #include "dRungeKutta.h"
 //-----------------------------//
 void dRungeKutta4th_1(dRungeKuttaParam& ParamP) {
-    dVector3D k1L;
-    dVector3D k2L;
-    dVector3D k3L;
-    dVector3D k4L;
+    dVector3D <double> k1L;
+    dVector3D <double> k2L;
+    dVector3D <double> k3L;
+    dVector3D <double> k4L;
 
-    dVector3D ZeroDerResL;
+    dVector3D <double> ZeroDerResL;
 
     k1L = ParamP.Func(ParamP.Arg, ParamP.ZeroDerInit);
     k2L = ParamP.Func(ParamP.Arg + ParamP.Step / 2, ParamP.ZeroDerInit + k1L * (ParamP.Step / 2));
@@ -19,18 +19,18 @@ void dRungeKutta4th_1(dRungeKuttaParam& ParamP) {
     ParamP.ZeroDerInit = ZeroDerResL;
 }
 void dRungeKutta4th_2(dRungeKuttaParam& ParamP) {
-    dVector3D k1L;
-    dVector3D k2L;
-    dVector3D k3L;
-    dVector3D k4L;
+    dVector3D <double> k1L;
+    dVector3D <double> k2L;
+    dVector3D <double> k3L;
+    dVector3D <double> k4L;
 
-    dVector3D l1L;
-    dVector3D l2L;
-    dVector3D l3L;
-    dVector3D l4L;
+    dVector3D <double> l1L;
+    dVector3D <double> l2L;
+    dVector3D <double> l3L;
+    dVector3D <double> l4L;
 
-    dVector3D ZeroDerResL;
-    dVector3D FirstDerResL;
+    dVector3D <double> ZeroDerResL;
+    dVector3D <double> FirstDerResL;
 
     k1L = ParamP.FirstDerInit;
     l1L = ParamP.Func(ParamP.Arg, ParamP.ZeroDerInit, ParamP.FirstDerInit);

@@ -1,65 +1,5 @@
 #include "dVectors.h"
 //----------------------------------//
-dVector3D::dVector3D(double xP, double yP, double zP) {
-	x = xP;
-	y = yP;
-	z = zP;
-}
-dVector3D::dVector3D() {
-	x = 0.0;
-	y = 0.0;
-	z = 0.0;
-}
-//----------------------------------//
-void dVector3D::operator+=(const dVector3D& VectP) {
-	x += VectP.x;
-	y += VectP.y;
-	z += VectP.z;
-}
-void dVector3D::operator-=(const dVector3D& VectP) {
-	x -= VectP.x;
-	y -= VectP.y;
-	z -= VectP.z;
-}
-bool dVector3D::operator==(const dVector3D& VectP) {
-	return std::tie(x, y, z) == std::tie(VectP.x, VectP.y, VectP.z);
-}
-bool dVector3D::operator!=(const dVector3D& VectP) {
-	return !(std::tie(x, y, z) == std::tie(VectP.x, VectP.y, VectP.z));
-}
-//----------------------------------//
-dVector3D dVector3D::Norm() {
-	dVector3D TempL;
-	double AbsL;
-	
-	AbsL = sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
-	
-	TempL.x = x / AbsL;
-	TempL.y = y / AbsL;
-	TempL.z = z / AbsL;
-	
-	return TempL;
-}
-double dVector3D::Greatest() {
-    if (x >= y  && x >= z) {
-        return x;
-    } else if (y >= x  && y >= z) {
-        return y;
-    } else {
-        return z;
-    }
-}
-double dVector3D::Least() {
-    if (x <= y  && x <= z) {
-        return x;
-    } else if (y <= x  && y <= z) {
-        return y;
-    } else {
-        return z;
-    }
-}
-//--------------------------------------------------------------------//
-//--------------------------------------------------------------------//
 dVector2D::dVector2D(double xP, double yP) {
 	x = xP;
 	y = yP;
@@ -185,16 +125,6 @@ void dQuaternion::Reciprocal() {
 	*this = QuatL;
 }
 //--------------------------------------------------------------------//
-//--------------------------------------------------------------------//
-dVector3D dVecCrossProd(const dVector3D& VectOneP, const dVector3D& VectTwoP) {
-	dVector3D VectL(0.0, 0.0, 0.0);
-
-	VectL.x = VectOneP.y * VectTwoP.z - VectOneP.z * VectTwoP.y;
-	VectL.y = VectOneP.z * VectTwoP.x - VectOneP.x * VectTwoP.z;
-	VectL.z = VectOneP.x * VectTwoP.y - VectOneP.y * VectTwoP.x;
-
-	return VectL;
-}
 //--------------------------------------------------------------------//
 dVectorND::dVectorND(std::initializer_list <double> CoordsP) {
     for (double CoordI : CoordsP) {

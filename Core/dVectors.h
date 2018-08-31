@@ -20,39 +20,56 @@
 #include <initializer_list>
 #include <tuple>
 //----------------------------------//
+template <typename VecT>
 struct dVector3D {
-	double x, y, z;
+    VecT x, y, z;
 
-	dVector3D();
-	dVector3D(double xP, double yP, double zP);
-	~dVector3D() = default;
+	dVector3D <VecT> () {
+	    x = 0;
+	    y = 0;
+	    z = 0;
+	}
+    dVector3D <VecT> (VecT xP, VecT yP, VecT zP) {
+        x = xP;
+        y = yP;
+        z = zP;
+    }
+	~dVector3D <VecT> () = default;
 
     //---Addition---//
-    dVector3D operator+() {
+    dVector3D <VecT> operator+() {
         return *this;
     }
-	void operator+=(const dVector3D& VectP);
-    dVector3D operator+(const dVector3D& VecP) {
-        return dVector3D(x + VecP.x, y + VecP.y, z + VecP.z);
+	void operator+=(const dVector3D <VecT>& VectP) {
+        x += VectP.x;
+        y += VectP.y;
+        z += VectP.z;
+    }
+    dVector3D <VecT> operator+(const dVector3D <VecT>& VecP) {
+        return dVector3D <VecT> (x + VecP.x, y + VecP.y, z + VecP.z);
     }
     //---Addition---//
 
     //---Subtraction---//
-	dVector3D operator-() {
-        return dVector3D(-this -> x, -this -> y, -this -> z);
+	dVector3D <VecT> operator-() {
+        return dVector3D <VecT> (-x, -y, -z);
     }
-	void operator-=(const dVector3D& VectP);
-    dVector3D operator-(const dVector3D& VecP) {
-        return dVector3D(x - VecP.x, y - VecP.y, z - VecP.z);
+	void operator-=(const dVector3D <VecT>& VectP) {
+        x -= VectP.x;
+        y -= VectP.y;
+        z -= VectP.z;
+    }
+    dVector3D <VecT> operator-(const dVector3D <VecT>& VecP) {
+        return dVector3D <VecT> (x - VecP.x, y - VecP.y, z - VecP.z);
     }
     //---Subtraction---//
 
     //---Multiplying---//
-    double operator*(const dVector3D& VectP) {
+    double operator*(const dVector3D <VecT>& VectP) {
         return x * VectP.x + y * VectP.y + z * VectP.z;
     }
-    template <typename T> dVector3D operator*(const T NumP) {
-        return dVector3D(x * NumP, y * NumP, z * NumP);
+    template <typename T> dVector3D <VecT> operator*(const T NumP) {
+        return dVector3D <VecT> (x * NumP, y * NumP, z * NumP);
     }
     template <typename T> void operator*=(const T NumP) {
         x *= NumP;
@@ -63,8 +80,8 @@ struct dVector3D {
     //---Multiplying---//
 
     //---Division---//
-    template <typename T> dVector3D operator/(const T NumP) {
-        return dVector3D(x / NumP, y / NumP, z / NumP);
+    template <typename T> dVector3D <VecT> operator/(const T NumP) {
+        return dVector3D <VecT> (x / NumP, y / NumP, z / NumP);
     }
     template <typename T> void operator/=(const T NumP) {
         x /= NumP;
@@ -75,9 +92,13 @@ struct dVector3D {
     //---Division---//
 
     //---Equality---//
-	dVector3D& operator=(const dVector3D& VectP) = default;
-	bool operator==(const dVector3D& VectP);
-	bool operator!=(const dVector3D& VectP);
+	dVector3D <VecT>& operator=(const dVector3D <VecT>& VectP) = default;
+	bool operator==(const dVector3D <VecT>& VectP) {
+        return std::tie(x, y, z) == std::tie(VectP.x, VectP.y, VectP.z);
+	}
+	bool operator!=(const dVector3D <VecT>& VectP) {
+        return !(std::tie(x, y, z) == std::tie(VectP.x, VectP.y, VectP.z));
+	}
     //---Equality---//
 
     //---Absolute value---//
@@ -89,16 +110,53 @@ struct dVector3D {
     }
     //---Absolute value---//
 
-	dVector3D Norm();
-    double Greatest();
-	double Least();
+	dVector3D <VecT> Norm() {
+        dVector3D <VecT> TempL;
+        double AbsL;
+
+        AbsL = sqrt(pow(x, 2) + pow(y, 2) + pow(z, 2));
+
+        TempL.x = x / AbsL;
+        TempL.y = y / AbsL;
+        TempL.z = z / AbsL;
+
+        return TempL;
+	}
+    double Greatest() {
+        if (x >= y  && x >= z) {
+            return x;
+        } else if (y >= x  && y >= z) {
+            return y;
+        } else {
+            return z;
+        }
+	}
+	double Least() {
+        if (x <= y && x <= z) {
+            return x;
+        } else if (y <= x && y <= z) {
+            return y;
+        } else {
+            return z;
+        }
+    }
 };
 
-template <typename T> dVector3D operator*(const dVector3D& VecP, const T NumP) {
-    return dVector3D(VecP.x * NumP, VecP.y * NumP, VecP.z * NumP);
+template <typename T, typename VecT> dVector3D <VecT> operator*(const dVector3D <VecT>& VecP, const T NumP) {
+    return dVector3D <VecT> (VecP.x * NumP, VecP.y * NumP, VecP.z * NumP);
 }
-template <typename T> dVector3D operator/(const dVector3D& VecP, const T NumP) {
-    return dVector3D(VecP.x / NumP, VecP.y / NumP, VecP.z / NumP);
+template <typename T, typename VecT> dVector3D <VecT> operator/(const dVector3D <VecT>& VecP, const T NumP) {
+    return dVector3D <VecT> (VecP.x / NumP, VecP.y / NumP, VecP.z / NumP);
+}
+//----------------------------------//
+template <typename VecT> dVector3D <VecT> dVecCrossProd(const dVector3D <VecT>& VectOneP, const dVector3D <VecT>& VectTwoP) {
+    dVector3D <VecT> VectL(0.0, 0.0, 0.0);
+
+    VectL.x = VectOneP.y * VectTwoP.z - VectOneP.z * VectTwoP.y;
+    VectL.y = VectOneP.z * VectTwoP.x - VectOneP.x * VectTwoP.z;
+    VectL.z = VectOneP.x * VectTwoP.y - VectOneP.y * VectTwoP.x;
+
+    return VectL;
 }
 //----------------------------------//
 struct dVector2D {
@@ -258,8 +316,6 @@ template <typename T> dQuaternion operator*(const dQuaternion& QuatP, const T Nu
 template <typename T> dQuaternion operator/(const dQuaternion& QuatP, const T NumP) {
     return dQuaternion(QuatP.w / NumP, QuatP.x / NumP, QuatP.y / NumP, QuatP.z / NumP);
 }
-//----------------------------------//
-dVector3D dVecCrossProd(const dVector3D& VectOneP, const dVector3D& VectTwoP);
 //----------------------------------//
 struct dVectorND {
 private:
