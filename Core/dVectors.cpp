@@ -1,10 +1,10 @@
 #include "dVectors.h"
 //----------------------------------//
 template <typename T, typename VecT> dVector3D <VecT> operator*(const dVector3D <VecT>& VecP, const T NumP) {
-    return dVector3D <VecT> (VecP.x * NumP, VecP.y * NumP, VecP.z * NumP);
+    return dVector3D <VecT>(VecP.x * NumP, VecP.y * NumP, VecP.z * NumP);
 }
 template <typename T, typename VecT> dVector3D <VecT> operator/(const dVector3D <VecT>& VecP, const T NumP) {
-    return dVector3D <VecT> (VecP.x / NumP, VecP.y / NumP, VecP.z / NumP);
+    return dVector3D <VecT>(VecP.x / NumP, VecP.y / NumP, VecP.z / NumP);
 }
 //----------------------------------//
 template <typename VecT> dVector3D <VecT> dVecCrossProd(const dVector3D <VecT>& VectOneP, const dVector3D <VecT>& VectTwoP) {
@@ -18,17 +18,17 @@ template <typename VecT> dVector3D <VecT> dVecCrossProd(const dVector3D <VecT>& 
 }
 //----------------------------------//
 template <typename T, typename VecT> dVector2D <VecT> operator*(const dVector2D <VecT>& VecP, const T NumP) {
-    return dVector2D <VecT> (VecP.x * NumP, VecP.y * NumP);
+    return dVector2D <VecT>(VecP.x * NumP, VecP.y * NumP);
 }
 template <typename T, typename VecT> dVector2D <VecT> operator/(const dVector2D <VecT>& VecP, const T NumP) {
-    return dVector2D <VecT> (VecP.x / NumP, VecP.y / NumP);
+    return dVector2D <VecT>(VecP.x / NumP, VecP.y / NumP);
 }
 //----------------------------------//
 template <typename T, typename QuatT> dQuaternion <QuatT> operator*(const dQuaternion <QuatT>& QuatP, const T NumP) {
-    return dQuaternion <QuatT> (QuatP.w * NumP, QuatP.x * NumP, QuatP.y * NumP, QuatP.z * NumP);
+    return dQuaternion <QuatT>(QuatP.w * NumP, QuatP.x * NumP, QuatP.y * NumP, QuatP.z * NumP);
 }
 template <typename T, typename QuatT> dQuaternion <QuatT> operator/(const dQuaternion <QuatT>& QuatP, const T NumP) {
-    return dQuaternion <QuatT> (QuatP.w / NumP, QuatP.x / NumP, QuatP.y / NumP, QuatP.z / NumP);
+    return dQuaternion <QuatT>(QuatP.w / NumP, QuatP.x / NumP, QuatP.y / NumP, QuatP.z / NumP);
 }
 //----------------------------------//
 

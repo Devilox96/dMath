@@ -24,17 +24,9 @@ template <typename VecT>
 struct dVector3D {
     VecT x, y, z;
 
-	dVector3D <VecT> () {
-	    x = 0;
-	    y = 0;
-	    z = 0;
-	}
-    dVector3D <VecT> (VecT xP, VecT yP, VecT zP) {
-        x = xP;
-        y = yP;
-        z = zP;
-    }
-	~dVector3D <VecT> () = default;
+	dVector3D <VecT>() : x(0), y(0), z(0) {}
+    dVector3D <VecT>(VecT xP, VecT yP, VecT zP) : x(xP), y(yP), z(zP) {}
+	~dVector3D <VecT>() = default;
 
     //---Addition---//
     dVector3D <VecT> operator+() {
@@ -46,13 +38,13 @@ struct dVector3D {
         z += VectP.z;
     }
     dVector3D <VecT> operator+(const dVector3D <VecT>& VecP) {
-        return dVector3D <VecT> (x + VecP.x, y + VecP.y, z + VecP.z);
+        return dVector3D <VecT>(x + VecP.x, y + VecP.y, z + VecP.z);
     }
     //---Addition---//
 
     //---Subtraction---//
 	dVector3D <VecT> operator-() {
-        return dVector3D <VecT> (-x, -y, -z);
+        return dVector3D <VecT>(-x, -y, -z);
     }
 	void operator-=(const dVector3D <VecT>& VectP) {
         x -= VectP.x;
@@ -60,7 +52,7 @@ struct dVector3D {
         z -= VectP.z;
     }
     dVector3D <VecT> operator-(const dVector3D <VecT>& VecP) {
-        return dVector3D <VecT> (x - VecP.x, y - VecP.y, z - VecP.z);
+        return dVector3D <VecT>(x - VecP.x, y - VecP.y, z - VecP.z);
     }
     //---Subtraction---//
 
@@ -69,7 +61,7 @@ struct dVector3D {
         return x * VectP.x + y * VectP.y + z * VectP.z;
     }
     template <typename T> dVector3D <VecT> operator*(const T NumP) {
-        return dVector3D <VecT> (x * NumP, y * NumP, z * NumP);
+        return dVector3D <VecT>(x * NumP, y * NumP, z * NumP);
     }
     template <typename T> void operator*=(const T NumP) {
         x *= NumP;
@@ -81,7 +73,7 @@ struct dVector3D {
 
     //---Division---//
     template <typename T> dVector3D <VecT> operator/(const T NumP) {
-        return dVector3D <VecT> (x / NumP, y / NumP, z / NumP);
+        return dVector3D <VecT>(x / NumP, y / NumP, z / NumP);
     }
     template <typename T> void operator/=(const T NumP) {
         x /= NumP;
@@ -146,15 +138,9 @@ template <typename VecT>
 struct dVector2D {
     VecT x, y;
 
-    dVector2D <VecT> () {
-        x = 0.0;
-        y = 0.0;
-    }
-    dVector2D <VecT> (VecT xP, VecT yP) {
-        x = xP;
-        y = yP;
-    }
-    ~dVector2D <VecT> () = default;
+    dVector2D <VecT>() : x(0), y(0) {}
+    dVector2D <VecT>(VecT xP, VecT yP) : x(xP), y(yP) {}
+    ~dVector2D <VecT>() = default;
 
     //---Addition---//
     dVector2D <VecT> operator+() {
@@ -165,20 +151,20 @@ struct dVector2D {
         y += VectP.y;
     }
     dVector2D <VecT> operator+(const dVector2D <VecT>& VecP) {
-        return dVector2D <VecT> (x + VecP.x, y + VecP.y);
+        return dVector2D <VecT>(x + VecP.x, y + VecP.y);
     }
     //---Addition---//
 
     //---Subtraction---//
     dVector2D <VecT> operator-() {
-        return dVector2D <VecT> (-x, -y);
+        return dVector2D <VecT>(-x, -y);
     }
     void operator-=(const dVector2D <VecT>& VectP) {
         x -= VectP.x;
         y -= VectP.y;
     }
     dVector2D <VecT> operator-(const dVector2D <VecT>& VecP) {
-        return dVector2D <VecT> (x - VecP.x, y - VecP.y);
+        return dVector2D <VecT>(x - VecP.x, y - VecP.y);
     }
     //---Subtraction---//
 
@@ -187,7 +173,7 @@ struct dVector2D {
         return x * VectP.x + y * VectP.y;
     }
     template <typename T> dVector2D <VecT> operator*(const T NumP) {
-        return dVector2D <VecT> (x * NumP, y * NumP);
+        return dVector2D <VecT>(x * NumP, y * NumP);
     }
     template <typename T> void operator*=(const T NumP) {
         x *= NumP;
@@ -198,7 +184,7 @@ struct dVector2D {
 
     //---Division---//
     template <typename T> dVector2D <VecT> operator/(const T NumP) {
-        return dVector2D <VecT> (x / NumP, y / NumP);
+        return dVector2D <VecT>(x / NumP, y / NumP);
     }
     template <typename T> void operator/=(const T NumP) {
         x /= NumP;
@@ -257,19 +243,9 @@ template <typename QuatT>
 struct dQuaternion {
     QuatT w, x, y, z;
 
-    dQuaternion <QuatT> () {
-        w = 0.0;
-        x = 0.0;
-        y = 0.0;
-        z = 0.0;
-    }
-    dQuaternion <QuatT> (QuatT wP, QuatT xP, QuatT yP, QuatT zP) {
-        w = wP;
-        x = xP;
-        y = yP;
-        z = zP;
-    }
-	~dQuaternion <QuatT> () = default;
+    dQuaternion <QuatT>() : w(0), x(0), y(0), z(0) {}
+    dQuaternion <QuatT>(QuatT wP, QuatT xP, QuatT yP, QuatT zP) : w(wP), x(xP), y(yP), z(zP) {}
+	~dQuaternion <QuatT>() = default;
 
     //---Addition---//
     dQuaternion <QuatT> operator+() {
@@ -282,13 +258,13 @@ struct dQuaternion {
         z += QuatP.z;
     }
     dQuaternion <QuatT> operator+(const dQuaternion <QuatT>& QuatP) {
-        return dQuaternion <QuatT> (w + QuatP.w, x + QuatP.x, y + QuatP.y, z + QuatP.z);
+        return dQuaternion <QuatT>(w + QuatP.w, x + QuatP.x, y + QuatP.y, z + QuatP.z);
     }
     //---Addition---//
 
     //---Subtraction---//
     dQuaternion <QuatT> operator-() {
-        return dQuaternion <QuatT> (-w, -x, -y, -z);
+        return dQuaternion <QuatT>(-w, -x, -y, -z);
     }
     void operator-=(const dQuaternion <QuatT>& QuatP) {
         w -= QuatP.w;
@@ -297,7 +273,7 @@ struct dQuaternion {
         z -= QuatP.z;
     }
 	dQuaternion <QuatT> operator-(const dQuaternion <QuatT>& QuatP) {
-        return dQuaternion <QuatT> (w - QuatP.w, x - QuatP.x, y - QuatP.y, z - QuatP.z);
+        return dQuaternion <QuatT>(w - QuatP.w, x - QuatP.x, y - QuatP.y, z - QuatP.z);
     }
     //---Subtraction---//
 
@@ -339,7 +315,7 @@ struct dQuaternion {
 
     //---Division---//
 	template <typename T> dQuaternion <QuatT> operator/(const T NumP) {
-        return dQuaternion <QuatT> (w / NumP, x / NumP, y / NumP, z / NumP);
+        return dQuaternion <QuatT>(w / NumP, x / NumP, y / NumP, z / NumP);
     }
     template <typename T> void operator/=(const T NumP) {
         w /= NumP;
@@ -361,7 +337,7 @@ struct dQuaternion {
     //---Equality---//
 
 	dQuaternion <QuatT> Conjugation() {
-        return dQuaternion <QuatT> (w, -x, -y, -z);
+        return dQuaternion <QuatT>(w, -x, -y, -z);
     }
     void Reciprocal() {
         dQuaternion <QuatT> QuatL;
@@ -397,7 +373,7 @@ public:
     ~dVectorND();
 
     void Resize(unsigned long NumP);
-    
+
     //---Addition---//
     dVectorND operator+() {
         return *this;
