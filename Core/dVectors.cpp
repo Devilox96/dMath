@@ -1,131 +1,59 @@
 #include "dVectors.h"
 //----------------------------------//
-dVector2D::dVector2D(double xP, double yP) {
-	x = xP;
-	y = yP;
+template <typename T, typename VecT> dVector3D <VecT> operator*(const dVector3D <VecT>& VecP, const T NumP) {
+    return dVector3D <VecT> (VecP.x * NumP, VecP.y * NumP, VecP.z * NumP);
 }
-dVector2D::dVector2D() {
-	x = 0.0;
-	y = 0.0;
+template <typename T, typename VecT> dVector3D <VecT> operator/(const dVector3D <VecT>& VecP, const T NumP) {
+    return dVector3D <VecT> (VecP.x / NumP, VecP.y / NumP, VecP.z / NumP);
 }
 //----------------------------------//
-void dVector2D::operator+=(const dVector2D& VectP) {
-	x += VectP.x;
-	y += VectP.y;
-}
-void dVector2D::operator-=(const dVector2D& VectP) {
-	x -= VectP.x;
-	y -= VectP.y;
-}
-bool dVector2D::operator==(const dVector2D& VectP) {
-	return std::tie(x, y) == std::tie(VectP.x, VectP.y);
-}
-bool dVector2D::operator!=(const dVector2D& VectP) {
-    return !(std::tie(x, y) == std::tie(VectP.x, VectP.y));
+template <typename VecT> dVector3D <VecT> dVecCrossProd(const dVector3D <VecT>& VectOneP, const dVector3D <VecT>& VectTwoP) {
+    dVector3D <VecT> VectL(0.0, 0.0, 0.0);
+
+    VectL.x = VectOneP.y * VectTwoP.z - VectOneP.z * VectTwoP.y;
+    VectL.y = VectOneP.z * VectTwoP.x - VectOneP.x * VectTwoP.z;
+    VectL.z = VectOneP.x * VectTwoP.y - VectOneP.y * VectTwoP.x;
+
+    return VectL;
 }
 //----------------------------------//
-dVector2D dVector2D::Norm() {
-	dVector2D TempL;
-	double AbsL;
-	
-	AbsL = sqrt(pow(x, 2) + pow(y, 2));
-	
-	TempL.x = x / AbsL;
-	TempL.y = y / AbsL;
-	
-	return TempL;
+template <typename T, typename VecT> dVector2D <VecT> operator*(const dVector2D <VecT>& VecP, const T NumP) {
+    return dVector2D <VecT> (VecP.x * NumP, VecP.y * NumP);
 }
-double dVector2D::Greatest() {
-    if (x >= y) {
-        return x;
-    } else {
-        return y;
-    }
-}
-double dVector2D::Least() {
-    if (x <= y) {
-        return x;
-    } else {
-        return y;
-    }
-}
-//--------------------------------------------------------------------//
-//--------------------------------------------------------------------//
-dQuaternion::dQuaternion() {
-	w = 0.0;
-	x = 0.0;
-	y = 0.0;
-	z = 0.0;
-}
-dQuaternion::dQuaternion(double wP, double xP, double yP, double zP) {
-	w = wP;
-	x = xP;
-	y = yP;
-	z = zP;
+template <typename T, typename VecT> dVector2D <VecT> operator/(const dVector2D <VecT>& VecP, const T NumP) {
+    return dVector2D <VecT> (VecP.x / NumP, VecP.y / NumP);
 }
 //----------------------------------//
-void dQuaternion::operator+=(const dQuaternion& QuatP) {
-	w += QuatP.w;
-	x += QuatP.x;
-	y += QuatP.y;
-	z += QuatP.z;
+template <typename T, typename QuatT> dQuaternion <QuatT> operator*(const dQuaternion <QuatT>& QuatP, const T NumP) {
+    return dQuaternion <QuatT> (QuatP.w * NumP, QuatP.x * NumP, QuatP.y * NumP, QuatP.z * NumP);
 }
-void dQuaternion::operator-=(const dQuaternion& QuatP) {
-	w -= QuatP.w;
-	x -= QuatP.x;
-	y -= QuatP.y;
-	z -= QuatP.z;
-}
-dQuaternion dQuaternion::operator*(const dQuaternion& QuatP) {
-	dQuaternion QuatL(0.0, 0.0, 0.0, 0.0);
-	
-	QuatL.w = w * QuatP.w - x * QuatP.x - y * QuatP.y - z * QuatP.z;
-	QuatL.x = w * QuatP.x + x * QuatP.w + y * QuatP.z - z * QuatP.y;
-	QuatL.y = w * QuatP.y + y * QuatP.w + z * QuatP.x - x * QuatP.z;
-	QuatL.z = w * QuatP.z + z * QuatP.w + x * QuatP.y - y * QuatP.x;
-	
-	return QuatL;
-}
-void dQuaternion::operator*=(const dQuaternion& QuatP) {
-	dQuaternion QuatL(0.0, 0.0, 0.0, 0.0);
-	
-	QuatL.w = w * QuatP.w - x * QuatP.x - y * QuatP.y - z * QuatP.z;
-	QuatL.x = w * QuatP.x + x * QuatP.w + y * QuatP.z - z * QuatP.y;
-	QuatL.y = w * QuatP.y + y * QuatP.w + z * QuatP.x - x * QuatP.z;
-	QuatL.z = w * QuatP.z + z * QuatP.w + x * QuatP.y - y * QuatP.x;
-	
-	w = QuatL.w;
-	x = QuatL.x;
-	y = QuatL.y;
-	z = QuatL.z;
-}
-bool dQuaternion::operator==(const dQuaternion& QuatP) {
-	return std::tie(w, x, y, z) == std::tie(QuatP.w, QuatP.x, QuatP.y, QuatP.z);
-}
-bool dQuaternion::operator!=(const dQuaternion& QuatP) {
-    return !(std::tie(w, x, y, z) == std::tie(QuatP.w, QuatP.x, QuatP.y, QuatP.z));
+template <typename T, typename QuatT> dQuaternion <QuatT> operator/(const dQuaternion <QuatT>& QuatP, const T NumP) {
+    return dQuaternion <QuatT> (QuatP.w / NumP, QuatP.x / NumP, QuatP.y / NumP, QuatP.z / NumP);
 }
 //----------------------------------//
-void dQuaternion::Reciprocal() {
-	dQuaternion QuatL(0.0, 0.0, 0.0, 0.0);
-	double NormL;
-	
-	QuatL.w = w;
-	QuatL.x = -x;
-	QuatL.y = -y;
-	QuatL.z = -z;
-	
-	NormL = pow(w, 2) + pow(x, 2) + pow(y, 2) + pow(z, 2);
-			
-	QuatL.w /= NormL;
-	QuatL.x /= NormL;
-	QuatL.y /= NormL;
-	QuatL.z /= NormL;
-	
-	*this = QuatL;
-}
-//--------------------------------------------------------------------//
-//--------------------------------------------------------------------//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 dVectorND::dVectorND(std::initializer_list <double> CoordsP) {
     for (double CoordI : CoordsP) {
         Vec.emplace_back(CoordI);
