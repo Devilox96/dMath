@@ -587,6 +587,13 @@ public:
             return Vec[0];
         }
     }
+    VecT operator[](unsigned long NumP) const {
+        if (NumP < Vec.size()) {
+            return Vec[NumP];
+        } else {
+            return Vec[0];
+        }
+    }
     VecT ConstGet(unsigned long NumP) const {
         return Vec[NumP];
     }
