@@ -1,8 +1,8 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
+#include <cmath>
 #include <cstring>
-#include <dVectors.h>
 //#include "Core/dVectors.h"
 
 template <typename VecT>
