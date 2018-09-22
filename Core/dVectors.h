@@ -365,21 +365,22 @@ struct dQuaternion {
 template <typename VecT>
 struct dVectorND {
 private:
-    std :: vector <double> Vec;
+    VecT* Vec;
+    unsigned long Size = 0;
 public:
     dVectorND <VecT>() = default;
     dVectorND <VecT>(std::initializer_list <double> CoordsP) {
-        for (double CoordI : CoordsP) {
-            Vec.emplace_back(CoordI);
-        }
+        Vec = new VecT[CoordsP.size()];
+        Size = CoordsP.size();
+
+        std::copy(CoordsP.begin(), CoordsP.end(), Vec);
     }
     explicit dVectorND <VecT>(unsigned long NumP) {
-        Vec.resize(NumP, 0);
+        Vec = new VecT[NumP];
+        Size = NumP;
     }
-    ~dVectorND <VecT>() = default;
-
-    void Resize(unsigned long NumP) {
-        Vec.resize(NumP);
+    ~dVectorND <VecT>() {
+        delete [] Vec;
     }
 
     //---Addition---//
@@ -387,22 +388,22 @@ public:
         return *this;
     }
     void operator+=(const dVectorND <VecT>& VectP) {
-        if (Vec.size() != VectP.Size()) {
+        if (Size != VectP.Size) {
             return;
         }
 
-        for (unsigned long i = 0; i < Vec.size(); i++) {
+        for (unsigned long i = 0; i < Size; i++) {
             Vec[i] += VectP.Vec[i];
         }
     }
     dVectorND <VecT> operator+(const dVectorND <VecT>& VectP) const {
-        dVectorND <VecT> TempVecL(Vec.size());
+        dVectorND <VecT> TempVecL(Size);
 
-        if (Vec.size() != VectP.Vec.size()) {
+        if (Size != VectP.Size) {
             return TempVecL;
         }
 
-        for (unsigned long i = 0; i < Vec.size(); i++) {
+        for (unsigned long i = 0; i < Size; i++) {
             TempVecL.Vec[i] = Vec[i] + VectP.Vec[i];
         }
 
@@ -412,31 +413,31 @@ public:
 
     //---Subtraction---//
     dVectorND <VecT> operator-() {
-        dVectorND <VecT> TempVecL(Vec.size());
+        dVectorND <VecT> TempVecL(Size);
 
-        for (unsigned long i = 0; i < Vec.size(); i++) {
+        for (unsigned long i = 0; i < Size; i++) {
             TempVecL.Vec[i] = -Vec[i];
         }
 
         return TempVecL;
     }
     void operator-=(const dVectorND <VecT>& VectP) {
-        if (Vec.size() != VectP.Size()) {
+        if (Size != VectP.Size) {
             return;
         }
 
-        for (unsigned long i = 0; i < Vec.size(); i++) {
+        for (unsigned long i = 0; i < Size; i++) {
             Vec[i] -= VectP.Vec[i];
         }
     }
     dVectorND <VecT> operator-(const dVectorND <VecT>& VectP) const {
-        dVectorND <VecT> TempVecL(Vec.size());
+        dVectorND <VecT> TempVecL(Size);
 
-        if (Vec.size() != VectP.Vec.size()) {
+        if (Size != VectP.Size) {
             return TempVecL;
         }
 
-        for (unsigned long i = 0; i < Vec.size(); i++) {
+        for (unsigned long i = 0; i < Size; i++) {
             TempVecL.Vec[i] = Vec[i] - VectP.Vec[i];
         }
 
@@ -448,20 +449,20 @@ public:
     double operator*(const dVectorND <VecT>& VectP) {
         double ResL = 0.0;
 
-        if (Vec.size() != VectP.Vec.size()) {
+        if (Size != VectP.Size) {
             return ResL;
         }
 
-        for (unsigned long i = 0; i < Vec.size(); i++) {
+        for (unsigned long i = 0; i < Size; i++) {
             ResL += Vec[i] * VectP.Vec[i];
         }
 
         return ResL;
     }
     template <typename T> dVectorND <VecT> operator*(const T NumP) {
-        dVectorND <VecT> TempVecL(Vec.size());
+        dVectorND <VecT> TempVecL(Size);
 
-        for (unsigned long i = 0; i < Vec.size(); i++) {
+        for (unsigned long i = 0; i < Size; i++) {
             TempVecL.Vec[i] = Vec[i] * NumP;
         }
 
@@ -472,14 +473,14 @@ public:
             NumI *= NumP;
         }
     }
-    template <typename T> friend dVectorND <VecT> operator*(const dVectorND <VecT>& VectP, const T NumP);
+    template <typename T> friend dVectorND <VecT> operator*(const dVectorND <VecT>& VectP, T NumP);
     //---Multiplying---//
 
     //---Division---//
     template <typename T> dVectorND <VecT> operator/(const T NumP) {
-        dVectorND <VecT> TempVecL(Vec.size());
+        dVectorND <VecT> TempVecL(Size);
 
-        for (unsigned long i = 0; i < Vec.size(); i++) {
+        for (unsigned long i = 0; i < Size; i++) {
             TempVecL.Vec[i] = Vec[i] / NumP;
         }
 
@@ -490,12 +491,12 @@ public:
             NumI /= NumP;
         }
     }
-    template <typename T> friend dVectorND <VecT> operator/(const dVectorND <VecT>& VectP, const T NumP);
+    template <typename T> friend dVectorND <VecT> operator/(const dVectorND <VecT>& VectP, T NumP);
     //---Division---//
 
     //---Equality---//
     dVectorND <VecT>& operator=(const dVectorND <VecT>& VectP) {
-        if (Vec.size() != VectP.Size()) {
+        if (Size != VectP.Size) {
             return *this;
         }
 
@@ -504,14 +505,14 @@ public:
         return *this;
     }
     bool operator==(const dVectorND <VecT>& VectP) {
-        if (Vec.size() != VectP.Vec.size()) {
+        if (Size != VectP.Size) {
             return true;
         }
 
         return Vec == VectP.Vec;
     }
     bool operator!=(const dVectorND <VecT>& VectP) {
-        if (Vec.size() != VectP.Vec.size()) {
+        if (Size != VectP.Size) {
             return true;
         }
 
@@ -542,15 +543,15 @@ public:
 
     dVectorND <double> Norm() {
         double SumL = 0.0;
-        dVectorND <double> VecL(Vec.size());
+        dVectorND <double> VecL(Size);
 
-        for (unsigned long i = 0; i < Vec.size(); i++) {
+        for (unsigned long i = 0; i < Size; i++) {
             SumL += pow(Vec[i], 2);
         }
 
         double AbsL = sqrt(SumL);
 
-        for (unsigned long i = 0; i < Vec.size(); i++) {
+        for (unsigned long i = 0; i < Size; i++) {
             VecL.Vec[i] = Vec[i] / AbsL;
         }
 
@@ -559,7 +560,7 @@ public:
     VecT Greatest() {
         VecT GreatestL = Vec[0];
 
-        for (unsigned long i = 1; i < Vec.size(); i++) {
+        for (unsigned long i = 1; i < Size; i++) {
             if (Vec[i] > GreatestL) {
                 GreatestL = Vec[i];
             }
@@ -570,7 +571,7 @@ public:
     VecT Least() {
         VecT LeastL = Vec[0];
 
-        for (unsigned long i = 1; i < Vec.size(); i++) {
+        for (unsigned long i = 1; i < Size; i++) {
             if (Vec[i] < LeastL) {
                 LeastL = Vec[i];
             }
@@ -581,14 +582,14 @@ public:
 
     //---Access---//
     VecT& operator[](unsigned long NumP) {
-        if (NumP < Vec.size()) {
+        if (NumP < Size) {
             return Vec[NumP];
         } else {
             return Vec[0];
         }
     }
     VecT operator[](unsigned long NumP) const {
-        if (NumP < Vec.size()) {
+        if (NumP < Size) {
             return Vec[NumP];
         } else {
             return Vec[0];
@@ -597,8 +598,8 @@ public:
     VecT ConstGet(unsigned long NumP) const {
         return Vec[NumP];
     }
-    unsigned long Size() const {
-        return Vec.size();
+    unsigned long GetSize() const {
+        return Size;
     }
     //---Access---//
 };
