@@ -38,7 +38,7 @@ template <typename T, typename VecT> dVectorND <VecT> operator*(const dVectorND 
         TempVecL.Vec[i] = VectP.Vec[i] * NumP;
     }
 
-    return TempVecL;
+    return dVectorND <VecT>(TempVecL);
 }
 template <typename T, typename VecT> dVectorND <VecT> operator/(const dVectorND <VecT>& VectP, const T NumP) {
     dVectorND <VecT> TempVecL(VectP.Size());
@@ -47,5 +47,5 @@ template <typename T, typename VecT> dVectorND <VecT> operator/(const dVectorND 
         TempVecL.Vec[i] = VectP.Vec[i] / NumP;
     }
 
-    return TempVecL;
+    return dVectorND <VecT>(TempVecL);
 }

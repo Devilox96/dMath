@@ -369,26 +369,18 @@ private:
     unsigned long Size = 0;
 public:
     dVectorND <VecT>() = default;
-    dVectorND <VecT>(std::initializer_list <double> CoordsP) {
-        Vec = new VecT[CoordsP.size()];
-        Size = CoordsP.size();
-
-        std::copy(CoordsP.begin(), CoordsP.end(), Vec);
-    }
-    explicit dVectorND <VecT>(unsigned long NumP) {
-        Vec = new VecT[NumP];
-        Size = NumP;
-    }
+    explicit dVectorND <VecT>(unsigned long NumP) : Vec(new VecT[NumP]), Size(NumP) {}
+    dVectorND <VecT>(const std::initializer_list <VecT>& CoordsP) : Vec(new VecT[CoordsP.size()]), Size(CoordsP.size()) {}
+    dVectorND <VecT>(const dVectorND <VecT>& CopyVecP) : Vec(new VecT(*CopyVecP.Vec)), Size(CopyVecP.Size) {}
     ~dVectorND <VecT>() {
-        delete [] Vec;
+        delete[] Vec;
     }
 
     //---Addition---//
-    dVectorND <VecT> operator+() {
-        return *this;
-    }
     void operator+=(const dVectorND <VecT>& VectP) {
         if (Size != VectP.Size) {
+            std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
+
             return;
         }
 
@@ -400,6 +392,8 @@ public:
         dVectorND <VecT> TempVecL(Size);
 
         if (Size != VectP.Size) {
+            std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
+
             return TempVecL;
         }
 
@@ -407,7 +401,7 @@ public:
             TempVecL.Vec[i] = Vec[i] + VectP.Vec[i];
         }
 
-        return TempVecL;
+        return dVectorND <VecT>(TempVecL);
     }
     //---Addition---//
 
@@ -419,10 +413,12 @@ public:
             TempVecL.Vec[i] = -Vec[i];
         }
 
-        return TempVecL;
+        return dVectorND <VecT>(TempVecL);
     }
     void operator-=(const dVectorND <VecT>& VectP) {
         if (Size != VectP.Size) {
+            std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
+
             return;
         }
 
@@ -434,6 +430,8 @@ public:
         dVectorND <VecT> TempVecL(Size);
 
         if (Size != VectP.Size) {
+            std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
+
             return TempVecL;
         }
 
@@ -441,7 +439,7 @@ public:
             TempVecL.Vec[i] = Vec[i] - VectP.Vec[i];
         }
 
-        return TempVecL;
+        return dVectorND <VecT>(TempVecL);
     }
     //---Subtraction---//
 
@@ -450,6 +448,8 @@ public:
         double ResL = 0.0;
 
         if (Size != VectP.Size) {
+            std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
+
             return ResL;
         }
 
@@ -466,10 +466,10 @@ public:
             TempVecL.Vec[i] = Vec[i] * NumP;
         }
 
-        return TempVecL;
+        return dVectorND <VecT>(TempVecL);
     }
     template <typename T> void operator*=(const T NumP) {
-        for (const double& NumI : Vec) {
+        for (double& NumI : Vec) {
             NumI *= NumP;
         }
     }
@@ -484,10 +484,10 @@ public:
             TempVecL.Vec[i] = Vec[i] / NumP;
         }
 
-        return TempVecL;
+        return dVectorND <VecT>(TempVecL);
     }
     template <typename T> void operator/=(const T NumP) {
-        for (const double& NumI : Vec) {
+        for (double& NumI : Vec) {
             NumI /= NumP;
         }
     }
@@ -500,23 +500,25 @@ public:
             return *this;
         }
 
-        Vec = VectP.Vec;
+        dVectorND <VecT> TempVecL(VectP);
+
+        std::swap(Vec, TempVecL.Vec);
 
         return *this;
     }
     bool operator==(const dVectorND <VecT>& VectP) {
         if (Size != VectP.Size) {
-            return true;
+            return false;
         }
 
-        return Vec == VectP.Vec;
+        return std::equal(std::begin(Vec), std::end(Vec)), std::begin(VectP.Vec);
     }
     bool operator!=(const dVectorND <VecT>& VectP) {
         if (Size != VectP.Size) {
             return true;
         }
 
-        return Vec != VectP.Vec;
+        return !std::equal(std::begin(Vec), std::end(Vec)), std::begin(VectP.Vec);
     }
     //---Equality---//
 
@@ -524,7 +526,7 @@ public:
     double Abs() {
         double ResL = 0.0;
 
-        for (const double& NumI : Vec) {
+        for (const VecT& NumI : Vec) {
             ResL += pow(NumI, 2);
         }
 
@@ -533,7 +535,7 @@ public:
     double Abs_2() {
         double ResL = 0.0;
 
-        for (const double& NumI : Vec) {
+        for (const VecT& NumI : Vec) {
             ResL += pow(NumI, 2);
         }
 
@@ -545,8 +547,8 @@ public:
         double SumL = 0.0;
         dVectorND <double> VecL(Size);
 
-        for (unsigned long i = 0; i < Size; i++) {
-            SumL += pow(Vec[i], 2);
+        for (const VecT& NumI : Vec) {
+            SumL += pow(NumI, 2);
         }
 
         double AbsL = sqrt(SumL);
@@ -555,7 +557,7 @@ public:
             VecL.Vec[i] = Vec[i] / AbsL;
         }
 
-        return VecL;
+        return dVectorND <double>(VecL);
     }
     VecT Greatest() {
         VecT GreatestL = Vec[0];
@@ -601,7 +603,7 @@ public:
     unsigned long GetSize() const {
         return Size;
     }
-    //---Access---//
+//    //---Access---//
 };
 //----------------------------------//
 #endif
