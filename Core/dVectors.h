@@ -37,8 +37,8 @@ struct dVector3D {
         y += VectP.y;
         z += VectP.z;
     }
-    dVector3D <VecT> operator+(const dVector3D <VecT>& VecP) {
-        return dVector3D <VecT>(x + VecP.x, y + VecP.y, z + VecP.z);
+    dVector3D <VecT> operator+(const dVector3D <VecT>& VectP) const {
+        return dVector3D <VecT>(x + VectP.x, y + VectP.y, z + VectP.z);
     }
     //---Addition---//
 
@@ -51,8 +51,8 @@ struct dVector3D {
         y -= VectP.y;
         z -= VectP.z;
     }
-    dVector3D <VecT> operator-(const dVector3D <VecT>& VecP) {
-        return dVector3D <VecT>(x - VecP.x, y - VecP.y, z - VecP.z);
+    dVector3D <VecT> operator-(const dVector3D <VecT>& VectP) const {
+        return dVector3D <VecT>(x - VectP.x, y - VectP.y, z - VectP.z);
     }
     //---Subtraction---//
 
@@ -150,7 +150,7 @@ struct dVector2D {
         x += VectP.x;
         y += VectP.y;
     }
-    dVector2D <VecT> operator+(const dVector2D <VecT>& VecP) {
+    dVector2D <VecT> operator+(const dVector2D <VecT>& VecP) const {
         return dVector2D <VecT>(x + VecP.x, y + VecP.y);
     }
     //---Addition---//
@@ -163,7 +163,7 @@ struct dVector2D {
         x -= VectP.x;
         y -= VectP.y;
     }
-    dVector2D <VecT> operator-(const dVector2D <VecT>& VecP) {
+    dVector2D <VecT> operator-(const dVector2D <VecT>& VecP) const {
         return dVector2D <VecT>(x - VecP.x, y - VecP.y);
     }
     //---Subtraction---//
@@ -370,8 +370,14 @@ private:
 public:
     dVectorND <VecT>() = default;
     explicit dVectorND <VecT>(unsigned long NumP) : Vec(new VecT[NumP]), Size(NumP) {}
-    dVectorND <VecT>(const std::initializer_list <VecT>& CoordsP) : Vec(new VecT[CoordsP.size()]), Size(CoordsP.size()) {}
-    dVectorND <VecT>(const dVectorND <VecT>& CopyVecP) : Vec(new VecT(*CopyVecP.Vec)), Size(CopyVecP.Size) {}
+    dVectorND <VecT>(const std::initializer_list <VecT>& CoordsP) : Vec(new VecT[CoordsP.size()]), Size(CoordsP.size()) {
+        std::copy(CoordsP.begin(), CoordsP.end(), Vec);
+    }
+    dVectorND <VecT>(const dVectorND <VecT>& CopyVecP) : Vec(new VecT[CopyVecP.Size]), Size(CopyVecP.Size) {
+        for (unsigned long i = 0; i < Size; i++) {
+            Vec[i] = CopyVecP.Vec[i];
+        }
+    }
     ~dVectorND <VecT>() {
         delete[] Vec;
     }

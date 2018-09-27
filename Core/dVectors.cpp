@@ -32,18 +32,18 @@ template <typename T, typename QuatT> dQuaternion <QuatT> operator/(const dQuate
 }
 //----------------------------------//
 template <typename T, typename VecT> dVectorND <VecT> operator*(const dVectorND <VecT>& VectP, const T NumP) {
-    dVectorND <VecT> TempVecL(VectP.Size());
+    dVectorND <VecT> TempVecL(VectP.Size);
 
-    for (unsigned long i = 0; i < VectP.Size(); i++) {
+    for (unsigned long i = 0; i < VectP.Size; i++) {
         TempVecL.Vec[i] = VectP.Vec[i] * NumP;
     }
 
     return dVectorND <VecT>(TempVecL);
 }
 template <typename T, typename VecT> dVectorND <VecT> operator/(const dVectorND <VecT>& VectP, const T NumP) {
-    dVectorND <VecT> TempVecL(VectP.Size());
+    dVectorND <VecT> TempVecL(VectP.Size);
 
-    for (unsigned long i = 0; i < VectP.Size(); i++) {
+    for (unsigned long i = 0; i < VectP.Size; i++) {
         TempVecL.Vec[i] = VectP.Vec[i] / NumP;
     }
 
