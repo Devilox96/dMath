@@ -408,7 +408,7 @@ public:
             std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
         } else {
             for (unsigned long i = 0; i < Size; i++) {
-                TempVecL.Vec[i] = Data[i] + VectorP.Data[i];
+                TempVecL.Data[i] = Data[i] + VectorP.Data[i];
             }
         }
 
@@ -421,7 +421,7 @@ public:
         dVectorND <T> TempVecL(Size);
 
         for (unsigned long i = 0; i < Size; i++) {
-            TempVecL.Vec[i] = -Data[i];
+            TempVecL.Data[i] = -Data[i];
         }
 
         return TempVecL;
@@ -444,7 +444,7 @@ public:
             std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
         } else {
             for (unsigned long i = 0; i < Size; i++) {
-                TempVecL.Vec[i] = Data[i] - VectorP.Data[i];
+                TempVecL.Data[i] = Data[i] - VectorP.Data[i];
             }
         }
 
