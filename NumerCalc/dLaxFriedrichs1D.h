@@ -25,7 +25,7 @@ public:
             std::cout << "ERROR! dLaxFriedrichs1D: Incorrect steps!" << std::endl;
         }
 
-        return  (tVecMinus + tVecPlus) / 2.0 -
+        return  (tVecPlus + tVecMinus) / 2.0 +
                 (func(tVecPlus) - func(tVecMinus)) * mTimeStep / mXStep / 2.0;
     }
 protected:
