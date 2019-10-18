@@ -142,11 +142,11 @@ public:
     }
 
     inline bool operator==(const Vector<Tp, N> &other) const {
-        return *data == *other.data;
+        return data == other.data;
     }
 
     inline bool operator!=(const Vector<Tp, N> &other) const {
-        return *data != *other.data;
+        return data != other.data;
     }
 
     inline constexpr Tp &operator[](std::size_t index) noexcept {

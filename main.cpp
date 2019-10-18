@@ -99,184 +99,55 @@ int main() {
 //
 //    outputFile.close();
 
+//    dVectorND_variadic <double, 5> Source(0.1, 0.2, 0.3, 0.4, 0.5);
 
-    //----------//
-    std::cout << "Creating 150.000.000 3D vectors..." << std::endl;
-    //----------//
+    dVectorND_variadic <double, 5> Temp1(0.1, 0.2, 0.3, 0.4, 0.5);
+    Vector <double, 5> Temp2({0.1, 0.2, 0.3, 0.4, 0.5});
+    dVectorND_variadic <double, 5> Add1(0.1, 0.1, 0.1, 0.1, 0.1);
+    Vector <double, 5> Add2({0.1, 0.1, 0.1, 0.1, 0.1});
+
+//    std::cout << "Result:" << Temp1 << std::endl;
+
+//    std::cout << Temp1 * Add1 << std::endl;
 
     auto Start = std::chrono::system_clock::now();
 
-    for (int i = 0; i < 150000000; i++) {
-        dVector3D <double>(0.1, 0.2, 0.3);
-    }
+//    for (int i = 0; i < 150000000; i++) {
+//        Temp1 * Add1;
+//    }
 
     auto Stop = std::chrono::system_clock::now();
-
+//
     std::chrono::duration <double> Time = Stop - Start;
-    std::cout << "dVector3D: " << Time.count() << "s" << std::endl;
+//    std::cout << "dVectorND_variadic multiplication *: " << Time.count() << "s" << std::endl;
+//
+//    std::cout << "Result:" << Temp1 << std::endl;
 
     //----------//
 
     Start = std::chrono::system_clock::now();
 
     for (int i = 0; i < 150000000; i++) {
-        Vector3d <double>({0.1, 0.2, 0.3});
+        Temp1 == Add1;
     }
 
     Stop = std::chrono::system_clock::now();
 
     Time = Stop - Start;
-    std::cout << "Vector3d: " << Time.count() << "s" << std::endl;
+    std::cout << "Vector comparison: " << Time.count() << "s" << std::endl;
 
     //----------//
 
     Start = std::chrono::system_clock::now();
 
     for (int i = 0; i < 150000000; i++) {
-        dVectorND_variadic_array <double, 3>(0.1, 0.2, 0.3);
+        Temp2 == Add2;
     }
 
     Stop = std::chrono::system_clock::now();
 
     Time = Stop - Start;
-    std::cout << "dVectorND_variadic_array: " << Time.count() << "s" << std::endl;
-
-    std::cout << "------------------------------------------" << std::endl;
-
-    //----------//
-    std::cout << "Creating 150.000.000 5D vectors..." << std::endl;
-    //----------//
-
-    Start = std::chrono::system_clock::now();
-
-    for (int i = 0; i < 150000000; i++) {
-        dVectorND <double>({0.1, 0.2, 0.3, 0.4, 0.5});
-    }
-
-    Stop = std::chrono::system_clock::now();
-
-    Time = Stop - Start;
-    std::cout << "dVectorND: " << Time.count() << "s" << std::endl;
-
-    //----------//
-
-    Start = std::chrono::system_clock::now();
-
-    for (int i = 0; i < 150000000; i++) {
-        Vector <double, 5>({0.1, 0.2, 0.3, 0.4, 0.5});
-    }
-
-    Stop = std::chrono::system_clock::now();
-
-    Time = Stop - Start;
-    std::cout << "Vector: " << Time.count() << "s" << std::endl;
-
-    //----------//
-
-    std::cout << "------------------------------------------" << std::endl;
-
-    //----------//
-    std::cout << "Creating 150.000.000 7D vectors..." << std::endl;
-    //----------//
-
-    Start = std::chrono::system_clock::now();
-
-    for (int i = 0; i < 150000000; i++) {
-        dVectorND <double>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7});
-    }
-
-    Stop = std::chrono::system_clock::now();
-
-    Time = Stop - Start;
-    std::cout << "dVectorND: " << Time.count() << "s" << std::endl;
-
-    //----------//
-
-    Start = std::chrono::system_clock::now();
-
-    for (int i = 0; i < 150000000; i++) {
-        Vector <double, 7>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7});
-    }
-
-    Stop = std::chrono::system_clock::now();
-
-    Time = Stop - Start;
-    std::cout << "Vector: " << Time.count() << "s" << std::endl;
-
-    //----------//
-
-    std::cout << "------------------------------------------" << std::endl;
-
-    //----------//
-    std::cout << "Creating 150.000.000 9D vectors..." << std::endl;
-    //----------//
-
-    Start = std::chrono::system_clock::now();
-
-    for (int i = 0; i < 150000000; i++) {
-        dVectorND <double>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9});
-    }
-
-    Stop = std::chrono::system_clock::now();
-
-    Time = Stop - Start;
-    std::cout << "dVectorND: " << Time.count() << "s" << std::endl;
-
-    //----------//
-
-    Start = std::chrono::system_clock::now();
-
-    for (int i = 0; i < 150000000; i++) {
-        Vector <double, 9>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9});
-    }
-
-    Stop = std::chrono::system_clock::now();
-
-    Time = Stop - Start;
-    std::cout << "Vector: " << Time.count() << "s" << std::endl;
-
-    //----------//
-
-
-    std::cout << "------------------------------------------" << std::endl;
-
-    //----------//
-    std::cout << "Calculating 300.000.000 dot products (7D)..." << std::endl;
-    //----------//
-
-    auto dTemp1 = dVectorND <double>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7});
-    auto dTemp2 = dVectorND <double>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7});
-
-    Start = std::chrono::system_clock::now();
-
-    for (int i = 0; i < 300000000; i++) {
-        dTemp1 * dTemp2;
-    }
-
-    Stop = std::chrono::system_clock::now();
-
-    Time = Stop - Start;
-    std::cout << "dVectorND: " << Time.count() << "s" << std::endl;
-
-    //----------//
-
-    auto Temp1 = Vector <double, 7>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7});
-    auto Temp2 = Vector <double, 7>({0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7});
-
-    Start = std::chrono::system_clock::now();
-
-    for (int i = 0; i < 150000000; i++) {
-        dot(Temp1, Temp2);
-    }
-
-    Stop = std::chrono::system_clock::now();
-
-    Time = Stop - Start;
-    std::cout << "Vector: " << Time.count() << "s" << std::endl;
-
-    //----------//
-
-    std::cout << "------------------------------------------" << std::endl;
+    std::cout << "dVectorND_variadic comparison: " << Time.count() << "s" << std::endl;
 
     //----------//
 
