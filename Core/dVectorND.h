@@ -1,198 +1,172 @@
 #ifndef DVECTORND_H
 #define DVECTORND_H
 //-----------------------------//
-#include <iostream>
-#include <utility>
-#include <initializer_list>
-#include <cmath>
-#include <tuple>
+#include <algorithm>
+#include <numeric>
+#include <functional>
 //-----------------------------//
-template <typename T>
+template <typename T, size_t SizeT>
 class dVectorND {
 public:
-    explicit dVectorND <T>(unsigned long SizeP) : Data(new T[SizeP]), Size(SizeP) {}
-    dVectorND <T>(const std::initializer_list <T>& ArgsP) : Data(new T[ArgsP.size()]), Size(ArgsP.size()) {
-        std::copy(ArgsP.begin(), ArgsP.end(), Data);
-    }
-    dVectorND <T>(const dVectorND <T>& CopyVectorP) : Data(new T[CopyVectorP.Size]), Size(CopyVectorP.Size) {
-        std::copy(CopyVectorP.Data, CopyVectorP.Data + Size, Data);
-    }
-    dVectorND <T>(dVectorND <T>&& MoveVectorP) noexcept : Data(std::exchange(MoveVectorP.Data, nullptr)), Size(MoveVectorP.Size) {}
-    ~dVectorND <T>() {
-        delete[] Data;
-    }
+    template <typename ... Args>
+    explicit dVectorND <T, SizeT>(Args ... tArgs) : mData({tArgs ...}), mSize(SizeT) {}
+    dVectorND(const dVectorND <T, SizeT>& tVecToCopy) : mData(tVecToCopy.mData), mSize(SizeT) {}
+    dVectorND(dVectorND <T, SizeT>&& tVecToMove) noexcept : mData(std::move(tVecToMove.mData)), mSize(SizeT) {}
+
+    ~dVectorND() = default;
 
     //----------//
 
-    dVectorND <T>& operator=(const dVectorND <T>& CopyVectorP) {
-        *this = dVectorND <T>(CopyVectorP);
+    dVectorND <T, SizeT>& operator=(const dVectorND <T, SizeT>& tVecToCopy) {
+        *this = dVectorND <T, SizeT>(tVecToCopy);
         return *this;
     }
-    dVectorND <T>& operator=(dVectorND <T>&& MoveVectorP) noexcept {
-        std::swap(Data, MoveVectorP.Data);
+    dVectorND <T, SizeT>& operator=(dVectorND <T, SizeT>&& tVecToMove) noexcept {
+        *this = dVectorND <T, SizeT>(tVecToMove);
         return *this;
     }
 
     //----------//
 
-    void operator+=(const dVectorND <T>& VectorP) {
-        if (Size != VectorP.Size) {
-            std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
-
-            return;
-        }
-
-        for (unsigned long i = 0; i < Size; i++) {
-            Data[i] += VectorP.Data[i];
+    void operator+=(const dVectorND <T, SizeT>& tVecToAdd) {
+        std::transform(mData.cbegin(), mData.cend(), tVecToAdd.mData.cbegin(), mData.begin(), std::plus <T>());
+    }
+    template <typename NumberT>
+    void operator+=(NumberT tNumToSubtract) {
+        for (size_t i = 0; i < mSize; i++) {
+            mData[i] += tNumToSubtract;
         }
     }
-    dVectorND <T> operator+(const dVectorND <T>& VectorP) const {
-        dVectorND <T> TempVecL(Size);
+    dVectorND <T, SizeT> operator+(const dVectorND <T, SizeT>& tVecToAdd) const {
+        dVectorND <T, SizeT> TempVec;
+        std::transform(mData.cbegin(), mData.cend(), tVecToAdd.mData.cbegin(), TempVec.mData.begin(), std::plus <T>());
 
-        if (Size != VectorP.Size) {
-            std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
-        } else {
-            for (unsigned long i = 0; i < Size; i++) {
-                TempVecL.Data[i] = Data[i] + VectorP.Data[i];
-            }
-        }
-
-        return TempVecL;
+        return TempVec;
     }
+    template <typename NumberT>
+    friend dVectorND <T, SizeT> operator+(const dVectorND <T, SizeT>& tVecToAddTo, NumberT tNumToAdd) {
+        dVectorND <T, SizeT> TempVec;
 
-    //----------//
-
-    dVectorND <T> operator-() const {
-        dVectorND <T> TempVecL(Size);
-
-        for (unsigned long i = 0; i < Size; i++) {
-            TempVecL.Data[i] = -Data[i];
+        for (size_t i = 0; i < tVecToAddTo.mSize; i++) {
+            TempVec.mData[i] = tVecToAddTo.mData[i] + tNumToAdd;
         }
 
-        return TempVecL;
+        return TempVec;
     }
-    void operator-=(const dVectorND <T>& VectorP) {
-        if (Size != VectorP.Size) {
-            std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
-
-            return;
-        }
-
-        for (unsigned long i = 0; i < Size; i++) {
-            Data[i] -= VectorP.Data[i];
-        }
-    }
-    dVectorND <T> operator-(const dVectorND <T>& VectorP) const {
-        dVectorND <T> TempVecL(Size);
-
-        if (Size != VectorP.Size) {
-            std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
-        } else {
-            for (unsigned long i = 0; i < Size; i++) {
-                TempVecL.Data[i] = Data[i] - VectorP.Data[i];
-            }
-        }
-
-        return TempVecL;
+    template <typename NumberT>
+    friend dVectorND <T, SizeT> operator+(NumberT tNumToAdd, const dVectorND <T, SizeT>& tVecToAddTo) {
+        return tVecToAddTo + tNumToAdd;
     }
 
     //----------//
 
-    T operator*(const dVectorND <T>& VectorP) const {
-        T ResultL = 0;
+    dVectorND <T, SizeT> operator-() const {
+        dVectorND <T, SizeT> TempVec;
+        std::transform(mData.cbegin(), mData.cend(), TempVec.mData.begin(), std::negate <T>());
 
-        if (Size != VectorP.Size) {
-            std::cout << "Error (dVectorND): incompatible vectors sizes!" << std::endl;
-        } else {
-            for (unsigned long i = 0; i < Size; i++) {
-                ResultL += Data[i] * VectorP.Data[i];
-            }
-        }
-
-        return ResultL;
+        return TempVec;
     }
-    template <typename NumberT> void operator*=(const NumberT NumberP) {
-        for (unsigned long i = 0; i < Size; i++) {
-            Data[i] *= NumberP;
+    void operator-=(const dVectorND <T, SizeT>& tVecToSubtract) {
+        std::transform(mData.cbegin(), mData.cend(), tVecToSubtract.mData.cbegin(), mData.begin(), std::minus <T>());
+    }
+    template <typename NumberT>
+    void operator-=(NumberT tNumToSubtract) {
+        for (size_t i = 0; i < mSize; i++) {
+            mData[i] -= tNumToSubtract;
         }
     }
-    template <typename NumberT> friend dVectorND <T> operator*(const dVectorND <T>& VectorP, NumberT NumberP) {
-        dVectorND <T> TempVecL(VectorP.Size);
+    dVectorND <T, SizeT> operator-(const dVectorND <T, SizeT>& tVecToAdd) const {
+        dVectorND <T, SizeT> TempVec;
+        std::transform(mData.cbegin(), mData.cend(), tVecToAdd.mData.cbegin(), TempVec.mData.begin(), std::minus <T>());
 
-        for (unsigned long i = 0; i < VectorP.Size; i++) {
-            TempVecL.Data[i] = VectorP.Data[i] * NumberP;
-        }
-
-        return TempVecL;
+        return TempVec;
     }
-    template <typename NumberT> friend dVectorND <T> operator*(NumberT NumberP, const dVectorND <T>& VectorP) {
-        dVectorND <T> TempVecL(VectorP.Size);
+    template <typename NumberT>
+    friend dVectorND <T, SizeT> operator-(const dVectorND <T, SizeT>& tVecToSubtractFrom, NumberT tNumToSubtract) {
+        dVectorND <T, SizeT> TempVec;
 
-        for (unsigned long i = 0; i < VectorP.Size; i++) {
-            TempVecL.Data[i] = VectorP.Data[i] * NumberP;
+        for (size_t i = 0; i < tVecToSubtractFrom.mSize; i++) {
+            TempVec.mData[i] = tVecToSubtractFrom.mData[i] - tNumToSubtract;
         }
 
-        return TempVecL;
+        return TempVec;
     }
 
     //----------//
 
-    template <typename NumberT> void operator/=(const NumberT NumberP) {
-        for (unsigned long i = 0; i < Size; i++) {
-            Data[i] /= NumberP;
+    T operator*(const dVectorND <T, SizeT> tVecToMultBy) const {
+        return std::inner_product(mData.cbegin(), mData.cend(), tVecToMultBy.mData.cbegin(), static_cast <T>(0));
+    }
+    template <typename NumberT>
+    void operator*=(const NumberT tNumToMultBy) {
+        for (size_t i = 0; i < mSize; i++) {
+            mData[i] *= tNumToMultBy;
         }
     }
-    template <typename NumberT> friend dVectorND <T> operator/(const dVectorND <T>& VectorP, NumberT NumberP) {
-        dVectorND <T> TempVecL(VectorP.Size);
+    template <typename NumberT>
+    friend dVectorND <T, SizeT> operator*(const dVectorND <T, SizeT>& tVecToMult, NumberT tNumToMultBy) {
+        dVectorND <T, SizeT> TempVec;
 
-        for (unsigned long i = 0; i < VectorP.Size; i++) {
-            TempVecL.Data[i] = VectorP.Data[i] / NumberP;
+        for (size_t i = 0; i < tVecToMult.mSize; i++) {
+            TempVec.mData[i] = tVecToMult.mData[i] * tNumToMultBy;
         }
 
-        return TempVecL;
+        return TempVec;
     }
-
-    //----------//
-
-    bool operator==(const dVectorND <T>& VectorP) const {
-        if (Size != VectorP.Size) {
-            return false;
-        }
-
-        return std::equal(std::begin(Data), std::end(Data)), std::begin(VectorP.Data);
-    }
-    bool operator!=(const dVectorND <T>& VectorP) const {
-        if (Size != VectorP.Size) {
-            return true;
-        }
-
-        return !std::equal(std::begin(Data), std::end(Data)), std::begin(VectorP.Data);
+    template <typename NumberT>
+    friend dVectorND <T, SizeT> operator*(NumberT tNumToMultBy, const dVectorND <T, SizeT>& tVecToMult) {
+        return tVecToMult * tNumToMultBy;
     }
 
     //----------//
 
-    T& operator[](unsigned long NumP) {
-        if (NumP < Size && NumP >= 0) {
-            return Data[NumP];
-        } else {
-            std::cout << "Error (dVectorND): out of range!" << std::endl;
-            return Data[0];
+    template <typename NumberT>
+    void operator/=(const NumberT tNumToDivBy) {
+        for (size_t i = 0; i < mSize; i++) {
+            mData[i] /= tNumToDivBy;
         }
     }
-    T operator[](unsigned long NumP) const {
-        if (NumP < Size && NumP >= 0) {
-            return Data[NumP];
-        } else {
-            std::cout << "Error (dVectorND): out of range!" << std::endl;
-            return Data[0];
+    template <typename NumberT>
+    friend dVectorND <T, SizeT> operator/(const dVectorND <T, SizeT>& tVecToDiv, NumberT tNumToDivBy) {
+        dVectorND <T, SizeT> TempVec;
+
+        for (size_t i = 0; i < tVecToDiv.mSize; i++) {
+            TempVec.mData[i] = tVecToDiv.mData[i] / tNumToDivBy;
         }
+
+        return TempVec;
     }
 
     //----------//
 
-    friend std::ostream& operator<<(std::ostream& StreamP, const dVectorND <T>& VectorP) {
-        for (unsigned long i = 0; i < VectorP.Size; i++) {
-            StreamP << VectorP.Data[i] << " ";
+    bool operator==(const dVectorND <T, SizeT>& tVecToComp) const {
+        return mData == tVecToComp.mData;
+    }
+    bool operator!=(const dVectorND <T, SizeT>& tVecToComp) const {
+        return mData != tVecToComp.mData;
+    }
+
+    //----------//
+
+    T& operator[](size_t tIndex) {
+        return mData[tIndex];
+    }
+    T operator[](size_t tIndex) const {
+        return mData[tIndex];
+    }
+
+    //----------//
+
+    friend std::ostream& operator<<(std::ostream& StreamP, const dVectorND <T, SizeT>& tVecToPrint) {
+        for (size_t i = 0; i < tVecToPrint.mData.size(); i++) {
+            StreamP << tVecToPrint.mData[i] << " ";
+        }
+
+        return StreamP;
+    }
+    friend std::istream& operator>>(std::istream& StreamP, dVectorND <T, SizeT>& tVecToPrint) {
+        for (size_t i = 0; i < tVecToPrint.mData.size(); i++) {
+            StreamP >> tVecToPrint.mData[i];
         }
 
         return StreamP;
@@ -200,102 +174,74 @@ public:
 
     //----------//
 
-    double Abs() const {
-        double ResL = 0.0;
+    double abs() const {
+        double TempRes = 0.0;
 
-        for (unsigned long i = 0; i < Size; i++) {
-            ResL += pow(Data[i], 2);
+        for (size_t i = 0; i < mSize; i++) {
+            TempRes += mData[i] * mData[i];
         }
 
-        return sqrt(ResL);
+        return sqrt(TempRes);
     }
-    float Absf() const {
-        float ResL = 0.0;
+    float absf() const {
+        float TempRes = 0.0;
 
-        for (unsigned long i = 0; i < Size; i++) {
-            ResL += powf(Data[i], 2);
+        for (size_t i = 0; i < mSize; i++) {
+            TempRes += mData[i] * mData[i];
         }
 
-        return sqrtf(ResL);
+        return sqrtf(TempRes);
     }
-    T Abs2() const {
-        T ResL = 0.0;
+    T abs2() const {
+        T TempRes = 0.0;
 
-        for (unsigned long i = 0; i < Size; i++) {
-            ResL += Data[i] * Data[i];
+        for (size_t i = 0; i < mSize; i++) {
+            TempRes += mData[i] * mData[i];
         }
 
-        return ResL;
-    }
-
-    //----------//
-
-    dVectorND <double> Norm() const {
-        double SumL = 0.0;
-        dVectorND <double> VecL(Size);
-
-        for (unsigned long i = 0; i < Size; i++) {
-            SumL += pow(Data[i], 2);
-        }
-
-        double AbsL = sqrt(SumL);
-
-        for (unsigned long i = 0; i < Size; i++) {
-            VecL.Data[i] = Data[i] / AbsL;
-        }
-
-        return VecL;
-    }
-    dVectorND <float> Normf() const {
-        float SumL = 0.0;
-        dVectorND <float> VecL(Size);
-
-        for (unsigned long i = 0; i < Size; i++) {
-            SumL += powf(Data[i], 2);
-        }
-
-        float AbsL = sqrtf(SumL);
-
-        for (unsigned long i = 0; i < Size; i++) {
-            VecL.Data[i] = Data[i] / AbsL;
-        }
-
-        return VecL;
+        return TempRes;
     }
 
     //----------//
 
-    T Greatest() const {
-        T GreatestL = Data[0];
+    dVectorND <double, SizeT> norm() const {
+        dVectorND <double, SizeT> TempVec(*this);
+        double AbsValue = abs();
 
-        for (unsigned long i = 1; i < Size; i++) {
-            if (Data[i] > GreatestL) {
-                GreatestL = Data[i];
-            }
-        }
+        TempVec /= AbsValue;
 
-        return GreatestL;
+        return TempVec;
     }
-    T Least() const {
-        T LeastL = Data[0];
+    dVectorND <float, SizeT> normf() const {
+        dVectorND <float, SizeT> TempVec(*this);
+        float AbsValue = abs();
 
-        for (unsigned long i = 1; i < Size; i++) {
-            if (Data[i] < LeastL) {
-                LeastL = Data[i];
-            }
-        }
+        TempVec /= AbsValue;
 
-        return LeastL;
+        return TempVec;
     }
 
     //----------//
 
-    unsigned long GetSize() const {
-        return Size;
+    T max() const {
+        return *std::max_element(mData.begin(), mData.end());
+    }
+    T min() const {
+        return *std::min_element(mData.begin(), mData.end());
+    }
+
+    //----------//
+
+    size_t getSize() const {
+        return mSize;
     }
 private:
-    T* Data;
-    unsigned long Size;
+    dVectorND() : mSize(SizeT) {}
+
+    //----------//
+
+    std::array <T, SizeT> mData;
+    size_t mSize;
 };
 //-----------------------------//
 #endif

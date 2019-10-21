@@ -12,19 +12,8 @@
 //-----------------------------//
 #include "Vector.h"
 //-----------------------------//
-template <typename T, size_t SizeT>
-class dVectorND_variadic_array {
-public:
-    template <typename ... Args>
-    explicit dVectorND_variadic_array <T, SizeT>(Args ... tArgs) : Data({tArgs ...}), Size(SizeT) {}
-    ~dVectorND_variadic_array <T, SizeT>() = default;
-private:
-    std::array<T, SizeT> Data;
-    unsigned long Size;
-};
-//-----------------------------//
 int main() {
-    dVectorND_variadic <double, 4> Test(0.1, 0.2, 0.3, 0.4);
+    dVectorND <double, 4> Test(0.1, 0.2, 0.3, 0.4);
     std::cout << Test << std::endl;
     std::cin >> Test;
     std::cout << Test << std::endl;
@@ -104,11 +93,11 @@ int main() {
 //
 //    outputFile.close();
 
-//    dVectorND_variadic <double, 5> Source(0.1, 0.2, 0.3, 0.4, 0.5);
+//    dVectorND <double, 5> Source(0.1, 0.2, 0.3, 0.4, 0.5);
 
-//    dVectorND_variadic <double, 5> Temp1(0.1, 0.2, 0.3, 0.4, 0.5);
+//    dVectorND <double, 5> Temp1(0.1, 0.2, 0.3, 0.4, 0.5);
 //    Vector <double, 5> Temp2({0.1, 0.2, 0.3, 0.4, 0.5});
-//    dVectorND_variadic <double, 5> Add1(0.1, 0.1, 0.1, 0.1, 0.1);
+//    dVectorND <double, 5> Add1(0.1, 0.1, 0.1, 0.1, 0.1);
 //    Vector <double, 5> Add2({0.1, 0.1, 0.1, 0.1, 0.1});
 //
 ////    std::cout << "Result:" << Temp1 << std::endl;
@@ -152,7 +141,7 @@ int main() {
 //    Stop = std::chrono::system_clock::now();
 //
 //    Time = Stop - Start;
-//    std::cout << "dVectorND_variadic comparison: " << Time.count() << "s" << std::endl;
+//    std::cout << "dVectorND comparison: " << Time.count() << "s" << std::endl;
 
     //----------//
 
