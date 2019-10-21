@@ -24,6 +24,11 @@ private:
 };
 //-----------------------------//
 int main() {
+    dVectorND_variadic <double, 4> Test(0.1, 0.2, 0.3, 0.4);
+    std::cout << Test << std::endl;
+    std::cin >> Test;
+    std::cout << Test << std::endl;
+
 //    dLaxFriedrichs1D <double> SolverLax;
 //    dLeapFrog1D <double> SolverLeap;
 //
@@ -101,53 +106,53 @@ int main() {
 
 //    dVectorND_variadic <double, 5> Source(0.1, 0.2, 0.3, 0.4, 0.5);
 
-    dVectorND_variadic <double, 5> Temp1(0.1, 0.2, 0.3, 0.4, 0.5);
-    Vector <double, 5> Temp2({0.1, 0.2, 0.3, 0.4, 0.5});
-    dVectorND_variadic <double, 5> Add1(0.1, 0.1, 0.1, 0.1, 0.1);
-    Vector <double, 5> Add2({0.1, 0.1, 0.1, 0.1, 0.1});
-
-//    std::cout << "Result:" << Temp1 << std::endl;
-
-//    std::cout << Temp1 * Add1 << std::endl;
-
-    auto Start = std::chrono::system_clock::now();
-
+//    dVectorND_variadic <double, 5> Temp1(0.1, 0.2, 0.3, 0.4, 0.5);
+//    Vector <double, 5> Temp2({0.1, 0.2, 0.3, 0.4, 0.5});
+//    dVectorND_variadic <double, 5> Add1(0.1, 0.1, 0.1, 0.1, 0.1);
+//    Vector <double, 5> Add2({0.1, 0.1, 0.1, 0.1, 0.1});
+//
+////    std::cout << "Result:" << Temp1 << std::endl;
+//
+////    std::cout << Temp1 * Add1 << std::endl;
+//
+//    auto Start = std::chrono::system_clock::now();
+//
+////    for (int i = 0; i < 150000000; i++) {
+////        Temp1 * Add1;
+////    }
+//
+//    auto Stop = std::chrono::system_clock::now();
+////
+//    std::chrono::duration <double> Time = Stop - Start;
+////    std::cout << "dVectorND_variadic multiplication *: " << Time.count() << "s" << std::endl;
+////
+////    std::cout << "Result:" << Temp1 << std::endl;
+//
+//    //----------//
+//
+//    Start = std::chrono::system_clock::now();
+//
 //    for (int i = 0; i < 150000000; i++) {
-//        Temp1 * Add1;
+//        Temp1 == Add1;
 //    }
-
-    auto Stop = std::chrono::system_clock::now();
 //
-    std::chrono::duration <double> Time = Stop - Start;
-//    std::cout << "dVectorND_variadic multiplication *: " << Time.count() << "s" << std::endl;
+//    Stop = std::chrono::system_clock::now();
 //
-//    std::cout << "Result:" << Temp1 << std::endl;
-
-    //----------//
-
-    Start = std::chrono::system_clock::now();
-
-    for (int i = 0; i < 150000000; i++) {
-        Temp1 == Add1;
-    }
-
-    Stop = std::chrono::system_clock::now();
-
-    Time = Stop - Start;
-    std::cout << "Vector comparison: " << Time.count() << "s" << std::endl;
-
-    //----------//
-
-    Start = std::chrono::system_clock::now();
-
-    for (int i = 0; i < 150000000; i++) {
-        Temp2 == Add2;
-    }
-
-    Stop = std::chrono::system_clock::now();
-
-    Time = Stop - Start;
-    std::cout << "dVectorND_variadic comparison: " << Time.count() << "s" << std::endl;
+//    Time = Stop - Start;
+//    std::cout << "Vector comparison: " << Time.count() << "s" << std::endl;
+//
+//    //----------//
+//
+//    Start = std::chrono::system_clock::now();
+//
+//    for (int i = 0; i < 150000000; i++) {
+//        Temp2 == Add2;
+//    }
+//
+//    Stop = std::chrono::system_clock::now();
+//
+//    Time = Stop - Start;
+//    std::cout << "dVectorND_variadic comparison: " << Time.count() << "s" << std::endl;
 
     //----------//
 
