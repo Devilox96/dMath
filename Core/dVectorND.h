@@ -22,7 +22,7 @@ public:
         return *this;
     }
     dVectorND <T, SizeT>& operator=(dVectorND <T, SizeT>&& tVecToMove) noexcept {
-        *this = dVectorND <T, SizeT>(tVecToMove);
+        *this = std::move(tVecToMove);
         return *this;
     }
 
@@ -33,9 +33,7 @@ public:
     }
     template <typename NumberT>
     void operator+=(NumberT tNumToSubtract) {
-        for (size_t i = 0; i < mSize; i++) {
-            mData[i] += tNumToSubtract;
-        }
+        std::transform(mData.cbegin(), mData.cend(), mData.begin(), [&tNumToSubtract](T tIter) { return tIter + T(tNumToSubtract); });
     }
     dVectorND <T, SizeT> operator+(const dVectorND <T, SizeT>& tVecToAdd) const {
         dVectorND <T, SizeT> TempVec;
@@ -70,7 +68,7 @@ public:
         std::transform(mData.cbegin(), mData.cend(), tVecToSubtract.mData.cbegin(), mData.begin(), std::minus <T>());
     }
     template <typename NumberT>
-    void operator-=(NumberT tNumToSubtract) {
+    void operator-=(const NumberT& tNumToSubtract) {
         for (size_t i = 0; i < mSize; i++) {
             mData[i] -= tNumToSubtract;
         }
@@ -82,7 +80,7 @@ public:
         return TempVec;
     }
     template <typename NumberT>
-    friend dVectorND <T, SizeT> operator-(const dVectorND <T, SizeT>& tVecToSubtractFrom, NumberT tNumToSubtract) {
+    friend dVectorND <T, SizeT> operator-(const dVectorND <T, SizeT>& tVecToSubtractFrom, const NumberT& tNumToSubtract) {
         dVectorND <T, SizeT> TempVec;
 
         for (size_t i = 0; i < tVecToSubtractFrom.mSize; i++) {
@@ -95,16 +93,14 @@ public:
     //----------//
 
     T operator*(const dVectorND <T, SizeT> tVecToMultBy) const {
-        return std::inner_product(mData.cbegin(), mData.cend(), tVecToMultBy.mData.cbegin(), static_cast <T>(0));
+        return std::inner_product(mData.cbegin(), mData.cend(), tVecToMultBy.mData.cbegin(), T(0));
     }
     template <typename NumberT>
-    void operator*=(const NumberT tNumToMultBy) {
-        for (size_t i = 0; i < mSize; i++) {
-            mData[i] *= tNumToMultBy;
-        }
+    void operator*=(const NumberT& tNumToMultBy) {
+        std::transform(mData.cbegin(), mData.cend(), mData.begin(), [&tNumToMultBy](T tIter) { return tIter * T(tNumToMultBy); });
     }
     template <typename NumberT>
-    friend dVectorND <T, SizeT> operator*(const dVectorND <T, SizeT>& tVecToMult, NumberT tNumToMultBy) {
+    friend dVectorND <T, SizeT> operator*(const dVectorND <T, SizeT>& tVecToMult, const NumberT&  tNumToMultBy) {
         dVectorND <T, SizeT> TempVec;
 
         for (size_t i = 0; i < tVecToMult.mSize; i++) {
@@ -114,7 +110,7 @@ public:
         return TempVec;
     }
     template <typename NumberT>
-    friend dVectorND <T, SizeT> operator*(NumberT tNumToMultBy, const dVectorND <T, SizeT>& tVecToMult) {
+    friend dVectorND <T, SizeT> operator*(const NumberT& tNumToMultBy, const dVectorND <T, SizeT>& tVecToMult) {
         return tVecToMult * tNumToMultBy;
     }
 
@@ -127,7 +123,7 @@ public:
         }
     }
     template <typename NumberT>
-    friend dVectorND <T, SizeT> operator/(const dVectorND <T, SizeT>& tVecToDiv, NumberT tNumToDivBy) {
+    friend dVectorND <T, SizeT> operator/(const dVectorND <T, SizeT>& tVecToDiv, const NumberT& tNumToDivBy) {
         dVectorND <T, SizeT> TempVec;
 
         for (size_t i = 0; i < tVecToDiv.mSize; i++) {
@@ -234,6 +230,31 @@ public:
 
     size_t getSize() const {
         return mSize;
+    }
+
+    //----------//
+
+    template <typename EnableT = T>
+    std::enable_if_t <SizeT == 3, dVectorND <EnableT, SizeT>> crossProduct(dVectorND <T, 3> tSecondVec) const {
+        dVectorND <T, 3> TempVec;
+
+        TempVec.mData[0] = mData[1] * tSecondVec.mData[2] - mData[2] * tSecondVec.mData[1];
+        TempVec.mData[1] = mData[2] * tSecondVec.mData[0] - mData[0] * tSecondVec.mData[2];
+        TempVec.mData[2] = mData[0] * tSecondVec.mData[1] - mData[1] * tSecondVec.mData[0];
+
+        return TempVec;
+    }
+    template <typename EnableT = T>
+    friend std::enable_if_t <SizeT == 3, dVectorND <EnableT, SizeT>> crossProduct(
+            const dVectorND <T, 3> tFirstVec,
+            const dVectorND <T, 3> tSecondVec) {
+        dVectorND <T, 3> TempVec;
+
+        TempVec.mData[0] = tFirstVec.mData[1] * tSecondVec.mData[2] - tFirstVec.mData[2] * tSecondVec.mData[1];
+        TempVec.mData[1] = tFirstVec.mData[2] * tSecondVec.mData[0] - tFirstVec.mData[0] * tSecondVec.mData[2];
+        TempVec.mData[2] = tFirstVec.mData[0] * tSecondVec.mData[1] - tFirstVec.mData[1] * tSecondVec.mData[0];
+
+        return TempVec;
     }
 private:
     dVectorND() : mSize(SizeT) {}
