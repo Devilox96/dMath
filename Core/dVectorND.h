@@ -1,6 +1,7 @@
 #ifndef DVECTORND_H
 #define DVECTORND_H
 //-----------------------------//
+#include <iostream>
 #include <algorithm>
 #include <numeric>
 #include <functional>
@@ -125,9 +126,7 @@ public:
 
     template <typename NumberT>
     void operator/=(const NumberT tNum) {
-        for (std::size_t i = 0; i < mSize; i++) {
-            mData[i] /= tNum;
-        }
+        std::transform(mData.cbegin(), mData.cend(), mData.begin(), [&tNum](T tIter) { return tIter / T(tNum); });
     }
     template <typename NumberT>
     friend dVectorND <T, SizeT> operator/(const dVectorND <T, SizeT>& tVec, const NumberT& tNum) {

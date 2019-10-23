@@ -10,8 +10,6 @@
 #include "NumerCalc/dLaxFriedrichs1D.h"
 #include "NumerCalc/dLeapFrog1D.h"
 //-----------------------------//
-#include "Vector.h"
-//-----------------------------//
 int main() {
 //    dVectorND <double, 3> Test(0, 1, 0);
 //    dVectorND <double, 3> Test2(1, 0, 0);
@@ -96,8 +94,8 @@ int main() {
 
 //    dVectorND <double, 5> Source(0.1, 0.2, 0.3, 0.4, 0.5);
 
-    dVectorND <double, 5> Temp1(0.1, 0.2, 0.3, 0.4, 0.5);
-    Vector <double, 5> Temp2({0.1, 0.2, 0.3, 0.4, 0.5});
+//    dVectorND <double, 5> Temp1(0.1, 0.2, 0.3, 0.4, 0.5);
+//    Vector <double, 5> Temp2({0.1, 0.2, 0.3, 0.4, 0.5});
 //    dVectorND <double, 5> Add1(0.1, 0.1, 0.1, 0.1, 0.1);
 //    Vector <double, 5> Add2({0.1, 0.1, 0.1, 0.1, 0.1});
 //
@@ -105,29 +103,29 @@ int main() {
 //
 ////    std::cout << Temp1 * Add1 << std::endl;
 //
-    auto Start = std::chrono::system_clock::now();
-
-    for (long int i = 0; i < 150000000000; i++) {
-        Temp1 * 5;
-    }
-
-    auto Stop = std::chrono::system_clock::now();
-
-    std::chrono::duration <double> Time = Stop - Start;
-    std::cout << "dVectorND_variadic multiplication *: " << Time.count() << "s" << std::endl;
-
-    //----------//
-
-    Start = std::chrono::system_clock::now();
-
-    for (long int i = 0; i < 150000000000; i++) {
-        Temp2 * 5;
-    }
-
-    Stop = std::chrono::system_clock::now();
-
-    Time = Stop - Start;
-    std::cout << "Vector multiplication *: " << Time.count() << "s" << std::endl;
+//    auto Start = std::chrono::system_clock::now();
+//
+//    for (long int i = 0; i < 150000000000; i++) {
+//        Temp1 * 5;
+//    }
+//
+//    auto Stop = std::chrono::system_clock::now();
+//
+//    std::chrono::duration <double> Time = Stop - Start;
+//    std::cout << "dVectorND_variadic multiplication *: " << Time.count() << "s" << std::endl;
+//
+//    //----------//
+//
+//    Start = std::chrono::system_clock::now();
+//
+//    for (long int i = 0; i < 150000000000; i++) {
+//        Temp2 * 5;
+//    }
+//
+//    Stop = std::chrono::system_clock::now();
+//
+//    Time = Stop - Start;
+//    std::cout << "Vector multiplication *: " << Time.count() << "s" << std::endl;
 
     //----------//
 //
