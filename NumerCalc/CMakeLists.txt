@@ -1,6 +1,6 @@
 project(dMathNumerCalcLib)
 
-set(dMathCoreDir ../Core)
+set(dMathCoreDir ../Core/)
 set(dMathCoreSource
         ${dMathCoreDir}/dVectors.cpp)
 

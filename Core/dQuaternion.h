@@ -38,18 +38,18 @@ class dQuaternion {
                        [&tNum](T tIter) { return tIter + T(tNum); });
     }
     dQuaternion <T> operator+(const dQuaternion <T>& tAdd) const {
-        dQuaternion <T> TempVec;
-        std::transform(mData.cbegin(), mData.cend(), tAdd.mData.cbegin(), TempVec.mData.begin(), std::plus <T>());
+        dQuaternion <T> Temp;
+        std::transform(mData.cbegin(), mData.cend(), tAdd.mData.cbegin(), Temp.mData.begin(), std::plus <T>());
 
-        return TempVec;
+        return Temp;
     }
     template <typename NumberT>
     friend dQuaternion <T> operator+(const dQuaternion <T>& tQuat, const NumberT& tNum) {
-        dQuaternion <T> TempVec;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), TempVec.mData.begin(),
+        dQuaternion <T> Temp;
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(),
                        [&tNum](T tIter) { return tIter + T(tNum); });
 
-        return TempVec;
+        return Temp;
     }
     template <typename NumberT>
     friend dQuaternion <T> operator+(NumberT tNum, const dQuaternion <T>& tQuat) {
@@ -59,10 +59,10 @@ class dQuaternion {
     //----------//
 
     dQuaternion <T> operator-() const {
-        dQuaternion <T> TempVec;
-        std::transform(mData.cbegin(), mData.cend(), TempVec.mData.begin(), std::negate <T>());
+        dQuaternion <T> Temp;
+        std::transform(mData.cbegin(), mData.cend(), Temp.mData.begin(), std::negate <T>());
 
-        return TempVec;
+        return Temp;
     }
     void operator-=(const dQuaternion <T>& tQuat) {
         std::transform(mData.cbegin(), mData.cend(), tQuat.mData.cbegin(), mData.begin(), std::minus <T>());
@@ -73,18 +73,18 @@ class dQuaternion {
                        [&tNum](T tIter) { return tIter - T(tNum); });
     }
     dQuaternion <T> operator-(const dQuaternion <T>& tQuat) const {
-        dQuaternion <T> TempVec;
-        std::transform(mData.cbegin(), mData.cend(), tQuat.mData.cbegin(), TempVec.mData.begin(), std::minus <T>());
+        dQuaternion <T> Temp;
+        std::transform(mData.cbegin(), mData.cend(), tQuat.mData.cbegin(), Temp.mData.begin(), std::minus <T>());
 
-        return TempVec;
+        return Temp;
     }
     template <typename NumberT>
     friend dQuaternion <T> operator-(const dQuaternion <T>& tQuat, const NumberT& tNum) {
-        dQuaternion <T> TempVec;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), TempVec.mData.begin(),
+        dQuaternion <T> Temp;
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(),
                        [&tNum](T tIter) { return tIter - T(tNum); });
 
-        return TempVec;
+        return Temp;
     }
 
     //----------//
@@ -123,11 +123,11 @@ class dQuaternion {
     }
     template <typename NumberT>
     friend dQuaternion <T> operator*(const dQuaternion <T>& tQuat, const NumberT&  tNum) {
-        dQuaternion <T> TempVec;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), TempVec.mData.begin(),
+        dQuaternion <T> Temp;
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(),
                        [&tNum](T tIter) { return tIter * T(tNum); });
 
-        return TempVec;
+        return Temp;
     }
     template <typename NumberT>
     friend dQuaternion <T> operator*(const NumberT& tNum, const dQuaternion <T>& tQuat) {
@@ -142,11 +142,11 @@ class dQuaternion {
     }
     template <typename NumberT>
     friend dQuaternion <T> operator/(const dQuaternion <T>& tQuat, const NumberT& tNum) {
-        dQuaternion <T> TempVec;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), TempVec.mData.begin(),
+        dQuaternion <T> Temp;
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(),
                        [&tNum](T tIter) { return tIter / T(tNum); });
 
-        return TempVec;
+        return Temp;
     }
 
     //----------//

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 //-----------------------------//
-#include "dVectors.h" //---dMath/Core/dVectors.h---//
+#include "../Core/dVector.h" //---dMath/Core/dVector.h---//
 //-----------------------------//
 struct dRungeKuttaParam {
     double Step = 0.1;
