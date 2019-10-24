@@ -1,7 +1,7 @@
 #ifndef DLAXFRIEDRICHS1D_H
 #define DLAXFRIEDRICHS1D_H
 //-----------------------------//
-#include "dVectors.h" //---dMath/Core/dVectors.h---//
+#include "../Core/dVector.h" //---dMath/Core/dVector.h---//
 //-----------------------------//
 template <class T>
 class dLaxFriedrichs1D {

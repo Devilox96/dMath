@@ -7,8 +7,8 @@ add_subdirectory(Core)
 add_subdirectory(NumerCalc)
 
 set(dMathLibs
-        dMathCoreLib
-        dMathNumerCalcLib)
+        dMathCoreLib)
+#        dMathNumerCalcLib)
 
 add_executable(dMath main.cpp main.cpp)
 target_link_libraries(dMath ${dMathLibs})
