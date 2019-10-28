@@ -2,143 +2,202 @@
 #define DQUATERNION_H
 //-----------------------------//
 #include <iostream>
+#include <algorithm>
+#include <numeric>
+#include <functional>
 #include <cmath>
-#include <tuple>
 //-----------------------------//
 template <typename T>
 class dQuaternion {
-    T w, x, y, z;
-
-    dQuaternion <T>() : w(0), x(0), y(0), z(0) {}
-    dQuaternion <T>(T wP, T xP, T yP, T zP) : w(wP), x(xP), y(yP), z(zP) {}
-    dQuaternion <T>(const dQuaternion <T>& CopyQuatP) : x(CopyQuatP.x), y(CopyQuatP.y), z(CopyQuatP.z), w(CopyQuatP.w) {}
+    dQuaternion() : mData(0, 0, 0, 0) {}
+    dQuaternion(T tW, T tX, T tY, T tZ) : mData(tW, tX, tY, tZ) {}
+    dQuaternion(const dQuaternion <T>& tCopy) : mData(tCopy.mData) {}
+    dQuaternion(dQuaternion <T>&& tMove) noexcept : mData(std::move(tMove.mData)) {}
+    
     ~dQuaternion <T>() = default;
 
     //----------//
 
-    dQuaternion <T>& operator=(const dQuaternion <T>& QuatP) = default;
+    dQuaternion <T>& operator=(const dQuaternion <T>& tCopy) {
+        *this = dQuaternion <T>(tCopy);
+        return *this;
+    }
+    dQuaternion <T>& operator=(dQuaternion <T>&& tMove) noexcept {
+        *this = std::move(tMove);
+        return *this;
+    }
 
     //----------//
 
-    void operator+=(const dQuaternion <T>& QuatP) {
-        w += QuatP.w;
-        x += QuatP.x;
-        y += QuatP.y;
-        z += QuatP.z;
+    void operator+=(const dQuaternion <T>& tAdd) {
+        std::transform(mData.cbegin(), mData.cend(), tAdd.mData.cbegin(), mData.begin(), std::plus <T>());
     }
-    dQuaternion <T> operator+(const dQuaternion <T>& QuatP) const {
-        return dQuaternion <T>(w + QuatP.w, x + QuatP.x, y + QuatP.y, z + QuatP.z);
+    template <typename NumberT>
+    void operator+=(const NumberT& tNum) {
+        std::transform(mData.cbegin(), mData.cend(), mData.begin(),
+                       [&tNum](T tIter) { return tIter + T(tNum); });
+    }
+    dQuaternion <T> operator+(const dQuaternion <T>& tAdd) const {
+        dQuaternion <T> Temp;
+        std::transform(mData.cbegin(), mData.cend(), tAdd.mData.cbegin(), Temp.mData.begin(), std::plus <T>());
+
+        return Temp;
+    }
+    template <typename NumberT>
+    friend dQuaternion <T> operator+(const dQuaternion <T>& tQuat, const NumberT& tNum) {
+        dQuaternion <T> Temp;
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(),
+                       [&tNum](T tIter) { return tIter + T(tNum); });
+
+        return Temp;
+    }
+    template <typename NumberT>
+    friend dQuaternion <T> operator+(NumberT tNum, const dQuaternion <T>& tQuat) {
+        return tQuat + tNum;
     }
 
     //----------//
 
     dQuaternion <T> operator-() const {
-        return dQuaternion <T>(-w, -x, -y, -z);
-    }
-    void operator-=(const dQuaternion <T>& QuatP) {
-        w -= QuatP.w;
-        x -= QuatP.x;
-        y -= QuatP.y;
-        z -= QuatP.z;
-    }
-    dQuaternion <T> operator-(const dQuaternion <T>& QuatP) const {
-        return dQuaternion <T>(w - QuatP.w, x - QuatP.x, y - QuatP.y, z - QuatP.z);
-    }
+        dQuaternion <T> Temp;
+        std::transform(mData.cbegin(), mData.cend(), Temp.mData.begin(), std::negate <T>());
 
-    //----------//
-
-    dQuaternion <T> operator*(const dQuaternion <T>& QuatP) const {
-        dQuaternion <T> QuatL(0.0, 0.0, 0.0, 0.0);
-
-        QuatL.w = w * QuatP.w - x * QuatP.x - y * QuatP.y - z * QuatP.z;
-        QuatL.x = w * QuatP.x + x * QuatP.w + y * QuatP.z - z * QuatP.y;
-        QuatL.y = w * QuatP.y + y * QuatP.w + z * QuatP.x - x * QuatP.z;
-        QuatL.z = w * QuatP.z + z * QuatP.w + x * QuatP.y - y * QuatP.x;
-
-        return QuatL;
+        return Temp;
     }
-    void operator*=(const dQuaternion <T>& QuatP) {
-        dQuaternion <T> QuatL(0.0, 0.0, 0.0, 0.0);
+    void operator-=(const dQuaternion <T>& tQuat) {
+        std::transform(mData.cbegin(), mData.cend(), tQuat.mData.cbegin(), mData.begin(), std::minus <T>());
+    }
+    template <typename NumberT>
+    void operator-=(const NumberT& tNum) {
+        std::transform(mData.cbegin(), mData.cend(), mData.begin(),
+                       [&tNum](T tIter) { return tIter - T(tNum); });
+    }
+    dQuaternion <T> operator-(const dQuaternion <T>& tQuat) const {
+        dQuaternion <T> Temp;
+        std::transform(mData.cbegin(), mData.cend(), tQuat.mData.cbegin(), Temp.mData.begin(), std::minus <T>());
 
-        QuatL.w = w * QuatP.w - x * QuatP.x - y * QuatP.y - z * QuatP.z;
-        QuatL.x = w * QuatP.x + x * QuatP.w + y * QuatP.z - z * QuatP.y;
-        QuatL.y = w * QuatP.y + y * QuatP.w + z * QuatP.x - x * QuatP.z;
-        QuatL.z = w * QuatP.z + z * QuatP.w + x * QuatP.y - y * QuatP.x;
+        return Temp;
+    }
+    template <typename NumberT>
+    friend dQuaternion <T> operator-(const dQuaternion <T>& tQuat, const NumberT& tNum) {
+        dQuaternion <T> Temp;
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(),
+                       [&tNum](T tIter) { return tIter - T(tNum); });
 
-        w = QuatL.w;
-        x = QuatL.x;
-        y = QuatL.y;
-        z = QuatL.z;
-    }
-    template <typename NumberT> void operator*=(const NumberT NumP) {
-        w *= NumP;
-        x *= NumP;
-        y *= NumP;
-        z *= NumP;
-    }
-    template <typename NumberT> friend dQuaternion <T> operator*(const dQuaternion <T>& QuatP, NumberT NumberP) {
-        return dQuaternion <T>(QuatP.w * NumberP, QuatP.x * NumberP, QuatP.y * NumberP, QuatP.z * NumberP);
-    }
-    template <typename NumberT> friend dQuaternion <T> operator*(NumberT NumberP, const dQuaternion <T>& QuatP) {
-        return dQuaternion <T>(QuatP.w * NumberP, QuatP.x * NumberP, QuatP.y * NumberP, QuatP.z * NumberP);
+        return Temp;
     }
 
     //----------//
 
-    template <typename NumberT> void operator/=(const NumberT NumP) {
-        w /= NumP;
-        x /= NumP;
-        y /= NumP;
-        z /= NumP;
+    dQuaternion <T> operator*(const dQuaternion <T>& tQuat) const {
+        dQuaternion <T> TempQuat(0.0, 0.0, 0.0, 0.0);
+
+        TempQuat.mData[0] = mData[0] * tQuat.mData[0] - mData[1] * tQuat.mData[1] -
+                            mData[2] * tQuat.mData[2] - mData[3] * tQuat.mData[3];
+        TempQuat.mData[1] = mData[0] * tQuat.mData[1] + mData[1] * tQuat.mData[0] +
+                            mData[2] * tQuat.mData[3] - mData[3] * tQuat.mData[2];
+        TempQuat.mData[2] = mData[0] * tQuat.mData[2] + mData[2] * tQuat.mData[0] +
+                            mData[3] * tQuat.mData[1] - mData[1] * tQuat.mData[3];
+        TempQuat.mData[3] = mData[0] * tQuat.mData[3] + mData[3] * tQuat.mData[0] +
+                            mData[1] * tQuat.mData[2] - mData[2] * tQuat.mData[1];
+
+        return TempQuat;
     }
-    template <typename NumberT> friend dQuaternion <T> operator/(const dQuaternion <T>& QuatP, NumberT NumberP) {
-        return dQuaternion <T>(QuatP.w / NumberP, QuatP.x / NumberP, QuatP.y / NumberP, QuatP.z / NumberP);
+    void operator*=(const dQuaternion <T>& tQuat) {
+        dQuaternion <T> TempQuat(0.0, 0.0, 0.0, 0.0);
+
+        TempQuat.mData[0] = mData[0] * tQuat.mData[0] - mData[1] * tQuat.mData[1] -
+                            mData[2] * tQuat.mData[2] - mData[3] * tQuat.mData[3];
+        TempQuat.mData[1] = mData[0] * tQuat.mData[1] + mData[1] * tQuat.mData[0] +
+                            mData[2] * tQuat.mData[3] - mData[3] * tQuat.mData[2];
+        TempQuat.mData[2] = mData[0] * tQuat.mData[2] + mData[2] * tQuat.mData[0] +
+                            mData[3] * tQuat.mData[1] - mData[1] * tQuat.mData[3];
+        TempQuat.mData[3] = mData[0] * tQuat.mData[3] + mData[3] * tQuat.mData[0] +
+                            mData[1] * tQuat.mData[2] - mData[2] * tQuat.mData[1];
+
+        *this = TempQuat;
+    }
+    template <typename NumberT>
+    void operator*=(const NumberT& tNum) {
+        std::transform(mData.cbegin(), mData.cend(), mData.begin(), [&tNum](T tIter) { return tIter * T(tNum); });
+    }
+    template <typename NumberT>
+    friend dQuaternion <T> operator*(const dQuaternion <T>& tQuat, const NumberT&  tNum) {
+        dQuaternion <T> Temp;
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(),
+                       [&tNum](T tIter) { return tIter * T(tNum); });
+
+        return Temp;
+    }
+    template <typename NumberT>
+    friend dQuaternion <T> operator*(const NumberT& tNum, const dQuaternion <T>& tQuat) {
+        return tQuat * tNum;
     }
 
     //----------//
 
-    bool operator==(const dQuaternion <T>& QuatP) const {
-        return std::tie(w, x, y, z) == std::tie(QuatP.w, QuatP.x, QuatP.y, QuatP.z);
+    template <typename NumberT>
+    void operator/=(const NumberT tNum) {
+        std::transform(mData.cbegin(), mData.cend(), mData.begin(), [&tNum](T tIter) { return tIter / T(tNum); });
     }
-    bool operator!=(const dQuaternion <T>& QuatP) const {
-        return !(std::tie(w, x, y, z) == std::tie(QuatP.w, QuatP.x, QuatP.y, QuatP.z));
-    }
+    template <typename NumberT>
+    friend dQuaternion <T> operator/(const dQuaternion <T>& tQuat, const NumberT& tNum) {
+        dQuaternion <T> Temp;
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(),
+                       [&tNum](T tIter) { return tIter / T(tNum); });
 
-    //----------//
-
-    dQuaternion <T> Conjugation() const {
-        return dQuaternion <T>(w, -x, -y, -z);
-    }
-    void Reciprocal() {
-        dQuaternion <T> QuatL;
-        double NormL;
-
-        QuatL.w = w;
-        QuatL.x = -x;
-        QuatL.y = -y;
-        QuatL.z = -z;
-
-        NormL = pow(w, 2) + pow(x, 2) + pow(y, 2) + pow(z, 2);
-
-        QuatL.w /= NormL;
-        QuatL.x /= NormL;
-        QuatL.y /= NormL;
-        QuatL.z /= NormL;
-
-        *this = QuatL;
+        return Temp;
     }
 
     //----------//
 
-    double Abs() const {
-        return sqrt(pow(w, 2) + pow(x, 2) + pow(y, 2) + pow(z, 2));
+    bool operator==(const dQuaternion <T>& tQuat) const {
+        return mData == tQuat.mData;
     }
-    float Absf() const {
-        return sqrtf(powf(w, 2) + powf(x, 2) + powf(y, 2) + powf(z, 2));
+    bool operator!=(const dQuaternion <T>& tQuat) const {
+        return mData != tQuat.mData;
     }
-    T Abs2() const {
-        return w * w + x * x + y * y + z * z;
+
+    //----------//
+
+    dQuaternion <T> conjugation() const {
+        return dQuaternion <T>(mData[0], -mData[1], -mData[2], -mData[3]);
     }
+    void reciprocal() {
+        *this = (this -> conjugation()) /= abs2();
+    }
+
+    //----------//
+
+    double abs() const {
+        double TempRes = 0.0;
+
+        for (std::size_t i = 0; i < 4; i++) {
+            TempRes += mData[i] * mData[i];
+        }
+
+        return sqrt(TempRes);
+    }
+    float absf() const {
+        float TempRes = 0.0;
+
+        for (std::size_t i = 0; i < 4; i++) {
+            TempRes += mData[i] * mData[i];
+        }
+
+        return sqrtf(TempRes);
+    }
+    T abs2() const {
+        T TempRes = 0.0;
+
+        for (std::size_t i = 0; i < 4; i++) {
+            TempRes += mData[i] * mData[i];
+        }
+
+        return TempRes;
+    }
+private:
+    std::array <T, 4> mData;
 };
 //-----------------------------//
 #endif
