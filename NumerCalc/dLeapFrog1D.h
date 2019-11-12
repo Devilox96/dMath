@@ -20,13 +20,13 @@ public:
 
     //----------//
 
-    T solve(const T& tVecTimeMinus, const T& tVecXMinus, const T& tVecXPlus) {
+    T solve(const T& tTimeMinus, const T& tOffsetMinus, const T& tOffsetPlus) {
         if (mTimeStep <= 0 || mXStep <= 0) {
             std::cout << "ERROR! dLeapFrog1D: Incorrect steps!" << std::endl;
         }
 
-        return tVecTimeMinus -
-               (func(tVecXPlus) - func(tVecXMinus)) * mTimeStep / mXStep;
+        return tTimeMinus -
+               (func(tOffsetPlus) - func(tOffsetMinus)) * mTimeStep / mXStep;
     }
 protected:
     virtual T func(const T& tVec) {
