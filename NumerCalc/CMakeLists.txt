@@ -6,7 +6,9 @@ set(dMathCoreSource
 
 set(Source
         dRungeKutta.cpp
-        dLaxFriedrichs1D.cpp dLeapFrog1D.cpp dLeapFrog1D.h)
+        dLaxFriedrichs1D.cpp
+        dLeapFrog1D.cpp
+        dRichtmyer1D.cpp)
 
 add_library(dMathNumerCalcLib ${Source} ${dMathCoreSource})
 target_link_libraries(dMathNumerCalcLib dMathCoreLib)
