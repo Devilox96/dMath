@@ -1,7 +1,7 @@
 #ifndef DLEAPFROG1D_H
 #define DLEAPFROG1D_H
 //-----------------------------//
-#include "../Core/dVector.h" //---dMath/Core/dVector.h---//
+#include <iostream>
 //-----------------------------//
 template <class T>
 class dLeapFrog1D {
@@ -29,8 +29,8 @@ public:
                (func(tOffsetPlus) - func(tOffsetMinus)) * mTimeStep / mXStep;
     }
 protected:
-    virtual T func(const T& tVec) {
-        return tVec;
+    virtual T func(const T& tVal) {
+        return tVal;
     }
 private:
     double mTimeStep = 0.0;

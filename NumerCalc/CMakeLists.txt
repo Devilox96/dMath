@@ -8,7 +8,8 @@ set(Source
         dRungeKutta.cpp
         dLaxFriedrichs1D.cpp
         dLeapFrog1D.cpp
-        dRichtmyer1D.cpp)
+        dRichtmyer1D.cpp
+        dRichtmyer2D.cpp)
 
 add_library(dMathNumerCalcLib ${Source} ${dMathCoreSource})
 target_link_libraries(dMathNumerCalcLib dMathCoreLib)

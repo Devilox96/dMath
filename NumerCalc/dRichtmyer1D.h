@@ -1,7 +1,7 @@
 #ifndef DRICHTMYER1D_H
 #define DRICHTMYER1D_H
 //-----------------------------//
-#include "../Core/dVector.h" //---dMath/Core/dVector.h---//
+#include <iostream>
 //-----------------------------//
 template <class T>
 class dRichtmyer1D {
@@ -34,8 +34,8 @@ public:
                (func(HalfPlus) - func(HalfMinus)) * mTimeStep / mXStep;
     }
 protected:
-    virtual T func(const T& tVec) {
-        return tVec;
+    virtual T func(const T& tVal) {
+        return tVal;
     }
 private:
     double mTimeStep = 0.0;
