@@ -33,7 +33,7 @@ public:
             std::cout << "ERROR! dLaxFriedrichs1D: Incorrect steps!" << std::endl;
         }
 
-        return (tOffsetPlus + tOffsetMinus) / 2.0 +
+        return (tOffsetPlus + tOffsetMinus) / 2.0 -
                (func(tOffsetPlus) - func(tOffsetMinus)) * mRatioX / 2.0;
     }
 protected:

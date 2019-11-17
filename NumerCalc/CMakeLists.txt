@@ -7,7 +7,9 @@ set(dMathCoreSource
 set(Source
         dRungeKutta.cpp
         dLaxFriedrichs1D.cpp
+        dLaxFriedrichs2D.cpp
         dLeapFrog1D.cpp
+        dLeapFrog2D.cpp
         dRichtmyer1D.cpp
         dRichtmyer2D.cpp)
 
