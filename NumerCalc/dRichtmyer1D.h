@@ -1,7 +1,7 @@
 #ifndef DRICHTMYER1D_H
 #define DRICHTMYER1D_H
 //-----------------------------//
-#include "../Core/dVector.h" //---dMath/Core/dVector.h---//
+#include <iostream>
 //-----------------------------//
 template <class T>
 class dRichtmyer1D {
@@ -12,34 +12,43 @@ public:
     //----------//
 
     void setTimeStep(double tStep) {
-        mTimeStep = tStep;
+        mStepTime = tStep;
+
+        if (mStepX != 0) {
+            mRatioX = mStepTime / mStepX;
+        }
     }
     void setXStep(double tStep) {
-        mXStep = tStep;
+        mStepX = tStep;
+
+        if (mStepX != 0) {
+            mRatioX = mStepTime / mStepX;
+        }
     }
 
     //----------//
 
     T solve(const T& tOffsetMinus, const T& tOffsetZero, const T& tOffsetPlus) {
-        if (mTimeStep <= 0 || mXStep <= 0) {
+        if (mStepTime <= 0 || mStepX <= 0) {
             std::cout << "ERROR! dRichtmyer1D: Incorrect steps!" << std::endl;
         }
 
-        T HalfMinus =   (tOffsetMinus + tOffsetZero -
-                        (func(tOffsetZero) - func(tOffsetMinus)) * mTimeStep / mXStep) / 2;
-        T HalfPlus =    (tOffsetPlus + tOffsetZero -
-                        (func(tOffsetPlus) - func(tOffsetZero)) * mTimeStep / mXStep) / 2;
+        T HalfMinus = (tOffsetMinus + tOffsetZero -
+                       (func(tOffsetZero) - func(tOffsetMinus)) * mRatioX) / 2;
+        T HalfPlus = (tOffsetPlus + tOffsetZero -
+                      (func(tOffsetPlus) - func(tOffsetZero)) * mRatioX) / 2;
 
         return tOffsetZero -
-               (func(HalfPlus) - func(HalfMinus)) * mTimeStep / mXStep;
+               (func(HalfPlus) - func(HalfMinus)) * mRatioX;
     }
 protected:
-    virtual T func(const T& tVec) {
-        return tVec;
+    virtual T func(const T& tVal) {
+        return tVal;
     }
 private:
-    double mTimeStep = 0.0;
-    double mXStep = 0.0;
+    double mStepTime = 0.0;
+    double mStepX = 0.0;
+    double mRatioX = 0.0; //---mStepTime / mStepX---//
 };
 //-----------------------------//
 #endif
