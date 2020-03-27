@@ -47,9 +47,42 @@ double getEnergy(const std::vector <double>& tGrid) {
     return Energy;
 }
 
-double Func(double tVal) {
-    return tVal * tVal / 2.0;
+//---Problem---//
+
+dVector2D <double> funcX(const dVector2D <double>& tVal) {
+    return dVector2D <double>(
+            tVal[1],
+            tVal[1] * tVal[1] / tVal[0] + 0.5 * 9.81 * tVal[0] * tVal[0]
+            );
 }
+
+void bottomFunc(std::vector <double>& tVec) {
+    for (int i = 0; i < 200; i++) {
+        tVec[i] = 25.0;
+    }
+
+    for (int i = 200; i < 400; i++) {
+        tVec[i] = 25.0 - static_cast <double>(i - 200) / 8;
+    }
+
+    for (int i = 400; i < 600; i++) {
+        tVec[i] = 0.0;
+    }
+}
+
+void initConditions(std::vector <dVector2D <double>>& tGrid) {
+    for (int i = 0; i < 200; i++) {
+        tGrid[i][0] = 100.0;
+        tGrid[i][1] = 0.0;
+    }
+
+    for (int i = 200; i < 600; i++) {
+        tGrid[i][0] = 50.0;
+        tGrid[i][1] = 0.0;
+    }
+}
+
+//---Problem---//
 
 double WENO_2(const double& tVal_minus, const double& tVal, const double& tVal_plus, bool tNegFlux) {
     double V0 = 0.5 * tVal + 0.5 * tVal_plus;       //---r = 0---//
@@ -76,109 +109,113 @@ double WENO_2(const double& tVal_minus, const double& tVal, const double& tVal_p
 }
 
 int main() {
-    size_t Num = 200;
+    size_t Num = 600;
+    int TimeToCompute = 1;  //---Sec---//
 
-    double ul = 30;
-    double ur = 10;
-    double alpha = 1.0;
-//    double xl = 15.0;
-    double xl = 0.0;
-//    double xr = 35.0;
-    double xr = 20.0;
+    std::vector <dVector2D <double>> GridCurrentData(Num);
+    std::vector <dVector2D <double>> GridTempData(Num);
 
-    int Sec = 4;
+    std::vector <dVector2D <double>> *CurrentData = &GridCurrentData;
+    std::vector <dVector2D <double>> *TempData = &GridTempData;
 
-    std::vector <double> GridFirst(Num);
-    std::vector <double> GridSecond(Num);
-
-    std::vector <double> GridExact(Num);
-
-    std::vector <double> *First = &GridFirst;
-    std::vector <double> *Second = &GridSecond;
-
-    //---Lax---//
-
-    for (size_t i = 0; i < xl; i++) {
-        GridFirst[i] = ul;
-        GridSecond[i] = ul;
-    }
-
-    for (size_t i = xl; i < xr; i++) {
-        GridFirst[i] = ul - alpha * double(i - xl);
-        GridSecond[i] = ul - alpha * double(i - xl);
-    }
-
-    for (size_t i = xr; i < Num; i++) {
-        GridFirst[i] = ur;
-        GridSecond[i] = ur;
-    }
+    std::vector <double> Bottom(Num);
+    bottomFunc(Bottom);
 
     std::ofstream EOutput;
-    std::ofstream Exact;
+    std::ofstream BottomOutput;
 
     EOutput.open("EAmplitude.dat");
-    Exact.open("Exact.dat");
+    BottomOutput.open("BottomOutput.dat");
 
-    for (int i = 0; i < Sec * 1000; i++) {
+    initConditions((*CurrentData));
+    initConditions((*TempData));
+
+    for (int i = 0; i < 7090; i++) {
         double Alpha = 0.0;
 
-        for (const auto& iNum : (*First)) {
-            Alpha = std::max(iNum, Alpha);
+        for (const auto& iNum : (*CurrentData)) {
+            Alpha = std::max(fabs(iNum[1] / iNum[0] + sqrt(9.81 * iNum[0])), Alpha);
+            Alpha = std::max(fabs(iNum[1] / iNum[0] - sqrt(9.81 * iNum[0])), Alpha);
+
+            if (iNum[0] <= 0) {
+                std::cout << iNum[0] << " " << i << std::endl;
+            }
         }
 
-        for (size_t j = 2; j < Num - 1; j++) {
-            double PlusPlus = WENO_2(
-                    (Func((*First)[j - 1]) + Alpha * (*First)[j - 1]) / 2.0,
-                    (Func((*First)[j]) + Alpha * (*First)[j]) / 2.0,
-                    (Func((*First)[j + 1]) + Alpha * (*First)[j + 1]) / 2.0, false);
-            double PlusMinus = WENO_2(
-                    (Func((*First)[j - 1]) - Alpha * (*First)[j - 1]) / 2.0,
-                    (Func((*First)[j]) - Alpha * (*First)[j]) / 2.0,
-                    (Func((*First)[j + 1]) - Alpha * (*First)[j + 1]) / 2.0, true);
+        for (size_t j = 2; j < Num - 2; j++) {
+            auto PlusPlus = dVector2D <double>(
+                    WENO_2(
+                            (funcX((*CurrentData)[j - 1])[0] + Alpha * (*CurrentData)[j - 1][0]) / 2.0,
+                            (funcX((*CurrentData)[j])[0] + Alpha * (*CurrentData)[j][0]) / 2.0,
+                            (funcX((*CurrentData)[j + 1])[0] + Alpha * (*CurrentData)[j + 1][0]) / 2.0,
+                            false),
+                    WENO_2(
+                            (funcX((*CurrentData)[j - 1])[1] + Alpha * (*CurrentData)[j - 1][1]) / 2.0,
+                            (funcX((*CurrentData)[j])[1] + Alpha * (*CurrentData)[j][1]) / 2.0,
+                            (funcX((*CurrentData)[j + 1])[1] + Alpha * (*CurrentData)[j + 1][1]) / 2.0,
+                            false));
+            auto PlusMinus = dVector2D <double>(
+                    WENO_2(
+                            (funcX((*CurrentData)[j])[0] - Alpha * (*CurrentData)[j][0]) / 2.0,
+                            (funcX((*CurrentData)[j + 1])[0] - Alpha * (*CurrentData)[j + 1][0]) / 2.0,
+                            (funcX((*CurrentData)[j + 2])[0] - Alpha * (*CurrentData)[j + 2][0]) / 2.0,
+                            true),
+                    WENO_2(
+                            (funcX((*CurrentData)[j])[1] - Alpha * (*CurrentData)[j][1]) / 2.0,
+                            (funcX((*CurrentData)[j + 1])[1] - Alpha * (*CurrentData)[j + 1][1]) / 2.0,
+                            (funcX((*CurrentData)[j + 2])[1] - Alpha * (*CurrentData)[j + 2][1]) / 2.0,
+                            true));
 
-            double MinusPlus = WENO_2(
-                    (Func((*First)[j - 2]) + Alpha * (*First)[j - 2]) / 2.0,
-                    (Func((*First)[j - 1]) + Alpha * (*First)[j - 1]) / 2.0,
-                    (Func((*First)[j]) + Alpha * (*First)[j]) / 2.0, false);
-            double MinusMinus = WENO_2(
-                    (Func((*First)[j - 2]) - Alpha * (*First)[j - 2]) / 2.0,
-                    (Func((*First)[j - 1]) - Alpha * (*First)[j - 1]) / 2.0,
-                    (Func((*First)[j]) - Alpha * (*First)[j]) / 2.0, true);
+            auto MinusPlus = dVector2D <double>(
+                    WENO_2(
+                            (funcX((*CurrentData)[j - 2])[0] + Alpha * (*CurrentData)[j - 2][0]) / 2.0,
+                            (funcX((*CurrentData)[j - 1])[0] + Alpha * (*CurrentData)[j - 1][0]) / 2.0,
+                            (funcX((*CurrentData)[j])[0] + Alpha * (*CurrentData)[j][0]) / 2.0,
+                            false),
+                    WENO_2(
+                            (funcX((*CurrentData)[j - 2])[1] + Alpha * (*CurrentData)[j - 2][1]) / 2.0,
+                            (funcX((*CurrentData)[j - 1])[1] + Alpha * (*CurrentData)[j - 1][1]) / 2.0,
+                            (funcX((*CurrentData)[j])[1] + Alpha * (*CurrentData)[j][1]) / 2.0,
+                            false));
+            auto MinusMinus = dVector2D <double>(
+                    WENO_2(
+                            (funcX((*CurrentData)[j - 1])[0] - Alpha * (*CurrentData)[j - 1][0]) / 2.0,
+                            (funcX((*CurrentData)[j])[0] - Alpha * (*CurrentData)[j][0]) / 2.0,
+                            (funcX((*CurrentData)[j + 1])[0] - Alpha * (*CurrentData)[j + 1][0]) / 2.0,
+                            true),
+                    WENO_2(
+                            (funcX((*CurrentData)[j - 1])[1] - Alpha * (*CurrentData)[j - 1][1]) / 2.0,
+                            (funcX((*CurrentData)[j])[1] - Alpha * (*CurrentData)[j][1]) / 2.0,
+                            (funcX((*CurrentData)[j + 1])[1] - Alpha * (*CurrentData)[j + 1][1]) / 2.0,
+                            true));
 
-            (*Second)[j] = (*First)[j] - 0.001 / 1.0 * (PlusPlus + PlusMinus - MinusPlus - MinusMinus);
+            (*TempData)[j] =
+                    (*CurrentData)[j] -
+                    0.001 / 0.5 * (PlusPlus + PlusMinus - MinusPlus - MinusMinus) -
+                    0.001 * dVector2D <double>(0.0, 9.81 * (*CurrentData)[j][0] * (Bottom[j + 1] - Bottom[j - 1]) / 0.5);
         }
 
-        (*Second)[0] = ul;
-        (*Second)[1] = ul;
-        (*Second)[Num - 1] = ur;
-//        (*Second)[Num - 2] = ur;
-//        (*Second)[Num - 3] = ur;
+        (*TempData)[1][0] = 100.0;
+        (*TempData)[0][0] = 100.0;
+        (*TempData)[Num - 2][0] = 2.0 * (*TempData)[Num - 3][0] - (*TempData)[Num - 4][0];
+        (*TempData)[Num - 1][0] = (*TempData)[Num - 2][0];
 
-        std::swap(First, Second);
-    }
+        (*TempData)[1][1] = 2.0 * (*TempData)[2][1] - (*TempData)[3][1];
+        (*TempData)[0][1] = (*TempData)[1][1];
+        (*TempData)[Num - 2][1] = 2.0 * (*TempData)[Num - 3][0] - (*TempData)[Num - 4][0];
+        (*TempData)[Num - 1][1] = (*TempData)[Num - 2][0];
 
-    for (size_t i = 0; i < Num; i++) {
-        EOutput << (*First)[i] << " ";
+        std::swap(CurrentData, TempData);
     }
 
     //-----------------------------//
 
-    double Time = Sec;
-
-    for (int i = 0; i < Num; i++) {
-        if (i < Time * ul) {
-            GridExact[i] = ul;
-        } else if (i >= Time * ul && i <= xr + ur * Time) {
-            GridExact[i] = (ul - alpha * i) / (1 - alpha * Time);
-        } else {
-            GridExact[i] = ur;
-        }
-
-//        std::cout << i << std::endl;
+    for (size_t i = 0; i < Num; i++) {
+        EOutput << (*CurrentData)[i][0] << " ";
     }
 
     for (size_t i = 0; i < Num; i++) {
-        Exact << GridExact[i] << " ";
+        BottomOutput << Bottom[i] << " ";
     }
 
     return 0;

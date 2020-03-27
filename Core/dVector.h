@@ -315,11 +315,11 @@ protected:
         if constexpr (std::is_arithmetic_v <NumberT>) {
             return static_cast<T>(tNum);
         } else if (std::is_same_v <NumberT, T>) {
-            return tNum;
+            return tNum[0];
         } else if (std::is_same_v <NumberT, dVector<T, 1> >) {
             return tNum[0];
         } else if (std::is_same_v <NumberT, dMatrix<T, 1, 1> >) {
-            return tNum[0][0];
+            return tNum[0];
         }
     }
 
