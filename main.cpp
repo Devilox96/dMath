@@ -84,28 +84,74 @@ void initConditions(std::vector <dVector2D <double>>& tGrid) {
 
 //---Problem---//
 
-double WENO_2(const double& tVal_minus, const double& tVal, const double& tVal_plus, bool tNegFlux) {
-    double V0 = 0.5 * tVal + 0.5 * tVal_plus;       //---r = 0---//
-    double V1 = -0.5 * tVal_minus + 1.5 * tVal;     //---r = 1---//
+//double WENO_2(const double& tVal_minus, const double& tVal, const double& tVal_plus, bool tNegFlux) {
+//    double V0 = 0.5 * tVal + 0.5 * tVal_plus;       //---r = 0---//
+//    double V1 = -0.5 * tVal_minus + 1.5 * tVal;     //---r = 1---//
+//
+//    double Beta0 = pow(tVal_plus - tVal, 2.0);
+//    double Beta1 = pow(tVal - tVal_minus, 2.0);
+//
+//    double Alpha0;
+//    double Alpha1;
+//
+//    if (tNegFlux) {
+//        Alpha0 = 1.0 / 3.0 / pow(1.0e-06 + Beta0, 2.0);
+//        Alpha1 = 2.0 / 3.0 / pow(1.0e-06 + Beta1, 2.0);
+//    } else {
+//        Alpha0 = 2.0 / 3.0 / pow(1.0e-06 + Beta0, 2.0);
+//        Alpha1 = 1.0 / 3.0 / pow(1.0e-06 + Beta1, 2.0);
+//    }
+//
+//    double Omega0 = Alpha0 / (Alpha0 + Alpha1);
+//    double Omega1 = Alpha1 / (Alpha0 + Alpha1);
+//
+//    return Omega0 * V0 + Omega1 * V1;
+//}
 
-    double Beta0 = pow(tVal_plus - tVal, 2.0);
-    double Beta1 = pow(tVal - tVal_minus, 2.0);
+dVector2D <double> WENO_2(const dVector2D <double>& tVal_minus, const dVector2D <double>& tVal, const dVector2D <double>& tVal_plus, bool tNegFlux) {
+    auto V0 = 0.5 * tVal + 0.5 * tVal_plus;       //---r = 0---//
+    auto V1 = -0.5 * tVal_minus + 1.5 * tVal;     //---r = 1---//
 
-    double Alpha0;
-    double Alpha1;
+    auto Beta0 = tVal_plus - tVal;
+    auto Beta1 = tVal - tVal_minus;
 
-    if (tNegFlux) {
-        Alpha0 = 1.0 / 3.0 / pow(1.0e-06 + Beta0, 2.0);
-        Alpha1 = 2.0 / 3.0 / pow(1.0e-06 + Beta1, 2.0);
-    } else {
-        Alpha0 = 2.0 / 3.0 / pow(1.0e-06 + Beta0, 2.0);
-        Alpha1 = 1.0 / 3.0 / pow(1.0e-06 + Beta1, 2.0);
+    int Dim = tVal.size();
+
+    for (int i = 0; i < Dim; i++) {
+        Beta0[i] *= Beta0[i];
+        Beta1[i] *= Beta1[i];
     }
 
-    double Omega0 = Alpha0 / (Alpha0 + Alpha1);
-    double Omega1 = Alpha1 / (Alpha0 + Alpha1);
+    dVector2D <double> Alpha0;
+    dVector2D <double> Alpha1;
 
-    return Omega0 * V0 + Omega1 * V1;
+    if (tNegFlux) {
+        for (int i = 0; i < Dim; i++) {
+            Alpha0[i] = 1.0 / 3.0 / pow(1.0e-06 + Beta0[i], 2.0);
+            Alpha1[i] = 2.0 / 3.0 / pow(1.0e-06 + Beta1[i], 2.0);
+        }
+    } else {
+        for (int i = 0; i < Dim; i++) {
+            Alpha0[i] = 2.0 / 3.0 / pow(1.0e-06 + Beta0[i], 2.0);
+            Alpha1[i] = 1.0 / 3.0 / pow(1.0e-06 + Beta1[i], 2.0);
+        }
+    }
+
+    dVector2D <double> Omega0;
+    dVector2D <double> Omega1;
+
+    for (int i = 0; i < Dim; i++) {
+        Omega0[i] = Alpha0[i] / (Alpha0[i] + Alpha1[i]);
+        Omega1[i] = Alpha1[i] / (Alpha0[i] + Alpha1[i]);
+    }
+
+    dVector2D <double> Res;
+
+    for (int i = 0; i < Dim; i++) {
+        Res[i] = Omega0[i] * V0[i] + Omega1[i] * V1[i];
+    }
+
+    return Res;
 }
 
 int main() {
@@ -130,7 +176,7 @@ int main() {
     initConditions((*CurrentData));
     initConditions((*TempData));
 
-    for (int i = 0; i < 7090; i++) {
+    for (int i = 0; i < 1000; i++) {
         double Alpha = 0.0;
 
         for (const auto& iNum : (*CurrentData)) {
@@ -143,51 +189,27 @@ int main() {
         }
 
         for (size_t j = 2; j < Num - 2; j++) {
-            auto PlusPlus = dVector2D <double>(
-                    WENO_2(
-                            (funcX((*CurrentData)[j - 1])[0] + Alpha * (*CurrentData)[j - 1][0]) / 2.0,
-                            (funcX((*CurrentData)[j])[0] + Alpha * (*CurrentData)[j][0]) / 2.0,
-                            (funcX((*CurrentData)[j + 1])[0] + Alpha * (*CurrentData)[j + 1][0]) / 2.0,
-                            false),
-                    WENO_2(
-                            (funcX((*CurrentData)[j - 1])[1] + Alpha * (*CurrentData)[j - 1][1]) / 2.0,
-                            (funcX((*CurrentData)[j])[1] + Alpha * (*CurrentData)[j][1]) / 2.0,
-                            (funcX((*CurrentData)[j + 1])[1] + Alpha * (*CurrentData)[j + 1][1]) / 2.0,
-                            false));
-            auto PlusMinus = dVector2D <double>(
-                    WENO_2(
-                            (funcX((*CurrentData)[j])[0] - Alpha * (*CurrentData)[j][0]) / 2.0,
-                            (funcX((*CurrentData)[j + 1])[0] - Alpha * (*CurrentData)[j + 1][0]) / 2.0,
-                            (funcX((*CurrentData)[j + 2])[0] - Alpha * (*CurrentData)[j + 2][0]) / 2.0,
-                            true),
-                    WENO_2(
-                            (funcX((*CurrentData)[j])[1] - Alpha * (*CurrentData)[j][1]) / 2.0,
-                            (funcX((*CurrentData)[j + 1])[1] - Alpha * (*CurrentData)[j + 1][1]) / 2.0,
-                            (funcX((*CurrentData)[j + 2])[1] - Alpha * (*CurrentData)[j + 2][1]) / 2.0,
-                            true));
+            auto PlusPlus = WENO_2(
+                    (funcX((*CurrentData)[j - 1]) + Alpha * (*CurrentData)[j - 1]) / 2.0,
+                    (funcX((*CurrentData)[j]) + Alpha * (*CurrentData)[j]) / 2.0,
+                    (funcX((*CurrentData)[j + 1]) + Alpha * (*CurrentData)[j + 1]) / 2.0,
+                    false);
+            auto PlusMinus = WENO_2(
+                    (funcX((*CurrentData)[j]) - Alpha * (*CurrentData)[j]) / 2.0,
+                    (funcX((*CurrentData)[j + 1]) - Alpha * (*CurrentData)[j + 1]) / 2.0,
+                    (funcX((*CurrentData)[j + 2]) - Alpha * (*CurrentData)[j + 2]) / 2.0,
+                    true);
 
-            auto MinusPlus = dVector2D <double>(
-                    WENO_2(
-                            (funcX((*CurrentData)[j - 2])[0] + Alpha * (*CurrentData)[j - 2][0]) / 2.0,
-                            (funcX((*CurrentData)[j - 1])[0] + Alpha * (*CurrentData)[j - 1][0]) / 2.0,
-                            (funcX((*CurrentData)[j])[0] + Alpha * (*CurrentData)[j][0]) / 2.0,
-                            false),
-                    WENO_2(
-                            (funcX((*CurrentData)[j - 2])[1] + Alpha * (*CurrentData)[j - 2][1]) / 2.0,
-                            (funcX((*CurrentData)[j - 1])[1] + Alpha * (*CurrentData)[j - 1][1]) / 2.0,
-                            (funcX((*CurrentData)[j])[1] + Alpha * (*CurrentData)[j][1]) / 2.0,
-                            false));
-            auto MinusMinus = dVector2D <double>(
-                    WENO_2(
-                            (funcX((*CurrentData)[j - 1])[0] - Alpha * (*CurrentData)[j - 1][0]) / 2.0,
-                            (funcX((*CurrentData)[j])[0] - Alpha * (*CurrentData)[j][0]) / 2.0,
-                            (funcX((*CurrentData)[j + 1])[0] - Alpha * (*CurrentData)[j + 1][0]) / 2.0,
-                            true),
-                    WENO_2(
-                            (funcX((*CurrentData)[j - 1])[1] - Alpha * (*CurrentData)[j - 1][1]) / 2.0,
-                            (funcX((*CurrentData)[j])[1] - Alpha * (*CurrentData)[j][1]) / 2.0,
-                            (funcX((*CurrentData)[j + 1])[1] - Alpha * (*CurrentData)[j + 1][1]) / 2.0,
-                            true));
+            auto MinusPlus = WENO_2(
+                    (funcX((*CurrentData)[j - 2]) + Alpha * (*CurrentData)[j - 2]) / 2.0,
+                    (funcX((*CurrentData)[j - 1]) + Alpha * (*CurrentData)[j - 1]) / 2.0,
+                    (funcX((*CurrentData)[j]) + Alpha * (*CurrentData)[j]) / 2.0,
+                    false);
+            auto MinusMinus = WENO_2(
+                    (funcX((*CurrentData)[j - 1]) - Alpha * (*CurrentData)[j - 1]) / 2.0,
+                    (funcX((*CurrentData)[j]) - Alpha * (*CurrentData)[j]) / 2.0,
+                    (funcX((*CurrentData)[j + 1]) - Alpha * (*CurrentData)[j + 1]) / 2.0,
+                    true);
 
             (*TempData)[j] =
                     (*CurrentData)[j] -
