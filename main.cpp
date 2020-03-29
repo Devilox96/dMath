@@ -24,9 +24,8 @@ public:
             Bottom[i].resize(mSizeY + mOffset * 2);
         }
 
+        initCoriolis();
         bottomFunc();
-
-        initConditions();
         initConditions();
 
         EOutput.open("Amplitude.dat");
@@ -112,12 +111,8 @@ public:
                     (*TempData)[i][j] =
                             (*CurrentData)[i][j] -
                             mStepTime / mStepX * (PlusPlusX + PlusMinusX - MinusPlusX - MinusMinusX) -
-                            mStepTime / mStepY * (PlusPlusY + PlusMinusY - MinusPlusY - MinusMinusY) -
-                            mStepTime *
-                            dVector3D <double> (
-                                    0.0,
-                                    9.81 * (*CurrentData)[i][j][0] * (Bottom[i + 1][j] - Bottom[i - 1][j]),
-                                    9.81 * (*CurrentData)[i][j][0] * (Bottom[i][j + 1] - Bottom[i][j - 1]));
+                            mStepTime / mStepY * (PlusPlusY + PlusMinusY - MinusPlusY - MinusMinusY) +
+                            mStepTime * source(i, j);
                 }
             }
 
@@ -178,6 +173,15 @@ private:
     double mStepTime = 0.0001;
 
     std::vector <std::vector <double>> Bottom;
+    std::vector <double> mCorParam;
+
+    //----------//
+
+    const double mGrav  = 9.81;
+    const double mCorParam_0 = 1.0e-04;
+    const double mBetaParam = 1.6e-11;
+
+    //----------//
 
     std::ofstream EOutput;
 
@@ -217,6 +221,15 @@ private:
             }
         }
     }
+    void initCoriolis() {
+        double MeanY = int(mSizeY / 2) * mStepY;
+
+        mCorParam.resize(mSizeY);
+
+        for (size_t i = 0; i < mSizeY; i++) {
+            mCorParam[i] = mCorParam_0 + mBetaParam * (i * mStepY - MeanY);
+        }
+    }
 
     dVector3D <double> funcX(const dVector3D <double>& tVal) {
         return dVector3D <double>(
@@ -231,6 +244,16 @@ private:
                 tVal[1] * tVal[2] / tVal[0],
                 tVal[2] * tVal[2] / tVal[0] + 0.5 * 9.81 * tVal[0] * tVal[0]
         );
+    }
+    dVector3D <double> source(int tPosX, int tPosY) {
+        return dVector3D <double> (
+                0.0,
+                mCorParam[tPosY] * (*CurrentData)[tPosX][tPosY][2] -
+                mGrav / (2.0 * mStepX) *
+                (*CurrentData)[tPosX][tPosY][0] * (Bottom[tPosX + 1][tPosY] - Bottom[tPosX - 1][tPosY]),
+                mCorParam[tPosY] * (*CurrentData)[tPosX][tPosY][1] -
+                mGrav / (2.0 * mStepY) *
+                (*CurrentData)[tPosX][tPosY][0] * (Bottom[tPosX][tPosY + 1] - Bottom[tPosX][tPosY - 1]));
     }
 
     //----------//
