@@ -7,6 +7,8 @@
 #include "Core/dVector.h"
 #include "Core/dMatrix.h"
 
+using dGrid = std::vector <std::vector <dVector3D <double>>>;
+
 class Solver {
 public:
     Solver() {
@@ -37,10 +39,10 @@ public:
     }
 
     void solve() {
-        for (int iTime = 0; iTime < 2000; iTime++) {
-            std::vector <double> AlphaX(mSizeY + mOffset * 2);
-            std::vector <double> AlphaY(mSizeX + mOffset * 2);
+        std::vector <double> AlphaX(mSizeY + mOffset * 2);
+        std::vector <double> AlphaY(mSizeX + mOffset * 2);
 
+        for (int iTime = 0; iTime < 2000; iTime++) {
             for (size_t iY = 0; iY < mSizeY + 2 * mOffset; iY++) {
                 for (size_t iX = 0; iX < mSizeX + 2 * mOffset; iX++) {
                     AlphaX[iY] = std::max(fabs((*CurrentData)[iX][iY][1] / (*CurrentData)[iX][iY][0] + sqrt(9.81 * (*CurrentData)[iX][iY][0])), AlphaX[iY]);
@@ -53,11 +55,11 @@ public:
                 for (size_t iY = 0; iY < mSizeY + 2 * mOffset; iY++) {
                     AlphaY[iX] = std::max(fabs((*CurrentData)[iX][iY][2] / (*CurrentData)[iX][iY][0] + sqrt(9.81 * (*CurrentData)[iX][iY][0])), AlphaY[iX]);
                     AlphaY[iX] = std::max(fabs((*CurrentData)[iX][iY][2] / (*CurrentData)[iX][iY][0] - sqrt(9.81 * (*CurrentData)[iX][iY][0])), AlphaY[iX]);
-                    AlphaX[iX] = std::max(fabs((*CurrentData)[iX][iY][2] / (*CurrentData)[iX][iY][0]), AlphaX[iX]);
+                    AlphaY[iX] = std::max(fabs((*CurrentData)[iX][iY][2] / (*CurrentData)[iX][iY][0]), AlphaY[iX]);
                 }
             }
 
-            std::cout << iTime << ": " << (*CurrentData)[302][302] << std::endl;
+            std::cout << iTime << ": " << (*CurrentData)[size_t(mSizeX / 2)][size_t(mSizeY / 2)] << std::endl;
 
             for (size_t i = mOffset; i < mSizeX + mOffset; i++) {
                 for (size_t j = mOffset; j < mSizeY + mOffset; j++) {
@@ -109,9 +111,9 @@ public:
 
                     (*TempData)[i][j] =
                             (*CurrentData)[i][j] -
-                            0.001 / 0.5 * (PlusPlusX + PlusMinusX - MinusPlusX - MinusMinusX) -
-                            0.001 / 0.5 * (PlusPlusY + PlusMinusY - MinusPlusY - MinusMinusY) -
-                            0.001 *
+                            mStepTime / mStepX * (PlusPlusX + PlusMinusX - MinusPlusX - MinusMinusX) -
+                            mStepTime / mStepY * (PlusPlusY + PlusMinusY - MinusPlusY - MinusMinusY) -
+                            mStepTime *
                             dVector3D <double> (
                                     0.0,
                                     9.81 * (*CurrentData)[i][j][0] * (Bottom[i + 1][j] - Bottom[i - 1][j]),
@@ -150,8 +152,8 @@ public:
         }
     }
     void save() {
-        for (size_t i = mOffset; i < mSizeX + mOffset; i++) {
-            for (size_t j = mOffset; j < mSizeY + mOffset; j++) {
+        for (size_t j = mOffset; j < mSizeY + mOffset; j++) {
+            for (size_t i = mOffset; i < mSizeX + mOffset; i++) {
                 EOutput << (*CurrentData)[i][j][0] << " ";
             }
 
@@ -159,16 +161,21 @@ public:
         }
     }
 private:
-    size_t mSizeX = 600;
-    size_t mSizeY = 600;
+    size_t mSizeX = 254;
+    size_t mSizeY = 51;
 
     size_t mOffset = 2;
 
-    std::vector <std::vector <dVector3D <double>>> GridCurrentData;
-    std::vector <std::vector <dVector3D <double>>> GridTempData;
+    dGrid GridCurrentData;
+    dGrid GridTempData;
 
-    std::vector <std::vector <dVector3D <double>>> *CurrentData = &GridCurrentData;
-    std::vector <std::vector <dVector3D <double>>> *TempData = &GridTempData;
+    dGrid *CurrentData = &GridCurrentData;
+    dGrid *TempData = &GridTempData;
+
+    double mStepX = 0.1;
+    double mStepY = 0.1;
+
+    double mStepTime = 0.0001;
 
     std::vector <std::vector <double>> Bottom;
 
