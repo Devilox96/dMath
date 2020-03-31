@@ -41,7 +41,9 @@ public:
         std::vector <double> AlphaX(mSizeY + mOffsetYU + mOffsetYD);
         std::vector <double> AlphaY(mSizeX + mOffsetXL + mOffsetXR);
 
-        for (int iTime = 0; iTime < 20; iTime++) {
+        double TimePassed = 0.0;
+
+        for (int iTime = 0; iTime < 50000; iTime++) {
             double MaxAlpha = 0.0;
 
             for (size_t iY = 0; iY < mSizeY + mOffsetYU + mOffsetYD; iY++) {
@@ -76,36 +78,72 @@ public:
                 break;
             }
 
-//            mStepTime = 0.1 * mStepX / MaxAlpha;
-            std::cout << iTime << ": Step - " << mStepTime << " Alpha - " << MaxAlpha << std::endl;
+            mStepTime = 0.1 * mStepX / MaxAlpha;
+            TimePassed += mStepTime;
+
+            std::cout << "Time: " << TimePassed / 3600 / 24 << " Step - " << mStepTime << " Alpha - " << MaxAlpha << std::endl;
 
             for (size_t i = mOffsetXL; i < mSizeX + mOffsetXL; i++) {
                 for (size_t j = mOffsetYU; j < mSizeY + mOffsetYU; j++) {
-                    auto PositiveX = WENO_PosFlux(
-                            (funcX((*CurrentData)[i - 2][j]) + MaxAlpha * (*CurrentData)[i - 2][j]) / 2.0,
+                    auto PlusX = WENO(
                             (funcX((*CurrentData)[i - 1][j]) + MaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
                             (funcX((*CurrentData)[i][j]) + MaxAlpha * (*CurrentData)[i][j]) / 2.0,
-                            (funcX((*CurrentData)[i + 1][j]) + MaxAlpha * (*CurrentData)[i + 1][j]) / 2.0
-                    );
-                    auto NegativeX = WENO_NegFlux(
-                            (funcX((*CurrentData)[i - 1][j]) - MaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
+                            (funcX((*CurrentData)[i + 1][j]) + MaxAlpha * (*CurrentData)[i + 1][j]) / 2.0,
                             (funcX((*CurrentData)[i][j]) - MaxAlpha * (*CurrentData)[i][j]) / 2.0,
                             (funcX((*CurrentData)[i + 1][j]) - MaxAlpha * (*CurrentData)[i + 1][j]) / 2.0,
                             (funcX((*CurrentData)[i + 2][j]) - MaxAlpha * (*CurrentData)[i + 2][j]) / 2.0
                     );
+                    auto MinusX = WENO(
+                            (funcX((*CurrentData)[i - 2][j]) + MaxAlpha * (*CurrentData)[i - 2][j]) / 2.0,
+                            (funcX((*CurrentData)[i - 1][j]) + MaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
+                            (funcX((*CurrentData)[i][j]) + MaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcX((*CurrentData)[i - 1][j]) - MaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
+                            (funcX((*CurrentData)[i][j]) - MaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcX((*CurrentData)[i + 1][j]) - MaxAlpha * (*CurrentData)[i + 1][j]) / 2.0
+                    );
 
-                    auto PositiveY = WENO_PosFlux(
-                            (funcY((*CurrentData)[i][j - 2]) + MaxAlpha * (*CurrentData)[i][j - 2]) / 2.0,
+                    auto PlusY = WENO(
                             (funcY((*CurrentData)[i][j - 1]) + MaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
                             (funcY((*CurrentData)[i][j]) + MaxAlpha * (*CurrentData)[i][j]) / 2.0,
-                            (funcY((*CurrentData)[i][j + 1]) + MaxAlpha * (*CurrentData)[i][j + 1]) / 2.0
-                    );
-                    auto NegativeY = WENO_NegFlux(
-                            (funcY((*CurrentData)[i][j - 1]) - MaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
+                            (funcY((*CurrentData)[i][j + 1]) + MaxAlpha * (*CurrentData)[i][j + 1]) / 2.0,
                             (funcY((*CurrentData)[i][j]) - MaxAlpha * (*CurrentData)[i][j]) / 2.0,
                             (funcY((*CurrentData)[i][j + 1]) - MaxAlpha * (*CurrentData)[i][j + 1]) / 2.0,
                             (funcY((*CurrentData)[i][j + 2]) - MaxAlpha * (*CurrentData)[i][j + 2]) / 2.0
                     );
+                    auto MinusY = WENO(
+                            (funcY((*CurrentData)[i][j - 2]) + MaxAlpha * (*CurrentData)[i][j - 2]) / 2.0,
+                            (funcY((*CurrentData)[i][j - 1]) + MaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
+                            (funcY((*CurrentData)[i][j]) + MaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcY((*CurrentData)[i][j - 1]) - MaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
+                            (funcY((*CurrentData)[i][j]) - MaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcY((*CurrentData)[i][j + 1]) - MaxAlpha * (*CurrentData)[i][j + 1]) / 2.0
+                    );
+
+//                    auto PositiveX = WENO_PosFlux(
+//                            (funcX((*CurrentData)[i - 2][j]) + MaxAlpha * (*CurrentData)[i - 2][j]) / 2.0,
+//                            (funcX((*CurrentData)[i - 1][j]) + MaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
+//                            (funcX((*CurrentData)[i][j]) + MaxAlpha * (*CurrentData)[i][j]) / 2.0,
+//                            (funcX((*CurrentData)[i + 1][j]) + MaxAlpha * (*CurrentData)[i + 1][j]) / 2.0
+//                    );
+//                    auto NegativeX = WENO_NegFlux(
+//                            (funcX((*CurrentData)[i - 1][j]) - MaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
+//                            (funcX((*CurrentData)[i][j]) - MaxAlpha * (*CurrentData)[i][j]) / 2.0,
+//                            (funcX((*CurrentData)[i + 1][j]) - MaxAlpha * (*CurrentData)[i + 1][j]) / 2.0,
+//                            (funcX((*CurrentData)[i + 2][j]) - MaxAlpha * (*CurrentData)[i + 2][j]) / 2.0
+//                    );
+//
+//                    auto PositiveY = WENO_PosFlux(
+//                            (funcY((*CurrentData)[i][j - 2]) + MaxAlpha * (*CurrentData)[i][j - 2]) / 2.0,
+//                            (funcY((*CurrentData)[i][j - 1]) + MaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
+//                            (funcY((*CurrentData)[i][j]) + MaxAlpha * (*CurrentData)[i][j]) / 2.0,
+//                            (funcY((*CurrentData)[i][j + 1]) + MaxAlpha * (*CurrentData)[i][j + 1]) / 2.0
+//                    );
+//                    auto NegativeY = WENO_NegFlux(
+//                            (funcY((*CurrentData)[i][j - 1]) - MaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
+//                            (funcY((*CurrentData)[i][j]) - MaxAlpha * (*CurrentData)[i][j]) / 2.0,
+//                            (funcY((*CurrentData)[i][j + 1]) - MaxAlpha * (*CurrentData)[i][j + 1]) / 2.0,
+//                            (funcY((*CurrentData)[i][j + 2]) - MaxAlpha * (*CurrentData)[i][j + 2]) / 2.0
+//                    );
                     
                     
 //                    auto PlusPlusX = WENO_2(
@@ -163,8 +201,8 @@ public:
                     (*TempData)[i][j] =
                             (*CurrentData)[i][j] -
                             mStepTime *
-                            ((PositiveX + NegativeX) / mStepX +
-                            (PositiveY + NegativeY) / mSizeY);
+                            ((PlusX - MinusX) / mStepX + (PlusY - MinusY) / mStepY -
+                            source(i, j));
                 }
             }
 
@@ -176,7 +214,7 @@ public:
     void save() {
         for (size_t j = mOffsetYU; j < mSizeY + mOffsetYU; j++) {
             for (size_t i = mOffsetXL; i < mSizeX + mOffsetXL; i++) {
-                EOutput << (*CurrentData)[i][j][0] << " ";
+                EOutput << (*CurrentData)[i][j][0] + Bottom[i][j] << " ";
             }
 
             EOutput << std::endl;
@@ -261,58 +299,76 @@ private:
         //---vx---//
         for (size_t j = 0; j < mSizeY + mOffsetYU + mOffsetYD; j++) {
             (*TempData)[0][j][1] =
-                    (*TempData)[mSizeX + mOffsetXL - 1][j][1] / (*TempData)[mSizeX + mOffsetXL - 1][j][0] *
+                    (*TempData)[mSizeX + mOffsetXL - 1][j][1] /
+                    (*TempData)[mSizeX + mOffsetXL - 1][j][0] *
                     (*TempData)[0][j][0];
             (*TempData)[1][j][1] =
-                    (*TempData)[mSizeX + mOffsetXL - 1][j][1] / (*TempData)[mSizeX + mOffsetXL - 1][j][0] *
+                    (*TempData)[mSizeX + mOffsetXL - 1][j][1] /
+                    (*TempData)[mSizeX + mOffsetXL - 1][j][0] *
                     (*TempData)[1][j][0];
 
             (*TempData)[mSizeX + mOffsetXL + mOffsetXR - 2][j][1] =
-                    (*TempData)[mOffsetXL][j][1] / (*TempData)[mOffsetXL][j][0] *
+                    (*TempData)[mOffsetXL][j][1] /
+                    (*TempData)[mOffsetXL][j][0] *
                     (*TempData)[mSizeX + mOffsetXL + mOffsetXR - 2][j][0];
             (*TempData)[mSizeX + mOffsetXL + mOffsetXR - 1][j][1] =
-                    (*TempData)[mOffsetXL + 1][j][1] / (*TempData)[mOffsetXL + 1][j][0] *
+                    (*TempData)[mOffsetXL + 1][j][1] /
+                    (*TempData)[mOffsetXL + 1][j][0] *
                     (*TempData)[mSizeX + mOffsetXL + mOffsetXR - 1][j][0];
         }
 
         for (size_t i = 0; i < mSizeX + mOffsetXL + mOffsetXR; i++) {
             (*TempData)[i][1][1] =
-                    (*TempData)[i][2][1] / (*TempData)[i][2][0] / 2.0 *
+                    (*TempData)[i][2][1] /
+                    (*TempData)[i][2][0] *
                     (*TempData)[i][1][0];
-            (*TempData)[i][0][1] = 0.0;
+            (*TempData)[i][0][1] =
+                    (*TempData)[i][2][1] /
+                    (*TempData)[i][2][0] *
+                    (*TempData)[i][0][0];
 
             (*TempData)[i][mSizeY + mOffsetYU + mOffsetYD - 2][1] =
-                    (*TempData)[i][mSizeY + mOffsetYU - 1][1] / (*TempData)[i][mSizeY + mOffsetYU - 1][0] / 2.0 *
+                    (*TempData)[i][mSizeY + mOffsetYU - 1][1] /
+                    (*TempData)[i][mSizeY + mOffsetYU - 1][0] *
                     (*TempData)[i][mSizeY + mOffsetYU + mOffsetYD - 2][0];
-            (*TempData)[i][mSizeY + mOffsetYU + mOffsetYD - 1][1] = 0.0;
+            (*TempData)[i][mSizeY + mOffsetYU + mOffsetYD - 1][1] =
+                    (*TempData)[i][mSizeY + mOffsetYU - 1][1] /
+                    (*TempData)[i][mSizeY + mOffsetYU - 1][0] *
+                    (*TempData)[i][mSizeY + mOffsetYU + mOffsetYD - 1][0];
         }
         //---vx---//
 
         //---vy---//
         for (size_t j = 0; j < mSizeY + mOffsetYU + mOffsetYD; j++) {
             (*TempData)[0][j][2] =
-                    (*TempData)[mSizeX + mOffsetXL - 2][j][2] / (*TempData)[mSizeX + mOffsetXL - 1][j][0] *
+                    (*TempData)[mSizeX + mOffsetXL - 1][j][2] /
+                    (*TempData)[mSizeX + mOffsetXL - 1][j][0] *
                     (*TempData)[0][j][0];
             (*TempData)[1][j][2] =
-                    (*TempData)[mSizeX + mOffsetXL - 1][j][2] / (*TempData)[mSizeX + mOffsetXL - 1][j][0] *
+                    (*TempData)[mSizeX + mOffsetXL - 1][j][2] /
+                    (*TempData)[mSizeX + mOffsetXL - 1][j][0] *
                     (*TempData)[1][j][0];
 
             (*TempData)[mSizeX + mOffsetXL + mOffsetXR - 2][j][2] =
-                    (*TempData)[mOffsetXL][j][2] / (*TempData)[mOffsetXL][j][0] *
+                    (*TempData)[mOffsetXL][j][2] /
+                    (*TempData)[mOffsetXL][j][0] *
                     (*TempData)[mSizeX + mOffsetXL + mOffsetXR - 2][j][0];
             (*TempData)[mSizeX + mOffsetXL + mOffsetXR - 1][j][2] =
-                    (*TempData)[mOffsetXL + 1][j][2] / (*TempData)[mOffsetXL + 1][j][0] *
+                    (*TempData)[mOffsetXL + 1][j][2] /
+                    (*TempData)[mOffsetXL + 1][j][0] *
                     (*TempData)[mSizeX + mOffsetXL + mOffsetXR - 1][j][0];
         }
 
         for (size_t i = 0; i < mSizeX + mOffsetXL + mOffsetXR; i++) {
             (*TempData)[i][1][2] =
-                    (*TempData)[i][2][2] / (*TempData)[i][2][0] / 2.0 *
+                    (*TempData)[i][2][2] /
+                    (*TempData)[i][2][0] / 2.0 *
                     (*TempData)[i][1][0];
             (*TempData)[i][0][2] = 0.0;
 
             (*TempData)[i][mSizeY + mOffsetYU + mOffsetYD - 2][2] =
-                    (*TempData)[i][mSizeY + mOffsetYU - 1][2] / (*TempData)[i][mSizeY + mOffsetYU - 1][0] / 2.0 *
+                    (*TempData)[i][mSizeY + mOffsetYU - 1][2] /
+                    (*TempData)[i][mSizeY + mOffsetYU - 1][0] / 2.0 *
                     (*TempData)[i][mSizeY + mOffsetYU + mOffsetYD - 2][0];
             (*TempData)[i][mSizeY + mOffsetYU + mOffsetYD - 1][2] = 0.0;
         }
@@ -358,14 +414,8 @@ private:
         }
 
         for (size_t i = 0; i < mSizeX + mOffsetXL + mOffsetXR; i++) {
-            GridCurrentData[i][0][1] = 0.0;
-            GridTempData[i][0][1] = 0.0;
-
             GridCurrentData[i][0][2] = 0.0;
             GridTempData[i][0][2] = 0.0;
-
-            GridCurrentData[i][mSizeY + mOffsetYU + mOffsetYD - 1][1] = 0.0;
-            GridTempData[i][mSizeY + mOffsetYU + mOffsetYD - 1][1] = 0.0;
 
             GridCurrentData[i][mSizeY + mOffsetYU + mOffsetYD - 1][2] = 0.0;
             GridTempData[i][mSizeY + mOffsetYU + mOffsetYD - 1][2] = 0.0;
@@ -385,7 +435,7 @@ private:
     dVector3D <double> funcX(const dVector3D <double>& tVal) {
         return dVector3D <double>(
                 tVal[1],
-                tVal[1] * tVal[1] / tVal[0] + 0.5 * 9.81 * tVal[0] * tVal[0],
+                tVal[1] * tVal[1] / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
                 tVal[1] * tVal[2] / tVal[0]
         );
     }
@@ -393,7 +443,7 @@ private:
         return dVector3D <double>(
                 tVal[2],
                 tVal[1] * tVal[2] / tVal[0],
-                tVal[2] * tVal[2] / tVal[0] + 0.5 * 9.81 * tVal[0] * tVal[0]
+                tVal[2] * tVal[2] / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0]
         );
     }
     dVector3D <double> source(int tPosX, int tPosY) {
@@ -436,147 +486,53 @@ private:
 
     //----------//
 
-    dVector3D <double> WENO_NegFlux(
-            const dVector3D <double>& tVal_minus_1,
-            const dVector3D <double>& tVal,
-            const dVector3D <double>& tVal_plus_1,
-            const dVector3D <double>& tVal_plus_2) {
-        int Dim = 3;
+    dVector3D <double> WENO(
+            const dVector3D <double>& tPosVal_minus_1,
+            const dVector3D <double>& tPosVal,
+            const dVector3D <double>& tPosVal_plus_1,
+            const dVector3D <double>& tNegVal,
+            const dVector3D <double>& tNegVal_plus_1,
+            const dVector3D <double>& tNegVal_plus_2) {
+        dVector3D <double> fPlus;
+        dVector3D <double> fMinus;
 
-        dVector3D <double> V0_Plus;
-        dVector3D <double> V1_Plus;
+        for (int i = 0; i < 3; i++) {
+            double Beta0 = pow(tPosVal_minus_1[i] - tPosVal[i], 2.0);
+            double Beta1 = pow(tPosVal[i] - tPosVal_plus_1[i], 2.0);
 
-        dVector3D <double> V0_Minus;
-        dVector3D <double> V1_Minus;
+            double d0 = 1.0 / 3.0;
+            double d1 = 2.0 / 3.0;
 
-        V0_Plus = 0.5 * tVal + 0.5 * tVal_plus_1;
-        V1_Plus = 1.5 * tVal_plus_1 - 0.5 * tVal_plus_2;
+            double Alpha0 = d0 / pow(1.0e-06 + Beta0, 2.0);
+            double Alpha1 = d1 / pow(1.0e-06 + Beta1, 2.0);
 
-        V0_Minus = 0.5 * tVal_minus_1 + 0.5 * tVal;
-        V1_Minus = 1.5 * tVal - 0.5 * tVal_plus_1;
+            double Omega0 = Alpha0 / (Alpha0 + Alpha1);
+            double Omega1 = Alpha1 / (Alpha0 + Alpha1);
 
-        auto Beta0_Plus = tVal_plus_1 - tVal;
-        auto Beta1_Plus = tVal_plus_2 - tVal_plus_1;
-
-        auto Beta0_Minus = tVal - tVal_minus_1;
-        auto Beta1_Minus = tVal_plus_1 - tVal;
-
-        for (int i = 0; i < Dim; i++) {
-            Beta0_Plus[i] *= Beta0_Plus[i];
-            Beta1_Plus[i] *= Beta1_Plus[i];
-
-            Beta0_Minus[i] *= Beta0_Minus[i];
-            Beta1_Minus[i] *= Beta1_Minus[i];
+            fPlus[i] =
+                    Omega0 * (-0.5 * tPosVal_minus_1[i] + 1.5 * tPosVal[i]) +
+                    Omega1 * (0.5 * tPosVal[i] + 0.5 * tPosVal_plus_1[i]);
         }
 
-        dVector3D <double> Alpha0_Plus;
-        dVector3D <double> Alpha1_Plus;
+        for (int i = 0; i < 3; i++) {
+            double Beta0 = pow(tNegVal[i] - tNegVal_plus_1[i], 2.0);
+            double Beta1 = pow(tNegVal_plus_1[i] - tNegVal_plus_2[i], 2.0);
 
-        dVector3D <double> Alpha0_Minus;
-        dVector3D <double> Alpha1_Minus;
+            double d0 = 2.0 / 3.0;
+            double d1 = 1.0 / 3.0;
 
-        for (int i = 0; i < Dim; i++) {
-            Alpha0_Plus[i] = 2.0 / 3.0 / pow(1.0e-06 + Beta0_Plus[i], 2.0);
-            Alpha1_Plus[i] = 1.0 / 3.0 / pow(1.0e-06 + Beta1_Plus[i], 2.0);
+            double Alpha0 = d0 / pow(1.0e-06 + Beta0, 2.0);
+            double Alpha1 = d1 / pow(1.0e-06 + Beta1, 2.0);
 
-            Alpha0_Minus[i] = 2.0 / 3.0 / pow(1.0e-06 + Beta0_Minus[i], 2.0);
-            Alpha1_Minus[i] = 1.0 / 3.0 / pow(1.0e-06 + Beta1_Minus[i], 2.0);
+            double Omega0 = Alpha0 / (Alpha0 + Alpha1);
+            double Omega1 = Alpha1 / (Alpha0 + Alpha1);
+
+            fMinus[i] =
+                    Omega0 * (0.5 * tNegVal[i] + 0.5 * tNegVal_plus_1[i]) +
+                    Omega1 * (1.5 * tNegVal_plus_1[i] - 0.5 * tNegVal_plus_2[i]);
         }
 
-        dVector3D <double> Omega0_Plus;
-        dVector3D <double> Omega1_Plus;
-
-        dVector3D <double> Omega0_Minus;
-        dVector3D <double> Omega1_Minus;
-
-        for (int i = 0; i < Dim; i++) {
-            Omega0_Plus[i] = Alpha0_Plus[i] / (Alpha0_Plus[i] + Alpha1_Plus[i]);
-            Omega1_Plus[i] = Alpha1_Plus[i] / (Alpha0_Plus[i] + Alpha1_Plus[i]);
-
-            Omega0_Minus[i] = Alpha0_Minus[i] / (Alpha0_Minus[i] + Alpha1_Minus[i]);
-            Omega1_Minus[i] = Alpha1_Minus[i] / (Alpha0_Minus[i] + Alpha1_Minus[i]);
-        }
-
-        dVector3D <double> Res;
-
-        for (int i = 0; i < Dim; i++) {
-            Res[i] =
-                    (Omega0_Plus[i] * V0_Plus[i] + Omega1_Plus[i] * V1_Plus[i]) -
-                    (Omega0_Minus[i] * V0_Minus[i] + Omega1_Minus[i] * V1_Minus[i]);
-        }
-
-        return Res;
-    }
-    dVector3D <double> WENO_PosFlux(
-            const dVector3D <double>& tVal_minus_2,
-            const dVector3D <double>& tVal_minus_1,
-            const dVector3D <double>& tVal,
-            const dVector3D <double>& tVal_plus_1) {
-        int Dim = 3;
-
-        dVector3D <double> V0_Plus;
-        dVector3D <double> V1_Plus;
-
-        dVector3D <double> V0_Minus;
-        dVector3D <double> V1_Minus;
-
-        V0_Plus = -0.5 * tVal_minus_1 + 1.5 * tVal;
-        V1_Plus = 0.5 * tVal + 0.5 * tVal_plus_1;
-
-        V0_Minus = -0.5 * tVal_minus_2 + 1.5 + tVal_minus_1;
-        V1_Minus = 0.5 * tVal_minus_1 + 0.5 + tVal;
-
-        auto Beta0_Plus = tVal - tVal_minus_1;
-        auto Beta1_Plus = tVal_plus_1 - tVal;
-
-        auto Beta0_Minus = tVal_minus_1 - tVal_minus_2;
-        auto Beta1_Minus = tVal - tVal_minus_1;
-
-        for (int i = 0; i < Dim; i++) {
-            Beta0_Plus[i] *= Beta0_Plus[i];
-            Beta1_Plus[i] *= Beta1_Plus[i];
-
-            Beta0_Minus[i] *= Beta0_Minus[i];
-            Beta1_Minus[i] *= Beta1_Minus[i];
-        }
-
-        dVector3D <double> Alpha0_Plus;
-        dVector3D <double> Alpha1_Plus;
-
-        dVector3D <double> Alpha0_Minus;
-        dVector3D <double> Alpha1_Minus;
-
-        for (int i = 0; i < Dim; i++) {
-            Alpha0_Plus[i] = 1.0 / 3.0 / pow(1.0e-06 + Beta0_Plus[i], 2.0);
-            Alpha1_Plus[i] = 2.0 / 3.0 / pow(1.0e-06 + Beta1_Plus[i], 2.0);
-
-            Alpha0_Minus[i] = 1.0 / 3.0 / pow(1.0e-06 + Beta0_Minus[i], 2.0);
-            Alpha1_Minus[i] = 2.0 / 3.0 / pow(1.0e-06 + Beta1_Minus[i], 2.0);
-        }
-
-        dVector3D <double> Omega0_Plus;
-        dVector3D <double> Omega1_Plus;
-
-        dVector3D <double> Omega0_Minus;
-        dVector3D <double> Omega1_Minus;
-
-        for (int i = 0; i < Dim; i++) {
-            Omega0_Plus[i] = Alpha0_Plus[i] / (Alpha0_Plus[i] + Alpha1_Plus[i]);
-            Omega1_Plus[i] = Alpha1_Plus[i] / (Alpha0_Plus[i] + Alpha1_Plus[i]);
-
-            Omega0_Minus[i] = Alpha0_Minus[i] / (Alpha0_Minus[i] + Alpha1_Minus[i]);
-            Omega1_Minus[i] = Alpha1_Minus[i] / (Alpha0_Minus[i] + Alpha1_Minus[i]);
-        }
-
-        dVector3D <double> Res;
-
-        for (int i = 0; i < Dim; i++) {
-            Res[i] =
-                    (Omega0_Plus[i] * V0_Plus[i] + Omega1_Plus[i] * V1_Plus[i]) -
-                    (Omega0_Minus[i] * V0_Minus[i] + Omega1_Minus[i] * V1_Minus[i]);
-        }
-
-        return Res;
+        return fPlus + fMinus;
     }
 
     dVector3D <double> WENO_2(const dVector3D <double>& tVal_minus, const dVector3D <double>& tVal, const dVector3D <double>& tVal_plus, bool tNegFlux) {
