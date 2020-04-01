@@ -28,6 +28,11 @@ public:
         bottomFunc();
         initConditions();
 
+        GridTempData = GridCurrentData;
+
+        updateBoundaries();
+        std::swap(CurrentData, TempData);
+
         EOutput.open("Amplitude.dat");
     }
     ~Solver() {
@@ -43,7 +48,7 @@ public:
 
         double TimePassed = 0.0;
 
-        for (int iTime = 0; iTime < 11520; iTime++) {
+        for (int iTime = 0; iTime < 1000; iTime++) {
             double MaxAlpha = 0.0;
 
             for (size_t iX = 0; iX < mGridX + mOffsetXL + mOffsetXR; iX++) {
@@ -201,27 +206,31 @@ private:
         }
         //---h---//
 
-        //---vx---//
-        for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
-            (*TempData)[0][j][1] =
-                    (*TempData)[mGridX + mOffsetXL - 1][j][1] /
-                    (*TempData)[mGridX + mOffsetXL - 1][j][0] *
-                    (*TempData)[0][j][0];
-            (*TempData)[1][j][1] =
-                    (*TempData)[mGridX + mOffsetXL - 1][j][1] /
-                    (*TempData)[mGridX + mOffsetXL - 1][j][0] *
-                    (*TempData)[1][j][0];
+        //---West-East---//
+        for (int iComp = 0; iComp < 3; iComp++) {
+            for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
+                (*TempData)[0][j][iComp] =
+                        (*TempData)[mGridX + mOffsetXL - 1][j][iComp] /
+                        (*TempData)[mGridX + mOffsetXL - 1][j][0] *
+                        (*TempData)[0][j][0];
+                (*TempData)[1][j][iComp] =
+                        (*TempData)[mGridX + mOffsetXL - 1][j][iComp] /
+                        (*TempData)[mGridX + mOffsetXL - 1][j][0] *
+                        (*TempData)[1][j][0];
 
-            (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][1] =
-                    (*TempData)[mOffsetXL][j][1] /
-                    (*TempData)[mOffsetXL][j][0] *
-                    (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][0];
-            (*TempData)[mGridX + mOffsetXL + mOffsetXR - 1][j][1] =
-                    (*TempData)[mOffsetXL + 1][j][1] /
-                    (*TempData)[mOffsetXL + 1][j][0] *
-                    (*TempData)[mGridX + mOffsetXL + mOffsetXR - 1][j][0];
+                (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][iComp] =
+                        (*TempData)[mOffsetXL][j][iComp] /
+                        (*TempData)[mOffsetXL][j][0] *
+                        (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][0];
+                (*TempData)[mGridX + mOffsetXL + mOffsetXR - 1][j][iComp] =
+                        (*TempData)[mOffsetXL + 1][j][iComp] /
+                        (*TempData)[mOffsetXL + 1][j][0] *
+                        (*TempData)[mGridX + mOffsetXL + mOffsetXR - 1][j][0];
+            }
         }
+        //---West-East---//
 
+        //---vx---//
         for (size_t i = 0; i < mGridX + mOffsetXL + mOffsetXR; i++) {
             (*TempData)[i][1][1] =
                     (*TempData)[i][2][1] /
@@ -244,26 +253,6 @@ private:
         //---vx---//
 
         //---vy---//
-        for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
-            (*TempData)[0][j][2] =
-                    (*TempData)[mGridX + mOffsetXL - 1][j][2] /
-                    (*TempData)[mGridX + mOffsetXL - 1][j][0] *
-                    (*TempData)[0][j][0];
-            (*TempData)[1][j][2] =
-                    (*TempData)[mGridX + mOffsetXL - 1][j][2] /
-                    (*TempData)[mGridX + mOffsetXL - 1][j][0] *
-                    (*TempData)[1][j][0];
-
-            (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][2] =
-                    (*TempData)[mOffsetXL][j][2] /
-                    (*TempData)[mOffsetXL][j][0] *
-                    (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][0];
-            (*TempData)[mGridX + mOffsetXL + mOffsetXR - 1][j][2] =
-                    (*TempData)[mOffsetXL + 1][j][2] /
-                    (*TempData)[mOffsetXL + 1][j][0] *
-                    (*TempData)[mGridX + mOffsetXL + mOffsetXR - 1][j][0];
-        }
-
         for (size_t i = 0; i < mGridX + mOffsetXL + mOffsetXR; i++) {
             (*TempData)[i][1][2] =
                     (*TempData)[i][2][2] /
@@ -288,7 +277,6 @@ private:
                 double TempHeight = 10000.0 - (MeanWind * mCorParam_0 / mGrav) * (j * mStepY - MeanY);
 
                 GridCurrentData[i][j] = dVector3D <double>(TempHeight, 0.0, 0.0);
-                GridTempData[i][j] = dVector3D <double>(TempHeight, 0.0, 0.0);
             }
         }
 
@@ -298,10 +286,6 @@ private:
                         GridCurrentData[i][j][0] *
                         (-0.5 * mGrav / (mCorParam[j] * mStepX) *
                         (GridCurrentData[i][j + 1][0] - GridCurrentData[i][j - 1][0]));
-                GridTempData[i][j][1] =
-                        GridTempData[i][j][0] *
-                        (-0.5 * mGrav / (mCorParam[j] * mStepX) *
-                        (GridTempData[i][j + 1][0] - GridTempData[i][j - 1][0]));
             }
         }
 
@@ -311,30 +295,19 @@ private:
                         GridCurrentData[i][j][0] *
                         (0.5 * mGrav / (mCorParam[j] * mStepX) *
                         (GridCurrentData[i + 1][j][0] - GridCurrentData[i - 1][j][0]));
-                GridTempData[i][j][2] =
-                        GridTempData[i][j][0] *
-                        (0.5 * mGrav / (mCorParam[j] * mStepX) *
-                        (GridTempData[i + 1][j][0] - GridTempData[i - 1][j][0]));
             }
         }
 
         for (size_t i = 0; i < mGridX + mOffsetXL + mOffsetXR; i++) {
             GridCurrentData[i][0][2] = 0.0;
-            GridTempData[i][0][2] = 0.0;
-
             GridCurrentData[i][mGridY + mOffsetYU + mOffsetYD - 1][2] = 0.0;
-            GridTempData[i][mGridY + mOffsetYU + mOffsetYD - 1][2] = 0.0;
         }
 
         for (size_t i = 0; i < mGridX + mOffsetXL + mOffsetXR; i++) {
             for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
                 GridCurrentData[i][j][0] -= Bottom[i][j];
-                GridTempData[i][j][0] -= Bottom[i][j];
             }
         }
-
-        updateBoundaries();
-        std::swap(CurrentData, TempData);
     }
 
     dVector3D <double> funcX(const dVector3D <double>& tVal) {
