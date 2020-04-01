@@ -7,7 +7,7 @@
 #include "Core/dVector.h"
 #include "Core/dMatrix.h"
 
-using dGrid = std::vector <std::vector <dVector3D <double>>>;
+using dGrid = std::vector <std::vector <dVector <double, 5>>>;
 
 class Solver {
 public:
@@ -53,13 +53,22 @@ public:
 
             for (size_t iX = 0; iX < mGridX + mOffsetXL + mOffsetXR; iX++) {
                 for (size_t iY = 0; iY < mGridY + mOffsetYU + mOffsetYD; iY++) {
-                    MaxAlpha = std::max(fabs((*CurrentData)[iX][iY][1] / (*CurrentData)[iX][iY][0] + sqrt(9.81 * (*CurrentData)[iX][iY][0])), MaxAlpha);
-                    MaxAlpha = std::max(fabs((*CurrentData)[iX][iY][1] / (*CurrentData)[iX][iY][0] - sqrt(9.81 * (*CurrentData)[iX][iY][0])), MaxAlpha);
-                    MaxAlpha = std::max(fabs((*CurrentData)[iX][iY][1] / (*CurrentData)[iX][iY][0]), MaxAlpha);
+                    double vx = (*CurrentData)[iX][iY][1] / (*CurrentData)[iX][iY][0];
+                    double vy = (*CurrentData)[iX][iY][2] / (*CurrentData)[iX][iY][0];
+                    double Bx = (*CurrentData)[iX][iY][3] / (*CurrentData)[iX][iY][0];
+                    double By = (*CurrentData)[iX][iY][4] / (*CurrentData)[iX][iY][0];
+                    double SqrX = sqrt(pow(Bx, 2.0) + 9.81 * (*CurrentData)[iX][iY][0]);
+                    double SqrY = sqrt(pow(By, 2.0) + 9.81 * (*CurrentData)[iX][iY][0]);
 
-                    MaxAlpha = std::max(fabs((*CurrentData)[iX][iY][2] / (*CurrentData)[iX][iY][0] + sqrt(9.81 * (*CurrentData)[iX][iY][0])), MaxAlpha);
-                    MaxAlpha = std::max(fabs((*CurrentData)[iX][iY][2] / (*CurrentData)[iX][iY][0] - sqrt(9.81 * (*CurrentData)[iX][iY][0])), MaxAlpha);
-                    MaxAlpha = std::max(fabs((*CurrentData)[iX][iY][2] / (*CurrentData)[iX][iY][0]), MaxAlpha);
+                    MaxAlpha = std::max(fabs(vx + Bx), MaxAlpha);
+                    MaxAlpha = std::max(fabs(vx - Bx), MaxAlpha);
+                    MaxAlpha = std::max(fabs(vx + SqrX), MaxAlpha);
+                    MaxAlpha = std::max(fabs(vx - SqrX), MaxAlpha);
+
+                    MaxAlpha = std::max(fabs(vy + By), MaxAlpha);
+                    MaxAlpha = std::max(fabs(vy - By), MaxAlpha);
+                    MaxAlpha = std::max(fabs(vy + SqrY), MaxAlpha);
+                    MaxAlpha = std::max(fabs(vy - SqrY), MaxAlpha);
                 }
             }
 
@@ -276,7 +285,7 @@ private:
             for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
                 double TempHeight = 10000.0 - (MeanWind * mCorParam_0 / mGrav) * (j * mStepY - MeanY);
 
-                GridCurrentData[i][j] = dVector3D <double>(TempHeight, 0.0, 0.0);
+                GridCurrentData[i][j] = dVector <double, 5>(TempHeight, 0.0, 0.0, 0.0, 0.0);
             }
         }
 
@@ -310,31 +319,38 @@ private:
         }
     }
 
-    dVector3D <double> funcX(const dVector3D <double>& tVal) {
-        return dVector3D <double>(
+    dVector <double, 5> funcX(const dVector <double, 5>& tVal) {
+        return dVector <double, 5>(
                 tVal[1],
                 tVal[1] * tVal[1] / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
-                tVal[1] * tVal[2] / tVal[0]
+                tVal[1] * tVal[2] / tVal[0],
+                0.0,
+                0.0
         );
     }
-    dVector3D <double> funcY(const dVector3D <double>& tVal) {
-        return dVector3D <double>(
+    dVector <double, 5> funcY(const dVector <double, 5>& tVal) {
+        return dVector <double, 5>(
                 tVal[2],
                 tVal[1] * tVal[2] / tVal[0],
-                tVal[2] * tVal[2] / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0]
+                tVal[2] * tVal[2] / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
+                0.0,
+                0.0
         );
     }
-    dVector3D <double> source(int tPosX, int tPosY) {
-        return dVector3D <double> (
+    dVector <double, 5> source(int tPosX, int tPosY) {
+        return dVector <double, 5> (
                 0.0,
                 mCorParam[tPosY] * (*CurrentData)[tPosX][tPosY][2] -
                 mGrav / (2.0 * mStepX) *
                 (*CurrentData)[tPosX][tPosY][0] * (Bottom[tPosX + 1][tPosY] - Bottom[tPosX - 1][tPosY]),
                 -mCorParam[tPosY] * (*CurrentData)[tPosX][tPosY][1] -
                 mGrav / (2.0 * mStepY) *
-                (*CurrentData)[tPosX][tPosY][0] * (Bottom[tPosX][tPosY + 1] - Bottom[tPosX][tPosY - 1]));
+                (*CurrentData)[tPosX][tPosY][0] * (Bottom[tPosX][tPosY + 1] - Bottom[tPosX][tPosY - 1]),
+                0.0,
+                0.0
+                );
     }
-    dVector3D <double> viscosity(int tPosX, int tPosY) {
+    dVector <double, 5> viscosity(int tPosX, int tPosY) {
         double v_x_xx = (
                 (*CurrentData)[tPosX - 1][tPosY][1] / (*CurrentData)[tPosX - 1][tPosY][0] +
                 (*CurrentData)[tPosX][tPosY][1] / (*CurrentData)[tPosX][tPosY][0] * 2.0 +
@@ -356,25 +372,27 @@ private:
                 (*CurrentData)[tPosX][tPosY + 1][2] / (*CurrentData)[tPosX][tPosY + 1][0]) /
                 pow(mStepY, 2.0);
 
-        return dVector3D <double> (
+        return dVector <double, 5> (
                 0.0,
                 (*CurrentData)[tPosX][tPosY][0] * (v_x_xx + v_x_yy),
-                (*CurrentData)[tPosX][tPosY][0] * (v_y_xx + v_y_yy));
+                (*CurrentData)[tPosX][tPosY][0] * (v_y_xx + v_y_yy),
+                0.0,
+                0.0);
     }
 
     //----------//
 
-    dVector3D <double> WENO(
-            const dVector3D <double>& tPosVal_minus_1,
-            const dVector3D <double>& tPosVal,
-            const dVector3D <double>& tPosVal_plus_1,
-            const dVector3D <double>& tNegVal,
-            const dVector3D <double>& tNegVal_plus_1,
-            const dVector3D <double>& tNegVal_plus_2) {
-        dVector3D <double> fPlus;
-        dVector3D <double> fMinus;
+    dVector <double, 5> WENO(
+            const dVector <double, 5>& tPosVal_minus_1,
+            const dVector <double, 5>& tPosVal,
+            const dVector <double, 5>& tPosVal_plus_1,
+            const dVector <double, 5>& tNegVal,
+            const dVector <double, 5>& tNegVal_plus_1,
+            const dVector <double, 5>& tNegVal_plus_2) {
+        dVector <double, 5> fPlus;
+        dVector <double, 5> fMinus;
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             double Beta0 = pow(tPosVal_minus_1[i] - tPosVal[i], 2.0);
             double Beta1 = pow(tPosVal[i] - tPosVal_plus_1[i], 2.0);
 
@@ -392,7 +410,7 @@ private:
                     Omega1 * (0.5 * tPosVal[i] + 0.5 * tPosVal_plus_1[i]);
         }
 
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < 5; i++) {
             double Beta0 = pow(tNegVal[i] - tNegVal_plus_1[i], 2.0);
             double Beta1 = pow(tNegVal_plus_1[i] - tNegVal_plus_2[i], 2.0);
 
