@@ -25,6 +25,7 @@ public:
         }
 
         initCoriolis();
+        initFields();
         bottomFunc();
         initConditions();
 
@@ -48,7 +49,7 @@ public:
 
         double TimePassed = 0.0;
 
-        for (int iTime = 0; iTime < 1000; iTime++) {
+        for (int iTime = 0; iTime < mTimeLimit; iTime++) {
             double MaxAlpha = 0.0;
 
             for (size_t iX = 0; iX < mGridX + mOffsetXL + mOffsetXR; iX++) {
@@ -79,7 +80,10 @@ public:
 //            mStepTime = 0.2 * mStepX / MaxAlpha;
             TimePassed += mStepTime;
 
-            std::cout << "Time: " << TimePassed / 3600 / 24 << " Step - " << mStepTime << " Alpha - " << MaxAlpha << std::endl;
+            if (int(TimePassed) % (30 * 60) == 0) {
+                std::cout << "Time: " << TimePassed / 3600 / 24 << " Step - " << mStepTime << " Alpha - " << MaxAlpha
+                          << std::endl;
+            }
 
             for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
                 for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
@@ -140,8 +144,8 @@ public:
         }
     }
 private:
-    size_t mGridX = 254;
-    size_t mGridY = 50;
+    size_t mGridX = 1006;
+    size_t mGridY = 200;
 
     size_t mOffsetXL = 2;
     size_t mOffsetXR = 2;
@@ -154,13 +158,16 @@ private:
     dGrid *CurrentData = &GridCurrentData;
     dGrid *TempData = &GridTempData;
 
-    double mStepX = 100.0e+03;
-    double mStepY = 100.0e+03;
+    double mStepX = 25.0e+03;
+    double mStepY = 25.0e+03;
 
-    double mStepTime = 60.0;
+    double mStepTime = 15.0;
+
+    double mTimeLimit = 92160;
 
     std::vector <std::vector <double>> Bottom;
     std::vector <double> mCorParam;
+    std::vector <double> mHorizFieldY;
 
     //----------//
 
@@ -181,6 +188,14 @@ private:
 
         for (size_t i = 0; i < mGridY + mOffsetYU + mOffsetYD; i++) {
             mCorParam[i] = mCorParam_0 + mBetaParam * (i * mStepY - MeanY);
+        }
+    }
+    void initFields() {
+        mHorizFieldY.resize(mGridY + mOffsetYU + mOffsetYD);
+
+        for (size_t i = 0; i < mGridY + mOffsetYU + mOffsetYD; i++) {
+            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * double(i) / 2.0;
+//            mHorizFieldY[i] = 0.0;
         }
     }
     void bottomFunc() {
@@ -216,7 +231,7 @@ private:
         //---h---//
 
         //---West-East---//
-        for (int iComp = 0; iComp < 3; iComp++) {
+        for (int iComp = 1; iComp < 5; iComp++) {
             for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
                 (*TempData)[0][j][iComp] =
                         (*TempData)[mGridX + mOffsetXL - 1][j][iComp] /
@@ -276,6 +291,51 @@ private:
             (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][2] = 0.0;
         }
         //---vy---//
+
+        //---vx---//
+        for (size_t i = 0; i < mGridX + mOffsetXL + mOffsetXR; i++) {
+            (*TempData)[i][1][3] =
+                    (*TempData)[i][2][3] /
+                    (*TempData)[i][2][0] *
+                    (*TempData)[i][1][0];
+            (*TempData)[i][0][3] =
+                    (*TempData)[i][2][3] /
+                    (*TempData)[i][2][0] *
+                    (*TempData)[i][0][0];
+
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][3] =
+                    (*TempData)[i][mGridY + mOffsetYU - 1][3] /
+                    (*TempData)[i][mGridY + mOffsetYU - 1][0] *
+                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][3] =
+                    (*TempData)[i][mGridY + mOffsetYU - 1][3] /
+                    (*TempData)[i][mGridY + mOffsetYU - 1][0] *
+                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
+        }
+        //---vx---//
+
+        //---vy---//
+        for (size_t i = 0; i < mGridX + mOffsetXL + mOffsetXR; i++) {
+            (*TempData)[i][0][4] =
+                    mHorizFieldY[0] *
+                    (*TempData)[i][0][0];
+            (*TempData)[i][1][4] =
+                    ((*TempData)[i][2][4] / (*TempData)[i][2][0] +
+                    (*TempData)[i][0][4] /
+                    (*TempData)[i][0][0]) / 2.0 *
+                    (*TempData)[i][1][0];
+
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][4] =
+                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 1] *
+                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][4];
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] =
+                    ((*TempData)[i][mGridY + mOffsetYU - 1][4] /
+                    (*TempData)[i][mGridY + mOffsetYU - 1][0] +
+                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][4] /
+                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0]) / 2.0 *
+                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
+        }
+        //---vy---//
     }
     void initConditions() {
         double MeanWind = 20.0;
@@ -285,7 +345,7 @@ private:
             for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
                 double TempHeight = 10000.0 - (MeanWind * mCorParam_0 / mGrav) * (j * mStepY - MeanY);
 
-                GridCurrentData[i][j] = dVector <double, 5>(TempHeight, 0.0, 0.0, 0.0, 0.0);
+                GridCurrentData[i][j] = dVector <double, 5>(TempHeight, 0.0, 0.0, 0.0, TempHeight * mHorizFieldY[j]);
             }
         }
 
@@ -322,32 +382,38 @@ private:
     dVector <double, 5> funcX(const dVector <double, 5>& tVal) {
         return dVector <double, 5>(
                 tVal[1],
-                tVal[1] * tVal[1] / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
-                tVal[1] * tVal[2] / tVal[0],
+                (tVal[1] * tVal[1] - tVal[3] * tVal[3]) / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
+                (tVal[1] * tVal[2] - tVal[3] * tVal[4]) / tVal[0],
                 0.0,
-                0.0
+                -(tVal[1] * tVal[4] - tVal[2] * tVal[3]) / tVal[0]
         );
     }
     dVector <double, 5> funcY(const dVector <double, 5>& tVal) {
         return dVector <double, 5>(
                 tVal[2],
-                tVal[1] * tVal[2] / tVal[0],
-                tVal[2] * tVal[2] / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
-                0.0,
+                (tVal[1] * tVal[2] - tVal[3] * tVal[4]) / tVal[0],
+                (tVal[2] * tVal[2] - tVal[4] * tVal[4]) / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
+                -(tVal[2] * tVal[3] - tVal[1] * tVal[4]) / tVal[0],
                 0.0
         );
     }
     dVector <double, 5> source(int tPosX, int tPosY) {
+        double Bz =
+                ((*CurrentData)[tPosX + 1][tPosY][3] - (*CurrentData)[tPosX - 1][tPosY][3]) / mStepX / 2.0 +
+                ((*CurrentData)[tPosX][tPosY + 1][4] - (*CurrentData)[tPosX][tPosY - 1][4]) / mStepY / 2.0;
+
         return dVector <double, 5> (
                 0.0,
+                Bz * (*CurrentData)[tPosX][tPosY][3] / (*CurrentData)[tPosX][tPosY][0] +
                 mCorParam[tPosY] * (*CurrentData)[tPosX][tPosY][2] -
                 mGrav / (2.0 * mStepX) *
                 (*CurrentData)[tPosX][tPosY][0] * (Bottom[tPosX + 1][tPosY] - Bottom[tPosX - 1][tPosY]),
+                Bz * (*CurrentData)[tPosX][tPosY][4] / (*CurrentData)[tPosX][tPosY][0] +
                 -mCorParam[tPosY] * (*CurrentData)[tPosX][tPosY][1] -
                 mGrav / (2.0 * mStepY) *
                 (*CurrentData)[tPosX][tPosY][0] * (Bottom[tPosX][tPosY + 1] - Bottom[tPosX][tPosY - 1]),
-                0.0,
-                0.0
+                Bz * (*CurrentData)[tPosX][tPosY][1] / (*CurrentData)[tPosX][tPosY][0],
+                Bz * (*CurrentData)[tPosX][tPosY][2] / (*CurrentData)[tPosX][tPosY][0]
                 );
     }
     dVector <double, 5> viscosity(int tPosX, int tPosY) {
@@ -389,8 +455,8 @@ private:
             const dVector <double, 5>& tNegVal,
             const dVector <double, 5>& tNegVal_plus_1,
             const dVector <double, 5>& tNegVal_plus_2) {
-        dVector <double, 5> fPlus;
-        dVector <double, 5> fMinus;
+        dVector <double, 5> fPlus(0.0, 0.0, 0.0, 0.0, 0.0);
+        dVector <double, 5> fMinus(0.0, 0.0, 0.0, 0.0, 0.0);
 
         for (int i = 0; i < 5; i++) {
             double Beta0 = pow(tPosVal_minus_1[i] - tPosVal[i], 2.0);
