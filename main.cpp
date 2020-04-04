@@ -144,8 +144,8 @@ public:
         }
     }
 private:
-    size_t mGridX = 1006;
-    size_t mGridY = 200;
+    size_t mGridX = 254;
+    size_t mGridY = 50;
 
     size_t mOffsetXL = 2;
     size_t mOffsetXR = 2;
@@ -158,12 +158,12 @@ private:
     dGrid *CurrentData = &GridCurrentData;
     dGrid *TempData = &GridTempData;
 
-    double mStepX = 25.0e+03;
-    double mStepY = 25.0e+03;
+    double mStepX = 100.0e+03;
+    double mStepY = 100.0e+03;
 
-    double mStepTime = 15.0;
+    double mStepTime = 60.0;
 
-    double mTimeLimit = 92160;
+    double mTimeLimit = 43200;
 
     std::vector <std::vector <double>> Bottom;
     std::vector <double> mCorParam;
@@ -194,8 +194,8 @@ private:
         mHorizFieldY.resize(mGridY + mOffsetYU + mOffsetYD);
 
         for (size_t i = 0; i < mGridY + mOffsetYU + mOffsetYD; i++) {
-            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * double(i) / 2.0;
-//            mHorizFieldY[i] = 0.0;
+//            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * i;
+            mHorizFieldY[i] = 0.0;
         }
     }
     void bottomFunc() {
@@ -221,7 +221,7 @@ private:
     }
     void updateBoundaries() {
         //---h---//
-        for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
+        for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
             (*TempData)[0][j][0] = (*TempData)[mGridX + mOffsetXL - 2][j][0];
             (*TempData)[1][j][0] = (*TempData)[mGridX + mOffsetXL - 1][j][0];
 
@@ -234,12 +234,12 @@ private:
         for (int iComp = 1; iComp < 5; iComp++) {
             for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
                 (*TempData)[0][j][iComp] =
-                        (*TempData)[mGridX + mOffsetXL - 1][j][iComp] /
-                        (*TempData)[mGridX + mOffsetXL - 1][j][0] *
+                        (*TempData)[mOffsetXL][j][iComp] /
+                        (*TempData)[mOffsetXL][j][0] *
                         (*TempData)[0][j][0];
                 (*TempData)[1][j][iComp] =
-                        (*TempData)[mGridX + mOffsetXL - 1][j][iComp] /
-                        (*TempData)[mGridX + mOffsetXL - 1][j][0] *
+                        (*TempData)[mOffsetXL][j][iComp] /
+                        (*TempData)[mOffsetXL][j][0] *
                         (*TempData)[1][j][0];
 
                 (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][iComp] =
@@ -278,16 +278,10 @@ private:
 
         //---vy---//
         for (size_t i = 0; i < mGridX + mOffsetXL + mOffsetXR; i++) {
-            (*TempData)[i][1][2] =
-                    (*TempData)[i][2][2] /
-                    (*TempData)[i][2][0] / 2.0 *
-                    (*TempData)[i][1][0];
+            (*TempData)[i][1][2] = 0.0;
             (*TempData)[i][0][2] = 0.0;
 
-            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][2] =
-                    (*TempData)[i][mGridY + mOffsetYU - 1][2] /
-                    (*TempData)[i][mGridY + mOffsetYU - 1][0] / 2.0 *
-                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][2] = 0.0;
             (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][2] = 0.0;
         }
         //---vy---//
