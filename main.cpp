@@ -80,12 +80,12 @@ public:
 //            mStepTime = 0.2 * mStepX / MaxAlpha;
             TimePassed += mStepTime;
 
-            if (int(TimePassed) % (30 * 60) == 0) {
+            if (int(TimePassed) % (60 * 60) == 0) {
                 std::cout << "Time: " << TimePassed / 3600 / 24 << " Step - " << mStepTime << " Alpha - " << MaxAlpha
                           << std::endl;
             }
 
-            for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
+            for (size_t i = mOffsetXL + 1; i < mGridX + mOffsetXL; i++) {
                 for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
                     auto PlusX = WENO(
                             (funcX((*CurrentData)[i - 1][j]) + MaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
@@ -147,7 +147,7 @@ private:
     size_t mGridX = 254;
     size_t mGridY = 50;
 
-    size_t mOffsetXL = 2;
+    size_t mOffsetXL = 1;
     size_t mOffsetXR = 2;
     size_t mOffsetYU = 2;
     size_t mOffsetYD = 2;
@@ -163,7 +163,7 @@ private:
 
     double mStepTime = 60.0;
 
-    double mTimeLimit = 43200;
+    double mTimeLimit = 90000;
 
     std::vector <std::vector <double>> Bottom;
     std::vector <double> mCorParam;
@@ -222,8 +222,8 @@ private:
     void updateBoundaries() {
         //---h---//
         for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
-            (*TempData)[0][j][0] = (*TempData)[mGridX + mOffsetXL - 2][j][0];
-            (*TempData)[1][j][0] = (*TempData)[mGridX + mOffsetXL - 1][j][0];
+            (*TempData)[0][j][0] = (*TempData)[mGridX + mOffsetXL - 1][j][0];
+//            (*TempData)[1][j][0] = (*TempData)[mGridX + mOffsetXL - 1][j][0];
 
             (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][0] = (*TempData)[mOffsetXL][j][0];
             (*TempData)[mGridX + mOffsetXL + mOffsetXR - 1][j][0] = (*TempData)[mOffsetXL + 1][j][0];
