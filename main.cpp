@@ -168,6 +168,7 @@ private:
     std::vector <std::vector <double>> Bottom;
     std::vector <double> mCorParam;
     std::vector <double> mHorizFieldY;
+    std::vector <double> mVertField;
 
     //----------//
 
@@ -192,10 +193,12 @@ private:
     }
     void initFields() {
         mHorizFieldY.resize(mGridY + mOffsetYU + mOffsetYD);
+        mVertField.resize(mGridY + mOffsetYU + mOffsetYD);
 
         for (size_t i = 0; i < mGridY + mOffsetYU + mOffsetYD; i++) {
-//            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * i;
-            mHorizFieldY[i] = 0.0;
+            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * i;
+            mVertField[i] = 1.27e-05 + 1.46e-06 * i - 1.38e-08 * pow(i, 2.0);
+//            mHorizFieldY[i] = 0.0;
         }
     }
     void bottomFunc() {
@@ -393,8 +396,9 @@ private:
     }
     dVector <double, 5> source(int tPosX, int tPosY) {
         double Bz =
-                ((*CurrentData)[tPosX + 1][tPosY][3] - (*CurrentData)[tPosX - 1][tPosY][3]) / mStepX / 2.0 +
-                ((*CurrentData)[tPosX][tPosY + 1][4] - (*CurrentData)[tPosX][tPosY - 1][4]) / mStepY / 2.0;
+                -((*CurrentData)[tPosX + 1][tPosY][3] - (*CurrentData)[tPosX - 1][tPosY][3]) / mStepX / 2.0 +
+                ((*CurrentData)[tPosX][tPosY + 1][4] - (*CurrentData)[tPosX][tPosY - 1][4]) / mStepY / 2.0 -
+                mVertField[tPosY];
 
         return dVector <double, 5> (
                 0.0,
