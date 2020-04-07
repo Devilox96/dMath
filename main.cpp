@@ -7,7 +7,7 @@
 #include "Core/dVector.h"
 #include "Core/dMatrix.h"
 
-using dGrid = std::vector <std::vector <dVector <double, 5>>>;
+using dGrid = std::vector <std::vector <dVector <double, 6>>>;
 
 class Solver {
 public:
@@ -50,7 +50,7 @@ public:
         double TimePassed = 0.0;
 
         for (int iTime = 0; iTime < mTimeLimit; iTime++) {
-            double MaxAlpha = 0.0;
+            mMaxAlpha = 0.0;
 
             for (size_t iX = 0; iX < mGridX + mOffsetXL + mOffsetXR; iX++) {
                 for (size_t iY = 0; iY < mGridY + mOffsetYU + mOffsetYD; iY++) {
@@ -61,64 +61,64 @@ public:
                     double SqrX = sqrt(pow(Bx, 2.0) + 9.81 * (*CurrentData)[iX][iY][0]);
                     double SqrY = sqrt(pow(By, 2.0) + 9.81 * (*CurrentData)[iX][iY][0]);
 
-                    MaxAlpha = std::max(fabs(vx + Bx), MaxAlpha);
-                    MaxAlpha = std::max(fabs(vx - Bx), MaxAlpha);
-                    MaxAlpha = std::max(fabs(vx + SqrX), MaxAlpha);
-                    MaxAlpha = std::max(fabs(vx - SqrX), MaxAlpha);
+                    mMaxAlpha = std::max(fabs(vx + Bx), mMaxAlpha);
+                    mMaxAlpha = std::max(fabs(vx - Bx), mMaxAlpha);
+                    mMaxAlpha = std::max(fabs(vx + SqrX), mMaxAlpha);
+                    mMaxAlpha = std::max(fabs(vx - SqrX), mMaxAlpha);
 
-                    MaxAlpha = std::max(fabs(vy + By), MaxAlpha);
-                    MaxAlpha = std::max(fabs(vy - By), MaxAlpha);
-                    MaxAlpha = std::max(fabs(vy + SqrY), MaxAlpha);
-                    MaxAlpha = std::max(fabs(vy - SqrY), MaxAlpha);
+                    mMaxAlpha = std::max(fabs(vy + By), mMaxAlpha);
+                    mMaxAlpha = std::max(fabs(vy - By), mMaxAlpha);
+                    mMaxAlpha = std::max(fabs(vy + SqrY), mMaxAlpha);
+                    mMaxAlpha = std::max(fabs(vy - SqrY), mMaxAlpha);
                 }
             }
 
-            if (MaxAlpha > 500) {
+            if (mMaxAlpha > 500) {
                 break;
             }
 
-//            mStepTime = 0.2 * mStepX / MaxAlpha;
+//            mStepTime = 0.2 * mStepX / mMaxAlpha;
             TimePassed += mStepTime;
 
             if (int(TimePassed) % (60 * 60) == 0) {
-                std::cout << "Time: " << TimePassed / 3600 / 24 << " Step - " << mStepTime << " Alpha - " << MaxAlpha
+                std::cout << "Time: " << TimePassed / 3600 / 24 << " Step - " << mStepTime << " Alpha - " << mMaxAlpha
                           << std::endl;
             }
 
             for (size_t i = mOffsetXL + 1; i < mGridX + mOffsetXL; i++) {
                 for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
                     auto PlusX = WENO(
-                            (funcX((*CurrentData)[i - 1][j]) + MaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
-                            (funcX((*CurrentData)[i][j]) + MaxAlpha * (*CurrentData)[i][j]) / 2.0,
-                            (funcX((*CurrentData)[i + 1][j]) + MaxAlpha * (*CurrentData)[i + 1][j]) / 2.0,
-                            (funcX((*CurrentData)[i][j]) - MaxAlpha * (*CurrentData)[i][j]) / 2.0,
-                            (funcX((*CurrentData)[i + 1][j]) - MaxAlpha * (*CurrentData)[i + 1][j]) / 2.0,
-                            (funcX((*CurrentData)[i + 2][j]) - MaxAlpha * (*CurrentData)[i + 2][j]) / 2.0
+                            (funcX((*CurrentData)[i - 1][j]) + mMaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
+                            (funcX((*CurrentData)[i][j]) + mMaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcX((*CurrentData)[i + 1][j]) + mMaxAlpha * (*CurrentData)[i + 1][j]) / 2.0,
+                            (funcX((*CurrentData)[i][j]) - mMaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcX((*CurrentData)[i + 1][j]) - mMaxAlpha * (*CurrentData)[i + 1][j]) / 2.0,
+                            (funcX((*CurrentData)[i + 2][j]) - mMaxAlpha * (*CurrentData)[i + 2][j]) / 2.0
                     );
                     auto MinusX = WENO(
-                            (funcX((*CurrentData)[i - 2][j]) + MaxAlpha * (*CurrentData)[i - 2][j]) / 2.0,
-                            (funcX((*CurrentData)[i - 1][j]) + MaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
-                            (funcX((*CurrentData)[i][j]) + MaxAlpha * (*CurrentData)[i][j]) / 2.0,
-                            (funcX((*CurrentData)[i - 1][j]) - MaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
-                            (funcX((*CurrentData)[i][j]) - MaxAlpha * (*CurrentData)[i][j]) / 2.0,
-                            (funcX((*CurrentData)[i + 1][j]) - MaxAlpha * (*CurrentData)[i + 1][j]) / 2.0
+                            (funcX((*CurrentData)[i - 2][j]) + mMaxAlpha * (*CurrentData)[i - 2][j]) / 2.0,
+                            (funcX((*CurrentData)[i - 1][j]) + mMaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
+                            (funcX((*CurrentData)[i][j]) + mMaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcX((*CurrentData)[i - 1][j]) - mMaxAlpha * (*CurrentData)[i - 1][j]) / 2.0,
+                            (funcX((*CurrentData)[i][j]) - mMaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcX((*CurrentData)[i + 1][j]) - mMaxAlpha * (*CurrentData)[i + 1][j]) / 2.0
                     );
 
                     auto PlusY = WENO(
-                            (funcY((*CurrentData)[i][j - 1]) + MaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
-                            (funcY((*CurrentData)[i][j]) + MaxAlpha * (*CurrentData)[i][j]) / 2.0,
-                            (funcY((*CurrentData)[i][j + 1]) + MaxAlpha * (*CurrentData)[i][j + 1]) / 2.0,
-                            (funcY((*CurrentData)[i][j]) - MaxAlpha * (*CurrentData)[i][j]) / 2.0,
-                            (funcY((*CurrentData)[i][j + 1]) - MaxAlpha * (*CurrentData)[i][j + 1]) / 2.0,
-                            (funcY((*CurrentData)[i][j + 2]) - MaxAlpha * (*CurrentData)[i][j + 2]) / 2.0
+                            (funcY((*CurrentData)[i][j - 1]) + mMaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
+                            (funcY((*CurrentData)[i][j]) + mMaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcY((*CurrentData)[i][j + 1]) + mMaxAlpha * (*CurrentData)[i][j + 1]) / 2.0,
+                            (funcY((*CurrentData)[i][j]) - mMaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcY((*CurrentData)[i][j + 1]) - mMaxAlpha * (*CurrentData)[i][j + 1]) / 2.0,
+                            (funcY((*CurrentData)[i][j + 2]) - mMaxAlpha * (*CurrentData)[i][j + 2]) / 2.0
                     );
                     auto MinusY = WENO(
-                            (funcY((*CurrentData)[i][j - 2]) + MaxAlpha * (*CurrentData)[i][j - 2]) / 2.0,
-                            (funcY((*CurrentData)[i][j - 1]) + MaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
-                            (funcY((*CurrentData)[i][j]) + MaxAlpha * (*CurrentData)[i][j]) / 2.0,
-                            (funcY((*CurrentData)[i][j - 1]) - MaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
-                            (funcY((*CurrentData)[i][j]) - MaxAlpha * (*CurrentData)[i][j]) / 2.0,
-                            (funcY((*CurrentData)[i][j + 1]) - MaxAlpha * (*CurrentData)[i][j + 1]) / 2.0
+                            (funcY((*CurrentData)[i][j - 2]) + mMaxAlpha * (*CurrentData)[i][j - 2]) / 2.0,
+                            (funcY((*CurrentData)[i][j - 1]) + mMaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
+                            (funcY((*CurrentData)[i][j]) + mMaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcY((*CurrentData)[i][j - 1]) - mMaxAlpha * (*CurrentData)[i][j - 1]) / 2.0,
+                            (funcY((*CurrentData)[i][j]) - mMaxAlpha * (*CurrentData)[i][j]) / 2.0,
+                            (funcY((*CurrentData)[i][j + 1]) - mMaxAlpha * (*CurrentData)[i][j + 1]) / 2.0
                     );
 
                     (*TempData)[i][j] =
@@ -169,6 +169,8 @@ private:
     std::vector <double> mCorParam;
     std::vector <double> mHorizFieldY;
     std::vector <double> mVertField;
+    
+    double mMaxAlpha = 0.0;
 
     //----------//
 
@@ -196,9 +198,10 @@ private:
         mVertField.resize(mGridY + mOffsetYU + mOffsetYD);
 
         for (size_t i = 0; i < mGridY + mOffsetYU + mOffsetYD; i++) {
-            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * i;
-            mVertField[i] = 1.27e-05 + 1.46e-06 * i - 1.38e-08 * pow(i, 2.0);
-//            mHorizFieldY[i] = 0.0;
+//            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * i;
+//            mVertField[i] = 1.27e-05 + 1.46e-06 * i - 1.38e-08 * pow(i, 2.0);
+            mHorizFieldY[i] = 0.0;
+            mVertField[i] = 0.0;
         }
     }
     void bottomFunc() {
@@ -226,7 +229,6 @@ private:
         //---h---//
         for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
             (*TempData)[0][j][0] = (*TempData)[mGridX + mOffsetXL - 1][j][0];
-//            (*TempData)[1][j][0] = (*TempData)[mGridX + mOffsetXL - 1][j][0];
 
             (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][0] = (*TempData)[mOffsetXL][j][0];
             (*TempData)[mGridX + mOffsetXL + mOffsetXR - 1][j][0] = (*TempData)[mOffsetXL + 1][j][0];
@@ -234,7 +236,7 @@ private:
         //---h---//
 
         //---West-East---//
-        for (int iComp = 1; iComp < 5; iComp++) {
+        for (int iComp = 1; iComp < 3; iComp++) {
             for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
                 (*TempData)[0][j][iComp] =
                         (*TempData)[mOffsetXL][j][iComp] /
@@ -243,6 +245,28 @@ private:
                 (*TempData)[1][j][iComp] =
                         (*TempData)[mOffsetXL][j][iComp] /
                         (*TempData)[mOffsetXL][j][0] *
+                        (*TempData)[1][j][0];
+
+                (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][iComp] =
+                        (*TempData)[mOffsetXL][j][iComp] /
+                        (*TempData)[mOffsetXL][j][0] *
+                        (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][0];
+                (*TempData)[mGridX + mOffsetXL + mOffsetXR - 1][j][iComp] =
+                        (*TempData)[mOffsetXL + 1][j][iComp] /
+                        (*TempData)[mOffsetXL + 1][j][0] *
+                        (*TempData)[mGridX + mOffsetXL + mOffsetXR - 1][j][0];
+            }
+        }
+
+        for (int iComp = 3; iComp < 6; iComp++) {
+            for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
+                (*TempData)[0][j][iComp] =
+                        (*TempData)[mGridX + mOffsetXL - 2][j][iComp] /
+                        (*TempData)[mGridX + mOffsetXL - 2][j][0] *
+                        (*TempData)[0][j][0];
+                (*TempData)[1][j][iComp] =
+                        (*TempData)[mGridX + mOffsetXL - 1][j][iComp] /
+                        (*TempData)[mGridX + mOffsetXL - 1][j][0] *
                         (*TempData)[1][j][0];
 
                 (*TempData)[mGridX + mOffsetXL + mOffsetXR - 2][j][iComp] =
@@ -289,7 +313,7 @@ private:
         }
         //---vy---//
 
-        //---vx---//
+        //---Bx---//
         for (size_t i = 0; i < mGridX + mOffsetXL + mOffsetXR; i++) {
             (*TempData)[i][1][3] =
                     (*TempData)[i][2][3] /
@@ -309,9 +333,9 @@ private:
                     (*TempData)[i][mGridY + mOffsetYU - 1][0] *
                     (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
         }
-        //---vx---//
+        //---Bx---//
 
-        //---vy---//
+        //---By---//
         for (size_t i = 0; i < mGridX + mOffsetXL + mOffsetXR; i++) {
             (*TempData)[i][0][4] =
                     mHorizFieldY[0] *
@@ -332,7 +356,17 @@ private:
                     (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0]) / 2.0 *
                     (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
         }
-        //---vy---//
+        //---By---//
+
+        //---Psi---//
+        for (size_t i = 0; i < mGridX + mOffsetXL + mOffsetXR; i++) {
+            (*TempData)[i][1][5] = 0.0;
+            (*TempData)[i][0][5] = 0.0;
+
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][5] = 0.0;
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][5] = 0.0;
+        }
+        //---Psi---//
     }
     void initConditions() {
         double MeanWind = 20.0;
@@ -342,7 +376,14 @@ private:
             for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
                 double TempHeight = 10000.0 - (MeanWind * mCorParam_0 / mGrav) * (j * mStepY - MeanY);
 
-                GridCurrentData[i][j] = dVector <double, 5>(TempHeight, 0.0, 0.0, 0.0, TempHeight * mHorizFieldY[j]);
+                GridCurrentData[i][j] = dVector <double, 6>(
+                        TempHeight,
+                        0.0,
+                        0.0,
+                        0.0,
+                        TempHeight * mHorizFieldY[j],
+                        0.0
+                        );
             }
         }
 
@@ -376,31 +417,30 @@ private:
         }
     }
 
-    dVector <double, 5> funcX(const dVector <double, 5>& tVal) {
-        return dVector <double, 5>(
+    dVector <double, 6> funcX(const dVector <double, 6>& tVal) {
+        return dVector <double, 6>(
                 tVal[1],
                 (tVal[1] * tVal[1] - tVal[3] * tVal[3]) / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
                 (tVal[1] * tVal[2] - tVal[3] * tVal[4]) / tVal[0],
-                0.0,
-                -(tVal[1] * tVal[4] - tVal[2] * tVal[3]) / tVal[0]
+                tVal[5],
+                -(tVal[1] * tVal[4] - tVal[2] * tVal[3]) / tVal[0],
+                mMaxAlpha * mMaxAlpha * tVal[3]
         );
     }
-    dVector <double, 5> funcY(const dVector <double, 5>& tVal) {
-        return dVector <double, 5>(
+    dVector <double, 6> funcY(const dVector <double, 6>& tVal) {
+        return dVector <double, 6>(
                 tVal[2],
                 (tVal[1] * tVal[2] - tVal[3] * tVal[4]) / tVal[0],
                 (tVal[2] * tVal[2] - tVal[4] * tVal[4]) / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
                 -(tVal[2] * tVal[3] - tVal[1] * tVal[4]) / tVal[0],
-                0.0
+                tVal[5],
+                mMaxAlpha * mMaxAlpha * tVal[4]
         );
     }
-    dVector <double, 5> source(int tPosX, int tPosY) {
-        double Bz =
-                -((*CurrentData)[tPosX + 1][tPosY][3] - (*CurrentData)[tPosX - 1][tPosY][3]) / mStepX / 2.0 +
-                ((*CurrentData)[tPosX][tPosY + 1][4] - (*CurrentData)[tPosX][tPosY - 1][4]) / mStepY / 2.0 -
-                mVertField[tPosY];
+    dVector <double, 6> source(int tPosX, int tPosY) {
+        double Bz = -mVertField[tPosY];
 
-        return dVector <double, 5> (
+        return dVector <double, 6> (
                 0.0,
                 Bz * (*CurrentData)[tPosX][tPosY][3] / (*CurrentData)[tPosX][tPosY][0] +
                 mCorParam[tPosY] * (*CurrentData)[tPosX][tPosY][2] -
@@ -411,10 +451,11 @@ private:
                 mGrav / (2.0 * mStepY) *
                 (*CurrentData)[tPosX][tPosY][0] * (Bottom[tPosX][tPosY + 1] - Bottom[tPosX][tPosY - 1]),
                 Bz * (*CurrentData)[tPosX][tPosY][1] / (*CurrentData)[tPosX][tPosY][0],
-                Bz * (*CurrentData)[tPosX][tPosY][2] / (*CurrentData)[tPosX][tPosY][0]
+                Bz * (*CurrentData)[tPosX][tPosY][2] / (*CurrentData)[tPosX][tPosY][0],
+                0.0
                 );
     }
-    dVector <double, 5> viscosity(int tPosX, int tPosY) {
+    dVector <double, 6> viscosity(int tPosX, int tPosY) {
         double v_x_xx = (
                 (*CurrentData)[tPosX - 1][tPosY][1] / (*CurrentData)[tPosX - 1][tPosY][0] +
                 (*CurrentData)[tPosX][tPosY][1] / (*CurrentData)[tPosX][tPosY][0] * 2.0 +
@@ -436,27 +477,28 @@ private:
                 (*CurrentData)[tPosX][tPosY + 1][2] / (*CurrentData)[tPosX][tPosY + 1][0]) /
                 pow(mStepY, 2.0);
 
-        return dVector <double, 5> (
+        return dVector <double, 6> (
                 0.0,
                 (*CurrentData)[tPosX][tPosY][0] * (v_x_xx + v_x_yy),
                 (*CurrentData)[tPosX][tPosY][0] * (v_y_xx + v_y_yy),
+                0.0,
                 0.0,
                 0.0);
     }
 
     //----------//
 
-    dVector <double, 5> WENO(
-            const dVector <double, 5>& tPosVal_minus_1,
-            const dVector <double, 5>& tPosVal,
-            const dVector <double, 5>& tPosVal_plus_1,
-            const dVector <double, 5>& tNegVal,
-            const dVector <double, 5>& tNegVal_plus_1,
-            const dVector <double, 5>& tNegVal_plus_2) {
-        dVector <double, 5> fPlus(0.0, 0.0, 0.0, 0.0, 0.0);
-        dVector <double, 5> fMinus(0.0, 0.0, 0.0, 0.0, 0.0);
+    dVector <double, 6> WENO(
+            const dVector <double, 6>& tPosVal_minus_1,
+            const dVector <double, 6>& tPosVal,
+            const dVector <double, 6>& tPosVal_plus_1,
+            const dVector <double, 6>& tNegVal,
+            const dVector <double, 6>& tNegVal_plus_1,
+            const dVector <double, 6>& tNegVal_plus_2) {
+        dVector <double, 6> fPlus(0.0, 0.0, 0.0, 0.0, 0.0);
+        dVector <double, 6> fMinus(0.0, 0.0, 0.0, 0.0, 0.0);
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 6; i++) {
             double Beta0 = pow(tPosVal_minus_1[i] - tPosVal[i], 2.0);
             double Beta1 = pow(tPosVal[i] - tPosVal_plus_1[i], 2.0);
 
@@ -474,7 +516,7 @@ private:
                     Omega1 * (0.5 * tPosVal[i] + 0.5 * tPosVal_plus_1[i]);
         }
 
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 6; i++) {
             double Beta0 = pow(tNegVal[i] - tNegVal_plus_1[i], 2.0);
             double Beta1 = pow(tNegVal_plus_1[i] - tNegVal_plus_2[i], 2.0);
 
