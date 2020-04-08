@@ -30,6 +30,7 @@ public:
         initConditions();
 
         GridTempData = GridCurrentData;
+        GridTempData2 = GridCurrentData;
 
         updateBoundaries();
         std::swap(CurrentData, TempData);
@@ -130,6 +131,54 @@ public:
             }
 
             updateBoundaries();
+            std::swap(TempData2, TempData);
+
+            for (size_t i = mOffsetXL + 1; i < mGridX + mOffsetXL; i++) {
+                for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
+                    auto PlusX = WENO(
+                            (funcX((*TempData2)[i - 1][j]) + mMaxAlpha * (*TempData2)[i - 1][j]) / 2.0,
+                            (funcX((*TempData2)[i][j]) + mMaxAlpha * (*TempData2)[i][j]) / 2.0,
+                            (funcX((*TempData2)[i + 1][j]) + mMaxAlpha * (*TempData2)[i + 1][j]) / 2.0,
+                            (funcX((*TempData2)[i][j]) - mMaxAlpha * (*TempData2)[i][j]) / 2.0,
+                            (funcX((*TempData2)[i + 1][j]) - mMaxAlpha * (*TempData2)[i + 1][j]) / 2.0,
+                            (funcX((*TempData2)[i + 2][j]) - mMaxAlpha * (*TempData2)[i + 2][j]) / 2.0
+                    );
+                    auto MinusX = WENO(
+                            (funcX((*TempData2)[i - 2][j]) + mMaxAlpha * (*TempData2)[i - 2][j]) / 2.0,
+                            (funcX((*TempData2)[i - 1][j]) + mMaxAlpha * (*TempData2)[i - 1][j]) / 2.0,
+                            (funcX((*TempData2)[i][j]) + mMaxAlpha * (*TempData2)[i][j]) / 2.0,
+                            (funcX((*TempData2)[i - 1][j]) - mMaxAlpha * (*TempData2)[i - 1][j]) / 2.0,
+                            (funcX((*TempData2)[i][j]) - mMaxAlpha * (*TempData2)[i][j]) / 2.0,
+                            (funcX((*TempData2)[i + 1][j]) - mMaxAlpha * (*TempData2)[i + 1][j]) / 2.0
+                    );
+
+                    auto PlusY = WENO(
+                            (funcY((*TempData2)[i][j - 1]) + mMaxAlpha * (*TempData2)[i][j - 1]) / 2.0,
+                            (funcY((*TempData2)[i][j]) + mMaxAlpha * (*TempData2)[i][j]) / 2.0,
+                            (funcY((*TempData2)[i][j + 1]) + mMaxAlpha * (*TempData2)[i][j + 1]) / 2.0,
+                            (funcY((*TempData2)[i][j]) - mMaxAlpha * (*TempData2)[i][j]) / 2.0,
+                            (funcY((*TempData2)[i][j + 1]) - mMaxAlpha * (*TempData2)[i][j + 1]) / 2.0,
+                            (funcY((*TempData2)[i][j + 2]) - mMaxAlpha * (*TempData2)[i][j + 2]) / 2.0
+                    );
+                    auto MinusY = WENO(
+                            (funcY((*TempData2)[i][j - 2]) + mMaxAlpha * (*TempData2)[i][j - 2]) / 2.0,
+                            (funcY((*TempData2)[i][j - 1]) + mMaxAlpha * (*TempData2)[i][j - 1]) / 2.0,
+                            (funcY((*TempData2)[i][j]) + mMaxAlpha * (*TempData2)[i][j]) / 2.0,
+                            (funcY((*TempData2)[i][j - 1]) - mMaxAlpha * (*TempData2)[i][j - 1]) / 2.0,
+                            (funcY((*TempData2)[i][j]) - mMaxAlpha * (*TempData2)[i][j]) / 2.0,
+                            (funcY((*TempData2)[i][j + 1]) - mMaxAlpha * (*TempData2)[i][j + 1]) / 2.0
+                    );
+
+                    (*TempData)[i][j] =
+                            0.5 * (*CurrentData)[i][j] +
+                            0.5 * (*TempData2)[i][j] -
+                            0.5 * mStepTime *
+                            ((PlusX - MinusX) / mStepX + (PlusY - MinusY) / mStepY -
+                             source(i, j));
+                }
+            }
+
+            updateBoundaries();
 
             std::swap(CurrentData, TempData);
         }
@@ -154,16 +203,18 @@ private:
 
     dGrid GridCurrentData;
     dGrid GridTempData;
+    dGrid GridTempData2;
 
     dGrid *CurrentData = &GridCurrentData;
     dGrid *TempData = &GridTempData;
+    dGrid *TempData2 = &GridTempData2;
 
     double mStepX = 100.0e+03;
     double mStepY = 100.0e+03;
 
     double mStepTime = 60.0;
 
-    double mTimeLimit = 90000;
+    double mTimeLimit = 1000;
 
     std::vector <std::vector <double>> Bottom;
     std::vector <double> mCorParam;
@@ -177,6 +228,7 @@ private:
     const double mGrav  = 9.81;
     const double mCorParam_0 = 1.0e-04;
     const double mBetaParam = 1.6e-11;
+//    const double mBetaParam = 0.0;
 
     //----------//
 
@@ -198,10 +250,10 @@ private:
         mVertField.resize(mGridY + mOffsetYU + mOffsetYD);
 
         for (size_t i = 0; i < mGridY + mOffsetYU + mOffsetYD; i++) {
-//            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * i;
-//            mVertField[i] = 1.27e-05 + 1.46e-06 * i - 1.38e-08 * pow(i, 2.0);
-            mHorizFieldY[i] = 0.0;
-            mVertField[i] = 0.0;
+            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * i;
+            mVertField[i] = 1.27e-05 + 1.46e-06 * i - 1.38e-08 * pow(i, 2.0);
+//            mHorizFieldY[i] = 0.0;
+//            mVertField[i] = 0.0;
         }
     }
     void bottomFunc() {
