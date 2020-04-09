@@ -8,6 +8,7 @@
 #include "Core/dMatrix.h"
 
 using dGrid = std::vector <std::vector <dVector <double, 6>>>;
+using dVec = dVector <double, 6>;
 
 class Solver {
 public:
@@ -428,7 +429,7 @@ private:
             for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
                 double TempHeight = 10000.0 - (MeanWind * mCorParam_0 / mGrav) * (j * mStepY - MeanY);
 
-                GridCurrentData[i][j] = dVector <double, 6>(
+                GridCurrentData[i][j] = dVec(
                         TempHeight,
                         0.0,
                         0.0,
@@ -469,8 +470,8 @@ private:
         }
     }
 
-    dVector <double, 6> funcX(const dVector <double, 6>& tVal) {
-        return dVector <double, 6>(
+    dVec funcX(const dVec& tVal) {
+        return dVec(
                 tVal[1],
                 (tVal[1] * tVal[1] - tVal[3] * tVal[3]) / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
                 (tVal[1] * tVal[2] - tVal[3] * tVal[4]) / tVal[0],
@@ -479,8 +480,8 @@ private:
                 mMaxAlpha * mMaxAlpha * tVal[3]
         );
     }
-    dVector <double, 6> funcY(const dVector <double, 6>& tVal) {
-        return dVector <double, 6>(
+    dVec funcY(const dVec& tVal) {
+        return dVec(
                 tVal[2],
                 (tVal[1] * tVal[2] - tVal[3] * tVal[4]) / tVal[0],
                 (tVal[2] * tVal[2] - tVal[4] * tVal[4]) / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
@@ -489,10 +490,10 @@ private:
                 mMaxAlpha * mMaxAlpha * tVal[4]
         );
     }
-    dVector <double, 6> source(int tPosX, int tPosY) {
+    dVec source(int tPosX, int tPosY) {
         double Bz = -mVertField[tPosY];
 
-        return dVector <double, 6> (
+        return dVec (
                 0.0,
                 Bz * (*CurrentData)[tPosX][tPosY][3] / (*CurrentData)[tPosX][tPosY][0] +
                 mCorParam[tPosY] * (*CurrentData)[tPosX][tPosY][2] -
@@ -507,7 +508,7 @@ private:
                 0.0
                 );
     }
-    dVector <double, 6> viscosity(int tPosX, int tPosY) {
+    dVec viscosity(int tPosX, int tPosY) {
         double v_x_xx = (
                 (*CurrentData)[tPosX - 1][tPosY][1] / (*CurrentData)[tPosX - 1][tPosY][0] +
                 (*CurrentData)[tPosX][tPosY][1] / (*CurrentData)[tPosX][tPosY][0] * 2.0 +
@@ -529,7 +530,7 @@ private:
                 (*CurrentData)[tPosX][tPosY + 1][2] / (*CurrentData)[tPosX][tPosY + 1][0]) /
                 pow(mStepY, 2.0);
 
-        return dVector <double, 6> (
+        return dVec (
                 0.0,
                 (*CurrentData)[tPosX][tPosY][0] * (v_x_xx + v_x_yy),
                 (*CurrentData)[tPosX][tPosY][0] * (v_y_xx + v_y_yy),
@@ -540,15 +541,15 @@ private:
 
     //----------//
 
-    dVector <double, 6> WENO(
-            const dVector <double, 6>& tPosVal_minus_1,
-            const dVector <double, 6>& tPosVal,
-            const dVector <double, 6>& tPosVal_plus_1,
-            const dVector <double, 6>& tNegVal,
-            const dVector <double, 6>& tNegVal_plus_1,
-            const dVector <double, 6>& tNegVal_plus_2) {
-        dVector <double, 6> fPlus(0.0, 0.0, 0.0, 0.0, 0.0);
-        dVector <double, 6> fMinus(0.0, 0.0, 0.0, 0.0, 0.0);
+    dVec WENO(
+            const dVec& tPosVal_minus_1,
+            const dVec& tPosVal,
+            const dVec& tPosVal_plus_1,
+            const dVec& tNegVal,
+            const dVec& tNegVal_plus_1,
+            const dVec& tNegVal_plus_2) {
+        dVec fPlus(0.0, 0.0, 0.0, 0.0, 0.0);
+        dVec fMinus(0.0, 0.0, 0.0, 0.0, 0.0);
 
         for (int i = 0; i < 6; i++) {
             double Beta0 = pow(tPosVal_minus_1[i] - tPosVal[i], 2.0);
@@ -587,6 +588,10 @@ private:
         }
 
         return fPlus + fMinus;
+    }
+
+    dVec extrapolate(const dVec& tOffset_1, const dVec& tOffset_2, const dVec& tOffset_3, const dVec& tOffset_4) {
+        return 4.0 * tOffset_1 - 6.0 * tOffset_2 + 4.0 * tOffset_3 - tOffset_4;
     }
 };
 
