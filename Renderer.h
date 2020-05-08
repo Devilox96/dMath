@@ -144,13 +144,13 @@ private:
     std::vector <Vertex> Vertices;
     std::vector <uint16_t> Indices;
 
-    double mDarkBlue = 9500;
+    double mDarkBlue = -1.0e-09;
     double mBlue;
     double mCyan;
     double mGreen;
     double mYellow;
     double mRed;
-    double mDarkRed = 10500;
+    double mDarkRed = 1.0e-09;
 
     std::vector <std::vector <double>> mData;
 

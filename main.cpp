@@ -38,6 +38,24 @@ public:
 
         Elevation.resize(mGridX);
 
+        //---Divergence---//
+        mDivergence.resize(mGridX * mGridY);
+        B.resize(mGridX * mGridY);
+        r.resize(mGridX * mGridY);
+        p.resize(mGridX * mGridY);
+        Ap.resize(mGridX * mGridY);
+        ResOpt.resize(mGridX * mGridY);
+
+        for (size_t i = 0; i < mGridX * mGridY; i++) {
+            mDivergence[i] = 0.0;
+            B[i] = 0.0;
+            r[i] = 0.0;
+            p[i] = 0.0;
+            Ap[i] = 0.0;
+            ResOpt[i] = 0.0;
+        }
+        //---Divergence---//
+
         for (auto& iRow : Elevation) {
             iRow.resize(mGridY);
         }
@@ -284,14 +302,133 @@ public:
 
             for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
                 for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
-                    Elevation[i - mOffsetXL][j - mOffsetYU] = (*CurrentData)[i][j][0] + Bottom[i][j];
+//                    Elevation[i - mOffsetXL][j - mOffsetYU] = (*CurrentData)[i][j][0] + Bottom[i][j];
+                    double dBx_dx = (
+                            (*CurrentData)[i + 1][j][3] / (*CurrentData)[i + 1][j][0] -
+                            (*CurrentData)[i - 1][j][3] / (*CurrentData)[i - 1][j][0]
+                            ) / (mStepX * 2.0);
+                    double dBy_dy = (
+                            (*CurrentData)[i][j + 1][4] / (*CurrentData)[i][j + 1][0] -
+                            (*CurrentData)[i][j - 1][4] / (*CurrentData)[i][j - 1][0]
+                            ) / (mStepY * 2.0);
+
+                    Elevation[i - mOffsetXL][j - mOffsetYU] = dBx_dx + dBy_dy;
                 }
             }
 
-//            double dhBx_dx = ((*CurrentData)[130][27][3] - (*CurrentData)[128][27][3]) / (mStepX * 2.0);
-//            double dhBy_dy = ((*CurrentData)[129][28][3] - (*CurrentData)[129][26][3]) / (mStepY * 2.0);
-//
+        for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
+            for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
+                double dBx_dx = (
+                        (*CurrentData)[i + 1][j][3] / (*CurrentData)[i + 1][j][0] -
+                        (*CurrentData)[i - 1][j][3] / (*CurrentData)[i - 1][j][0]
+                        ) / (mStepX * 2.0);
+                double dBy_dy = (
+                        (*CurrentData)[i][j + 1][4] / (*CurrentData)[i][j + 1][0] -
+                        (*CurrentData)[i][j - 1][4] / (*CurrentData)[i][j - 1][0]
+                        ) / (mStepY * 2.0);
+
+                B[(i - mOffsetXL) * mGridY + j - mOffsetYU] = -(dBx_dx + dBy_dy) * mStepX * mStepX;
+                mDivergence[(i - mOffsetXL) * mGridY + j - mOffsetYU] = 0.0;
+            }
+        }
+
+        //---Poisson---//
+
+        double rsold = 0.0;
+        AxOpt(mDivergence, ResOpt, mGridY, mGridX);
+
+        for (size_t i = 0; i < mGridX * mGridY; i++) {
+            r[i] = B[i] - ResOpt[i];
+            p[i] = r[i];
+
+            rsold += r[i] * r[i];
+        }
+
+        for (size_t i = 0; i < mGridX * mGridY; i++) {
+            AxOpt(p, Ap, mGridY, mGridX);
+            double C = 0.0;
+
+            for (size_t j = 0; j < Ap.size(); j++) {
+                C += p[j] * Ap[j];
+
+//                std::cout << p[j] << " " << Ap[j] << std::endl;
+            }
+
+            double Alpha = rsold / C;
+
+            for (size_t j = 0; j < Ap.size(); j++) {
+                mDivergence[j] += Alpha * p[j];
+                r[j] -= Alpha * Ap[j];
+            }
+
+            double rsnew = 0.0;
+
+            for (size_t j = 0; j < Ap.size(); j++) {
+                rsnew += r[j] * r[j];
+            }
+
+            if (sqrt(rsnew) < 1.0e-10) {
+                break;
+            }
+
+            double Ratio = rsnew / rsold;
+
+            for (size_t j = 0; j < Ap.size(); j++) {
+                p[j] = r[j] + Ratio * p[j];
+            }
+
+            rsold = rsnew;
+
+//            std::cout << i << ": " << (mDivergence[6350] - mDivergence[6349]) / mStepX << " " << Ratio << std::endl;
+        }
+
+        for (size_t i = mOffsetXL + 1; i < mGridX + mOffsetXL - 1; i++) {
+            for (size_t j = mOffsetYU + 1; j < mGridY + mOffsetYU - 1; j++) {
+                (*CurrentData)[i][j][3] = (
+                        (*CurrentData)[i][j][3] / (*CurrentData)[i][j][0] -
+                        (mDivergence[(i - mOffsetXL + 1) * mGridY + j - mOffsetYU] - mDivergence[(i - mOffsetXL - 1) * mGridY + j - mOffsetYU]) / 2.0 / mStepX
+                        ) * (*CurrentData)[i][j][0];
+                (*CurrentData)[i][j][4] = (
+                        (*CurrentData)[i][j][4] / (*CurrentData)[i][j][0] -
+                        (mDivergence[(i - mOffsetXL) * mGridY + j - mOffsetYU + 1] - mDivergence[(i - mOffsetXL) * mGridY + j - mOffsetYU - 1]) / 2.0 / mStepX
+                        ) * (*CurrentData)[i][j][0];
+            }
+        }
+
+        for (size_t j = mOffsetYU + 1; j < mGridY + mOffsetYU - 1; j++) {
+            (*CurrentData)[mOffsetXL][j][3] = (
+                    (*CurrentData)[mOffsetXL][j][3] / (*CurrentData)[mOffsetXL][j][0] -
+                    (mDivergence[mGridY + j - mOffsetYU] - mDivergence[(mGridX - 1) * mGridY + j - mOffsetYU]) / 2.0 / mStepX
+                    ) * (*CurrentData)[mOffsetXL][j][0];
+            (*CurrentData)[mGridX + mOffsetXL - 1][j][3] = (
+                    (*CurrentData)[mGridX + mOffsetXL - 1][j][3] / (*CurrentData)[mGridX + mOffsetXL - 1][j][0] -
+                    (mDivergence[mGridY + j - mOffsetYU] - mDivergence[(mGridX + mOffsetXL - 2) * mGridY + j - mOffsetYU]) / 2.0 / mStepX
+                    ) * (*CurrentData)[mGridX + mOffsetXL - 1][j][0];
+        }
+
+        for (size_t i = mOffsetXL + 1; i < mGridX + mOffsetXL - 1; i++) {
+            (*CurrentData)[i][mOffsetYU][4] = (
+                    (*CurrentData)[i][mOffsetYU][4] / (*CurrentData)[i][mOffsetYU][0] -
+                    (mDivergence[(i - mOffsetXL) * mGridY + 1] - mDivergence[(i - mOffsetXL) * mGridY]) / mStepX
+                    ) * (*CurrentData)[i][mOffsetYU][0];
+            (*CurrentData)[i][mGridY + mOffsetYU - 1][4] = (
+                    (*CurrentData)[i][mGridY + mOffsetYU - 1][4] / (*CurrentData)[i][mGridY + mOffsetYU - 1][0] -
+                    (mDivergence[(i - mOffsetXL) * mGridY + mGridY - 1] - mDivergence[(i - mOffsetXL) * mGridY + mGridY - 2]) / mStepX
+                    ) * (*CurrentData)[i][mGridY + mOffsetYU - 1][0];
+        }
+
 //            std::cout << dhBx_dx + dhBy_dy + mVertField[27] << std::endl;
+//        }
+
+//        for (size_t i = 0; i < mGridX; i++) {
+////            Elevation[i][0] = mDivergence[i * mGridY] / 2.0 / mStepX;
+//
+//            for (size_t j = 0; j < mGridY; j++) {
+////                Elevation[i][j] = (mDivergence[i * mGridY + j + 1] - mDivergence[i * mGridY + j - 1]) / 2.0 / mStepX;
+//                Elevation[i][j] = mDivergence[i * mGridY + j];
+//            }
+//
+////            Elevation[i][mGridY - 1] = mDivergence[i * mGridY + mGridY - 1] / 2.0 / mStepX;
 //        }
     }
     void save() {
@@ -343,6 +480,15 @@ private:
     double TimePassed = 0.0;
 
     std::vector <std::vector <double>> Elevation;
+
+    //---Divergence---//
+    std::vector <double> mDivergence;
+    std::vector <double> B;
+    std::vector <double> r;
+    std::vector <double> p;
+    std::vector <double> Ap;
+    std::vector <double> ResOpt;
+    //---Divergence---//
 
     //----------//
 
@@ -747,6 +893,36 @@ private:
     double extrapolate(double tOffset_1, double tOffset_2, double tOffset_3, double tOffset_4) {
         return 4.0 * tOffset_1 - 6.0 * tOffset_2 + 4.0 * tOffset_3 - tOffset_4;
     }
+    void AxOpt(const std::vector <double>& tMult, std::vector <double>& tRes, size_t tRows, size_t tColumns) {
+        for (size_t i = 0; i < tRows * tColumns; i++) {
+            tRes[i] = 0.0;
+        }
+
+        for (size_t i = 0; i < tRows * tColumns; i++) {
+            tRes[i] += 4 * tMult[i];
+        }
+
+//        for (size_t i = 0; i < tRows * tColumns; i++) {
+//            if ((i + 1) % tRows == 0) {
+//                tRes[i - tRows + 1] -= tMult[i];
+//                tRes[i] -= tMult[i - tRows + 1];
+//            }
+//        }
+
+        for (size_t i = 1; i < tRows * tColumns; i++) {
+            if (i % tRows == 0) {
+                continue;
+            }
+
+            tRes[i - 1] -= tMult[i];
+            tRes[i] -= tMult[i - 1];
+        }
+
+        for (size_t i = tRows; i < tRows * tColumns; i++) {
+            tRes[i - tRows] -= tMult[i];
+            tRes[i] -= tMult[i - tRows];
+        }
+    }
 };
 
 int main(int argc, char** argv) {
@@ -784,11 +960,10 @@ int main(int argc, char** argv) {
                 }
             }
 
-//            for (int i = 0; i < 100; i++) {
-                Test.solve();
-//            }
+            Test.solve();
 
             Rend.drawFrame(Test.getElevation());
+//            break;
         }
 
         //----------//

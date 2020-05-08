@@ -388,11 +388,13 @@ void Renderer::loadPlot(const std::string& tPath) {
 void Renderer::fillGrid(uint16_t tSizeX, uint16_t tSizeY) {
     Vertices.resize(tSizeX * tSizeY);
 
-    mRed    = 10500 - 500.0 / 3.0;
-    mYellow = 10500 - 1000.0 / 3.0;
-    mGreen  = 10500 - 500;
-    mCyan   = 9500 + 1000.0 / 3.0;
-    mBlue   = 9500 + 500.0 / 3.0;
+    double ColorStep = (mDarkRed - mDarkBlue) / 6.0;
+
+    mRed    = mDarkRed - ColorStep;
+    mYellow = mDarkRed - ColorStep * 2.0;
+    mGreen  = mDarkRed - ColorStep * 3.0;
+    mCyan   = mDarkBlue + ColorStep * 2.0;
+    mBlue   = mDarkBlue + ColorStep;
 
     for (uint16_t i = 0; i < tSizeX; i++) {
         for (uint16_t j = 0; j < tSizeY; j++) {
