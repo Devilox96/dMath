@@ -46,6 +46,16 @@ public:
         Ap.resize(mGridX * mGridY);
         ResOpt.resize(mGridX * mGridY);
 
+        ResGrid.resize(mGridX + mOffsetXL + mOffsetXR);
+
+        for (auto& iRow : ResGrid) {
+            iRow.resize(mGridY + mOffsetYU + mOffsetYD);
+
+            for (auto& iVal : iRow) {
+                iVal = 0.0;
+            }
+        }
+
         for (size_t i = 0; i < mGridX * mGridY; i++) {
             mDivergence[i] = 0.0;
             B[i] = 0.0;
@@ -117,7 +127,7 @@ public:
 //            mStepTime = 0.2 * mStepX / mMaxAlpha;
             TimePassed += mStepTime;
 
-            if (int(TimePassed) % (60 * 60) == 0) {
+            if (int(TimePassed) % (60 * 15) == 0) {
                 std::cout << "Time: " << TimePassed / 3600 / 24 << " Step - " << mStepTime << " Alpha - " << mMaxAlpha
                           << std::endl;
             }
@@ -302,17 +312,23 @@ public:
 
             for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
                 for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
-//                    Elevation[i - mOffsetXL][j - mOffsetYU] = (*CurrentData)[i][j][0] + Bottom[i][j];
-                    double dBx_dx = (
-                            (*CurrentData)[i + 1][j][3] / (*CurrentData)[i + 1][j][0] -
-                            (*CurrentData)[i - 1][j][3] / (*CurrentData)[i - 1][j][0]
-                            ) / (mStepX * 2.0);
-                    double dBy_dy = (
-                            (*CurrentData)[i][j + 1][4] / (*CurrentData)[i][j + 1][0] -
-                            (*CurrentData)[i][j - 1][4] / (*CurrentData)[i][j - 1][0]
-                            ) / (mStepY * 2.0);
+                    Elevation[i - mOffsetXL][j - mOffsetYU] = (*CurrentData)[i][j][0] + Bottom[i][j];
 
-                    Elevation[i - mOffsetXL][j - mOffsetYU] = dBx_dx + dBy_dy;
+//                    double dBx_dx = (
+//                            (*CurrentData)[i + 1][j][3] / (*CurrentData)[i + 1][j][0] -
+//                            (*CurrentData)[i - 1][j][3] / (*CurrentData)[i - 1][j][0]
+//                            ) / (mStepX * 2.0);
+//                    double dBy_dy = (
+//                            (*CurrentData)[i][j + 1][4] / (*CurrentData)[i][j + 1][0] -
+//                            (*CurrentData)[i][j - 1][4] / (*CurrentData)[i][j - 1][0]
+//                            ) / (mStepY * 2.0);
+//
+//                    Elevation[i - mOffsetXL][j - mOffsetYU] = dBx_dx + dBy_dy;
+
+                    double Bx2 = pow((*CurrentData)[i][j][3] / (*CurrentData)[i][j][0], 2.0);
+                    double By2 = pow((*CurrentData)[i][j][4] / (*CurrentData)[i][j][0], 2.0);
+
+                    Elevation[i - mOffsetXL][j - mOffsetYU] = sqrt(Bx2 + By2);
                 }
             }
 
@@ -382,54 +398,102 @@ public:
 //            std::cout << i << ": " << (mDivergence[6350] - mDivergence[6349]) / mStepX << " " << Ratio << std::endl;
         }
 
+        for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
+            for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
+                ResGrid[i][j] = mDivergence[(i - mOffsetXL) * mGridY + j - mOffsetYU];
+            }
+        }
+
         for (size_t i = mOffsetXL + 1; i < mGridX + mOffsetXL - 1; i++) {
             for (size_t j = mOffsetYU + 1; j < mGridY + mOffsetYU - 1; j++) {
-                (*CurrentData)[i][j][3] = (
+                (*CurrentData)[i][j][3] =
                         (*CurrentData)[i][j][3] / (*CurrentData)[i][j][0] -
-                        (mDivergence[(i - mOffsetXL + 1) * mGridY + j - mOffsetYU] - mDivergence[(i - mOffsetXL - 1) * mGridY + j - mOffsetYU]) / 2.0 / mStepX
-                        ) * (*CurrentData)[i][j][0];
-                (*CurrentData)[i][j][4] = (
+                        (ResGrid[i + 1][j] - ResGrid[i - 1][j]) / (2.0 * mStepX) *
+                        (*CurrentData)[i][j][0];
+                (*CurrentData)[i][j][4] =
                         (*CurrentData)[i][j][4] / (*CurrentData)[i][j][0] -
-                        (mDivergence[(i - mOffsetXL) * mGridY + j - mOffsetYU + 1] - mDivergence[(i - mOffsetXL) * mGridY + j - mOffsetYU - 1]) / 2.0 / mStepX
-                        ) * (*CurrentData)[i][j][0];
+                        (ResGrid[i][j + 1] - ResGrid[i][j - 1]) / (2.0 * mStepX) *
+                        (*CurrentData)[i][j][0];
             }
         }
 
         for (size_t j = mOffsetYU + 1; j < mGridY + mOffsetYU - 1; j++) {
-            (*CurrentData)[mOffsetXL][j][3] = (
+            (*CurrentData)[mOffsetXL][j][3] =
                     (*CurrentData)[mOffsetXL][j][3] / (*CurrentData)[mOffsetXL][j][0] -
-                    (mDivergence[mGridY + j - mOffsetYU] - mDivergence[(mGridX - 1) * mGridY + j - mOffsetYU]) / 2.0 / mStepX
-                    ) * (*CurrentData)[mOffsetXL][j][0];
-            (*CurrentData)[mGridX + mOffsetXL - 1][j][3] = (
-                    (*CurrentData)[mGridX + mOffsetXL - 1][j][3] / (*CurrentData)[mGridX + mOffsetXL - 1][j][0] -
-                    (mDivergence[mGridY + j - mOffsetYU] - mDivergence[(mGridX + mOffsetXL - 2) * mGridY + j - mOffsetYU]) / 2.0 / mStepX
-                    ) * (*CurrentData)[mGridX + mOffsetXL - 1][j][0];
+                    ResGrid[mOffsetXL + 1][j] / (2.0 * mStepX) *
+                    (*CurrentData)[mOffsetXL][j][0];
+            (*CurrentData)[mGridX + mOffsetXL - 1][j][3] =
+                    (*CurrentData)[mGridX + mOffsetXL - 1][j][3] / (*CurrentData)[mGridX + mOffsetXL - 1][j][0] +
+                    ResGrid[mGridX + mOffsetXL - 2][j] / (2.0 * mStepX) *
+                    (*CurrentData)[mGridX + mOffsetXL - 1][j][0];
+
+            (*CurrentData)[mOffsetXL][j][4] =
+                    (*CurrentData)[mOffsetXL][j][4] / (*CurrentData)[mOffsetXL][j][0] -
+                    (ResGrid[mOffsetXL][j + 1] - ResGrid[mOffsetXL][j - 1]) / (2.0 * mStepY) *
+                    (*CurrentData)[mOffsetXL][j][0];
+            (*CurrentData)[mGridX + mOffsetXL - 1][j][4] =
+                    (*CurrentData)[mGridX + mOffsetXL - 1][j][4] / (*CurrentData)[mGridX + mOffsetXL - 1][j][0] -
+                    (ResGrid[mGridX + mOffsetXL - 1][j + 1] - ResGrid[mGridX + mOffsetXL - 1][j - 1]) / (2.0 * mStepY) *
+                    (*CurrentData)[mGridX + mOffsetXL - 1][j][0];
         }
 
         for (size_t i = mOffsetXL + 1; i < mGridX + mOffsetXL - 1; i++) {
-            (*CurrentData)[i][mOffsetYU][4] = (
+            (*CurrentData)[i][mOffsetYU][3] =
+                    (*CurrentData)[i][mOffsetYU][3] / (*CurrentData)[i][mOffsetYU][0] -
+                    (ResGrid[i + 1][mOffsetYU] - ResGrid[i - 1][mOffsetYU]) / (2.0 * mStepX) *
+                    (*CurrentData)[i][mOffsetYU][0];
+            (*CurrentData)[i][mGridY + mOffsetYU - 1][3] =
+                    (*CurrentData)[i][mGridY + mOffsetYU - 1][3] / (*CurrentData)[i][mGridY + mOffsetYU - 1][0] -
+                    (ResGrid[i + 1][mGridY + mOffsetYU - 1] - ResGrid[i - 1][mGridY + mOffsetYU - 1]) / (2.0 * mStepX) *
+                    (*CurrentData)[i][mGridY + mOffsetYU - 1][0];
+
+            (*CurrentData)[i][mOffsetYU][4] =
                     (*CurrentData)[i][mOffsetYU][4] / (*CurrentData)[i][mOffsetYU][0] -
-                    (mDivergence[(i - mOffsetXL) * mGridY + 1] - mDivergence[(i - mOffsetXL) * mGridY]) / mStepX
-                    ) * (*CurrentData)[i][mOffsetYU][0];
-            (*CurrentData)[i][mGridY + mOffsetYU - 1][4] = (
-                    (*CurrentData)[i][mGridY + mOffsetYU - 1][4] / (*CurrentData)[i][mGridY + mOffsetYU - 1][0] -
-                    (mDivergence[(i - mOffsetXL) * mGridY + mGridY - 1] - mDivergence[(i - mOffsetXL) * mGridY + mGridY - 2]) / mStepX
-                    ) * (*CurrentData)[i][mGridY + mOffsetYU - 1][0];
+                    ResGrid[i][mOffsetYU + 1] / (2.0 * mStepY) *
+                    (*CurrentData)[i][mOffsetYU][0];
+            (*CurrentData)[i][mGridY + mOffsetYU - 1][4] =
+                    (*CurrentData)[i][mGridY + mOffsetYU - 1][4] / (*CurrentData)[i][mGridY + mOffsetYU - 1][0] +
+                    ResGrid[i][mGridY + mOffsetYU - 2] / (2.0 * mStepY) *
+                    (*CurrentData)[i][mGridY + mOffsetYU - 1][0];
         }
 
-//            std::cout << dhBx_dx + dhBy_dy + mVertField[27] << std::endl;
-//        }
+        (*CurrentData)[mOffsetXL][mOffsetYU][3] =
+                (*CurrentData)[mOffsetXL][mOffsetYU][3] / (*CurrentData)[mOffsetXL][mOffsetYU][0] -
+                ResGrid[mOffsetXL + 1][mOffsetYU] / (2.0 * mStepX) *
+                (*CurrentData)[mOffsetXL][mOffsetYU][0];
+        (*CurrentData)[mOffsetXL][mOffsetYU][4] =
+                (*CurrentData)[mOffsetXL][mOffsetYU][4] / (*CurrentData)[mOffsetXL][mOffsetYU][0] -
+                ResGrid[mOffsetXL][mOffsetYU + 1] / (2.0 * mStepY) *
+                (*CurrentData)[mOffsetXL][mOffsetYU][0];
 
-//        for (size_t i = 0; i < mGridX; i++) {
-////            Elevation[i][0] = mDivergence[i * mGridY] / 2.0 / mStepX;
-//
-//            for (size_t j = 0; j < mGridY; j++) {
-////                Elevation[i][j] = (mDivergence[i * mGridY + j + 1] - mDivergence[i * mGridY + j - 1]) / 2.0 / mStepX;
-//                Elevation[i][j] = mDivergence[i * mGridY + j];
-//            }
-//
-////            Elevation[i][mGridY - 1] = mDivergence[i * mGridY + mGridY - 1] / 2.0 / mStepX;
-//        }
+        (*CurrentData)[mGridX + mOffsetXL - 1][mOffsetYU][3] =
+                (*CurrentData)[mGridX + mOffsetXL - 1][mOffsetYU][3] / (*CurrentData)[mGridX + mOffsetXL - 1][mOffsetYU][0] +
+                ResGrid[mGridX + mOffsetXL - 2][mOffsetYU] / (2.0 * mStepX) *
+                (*CurrentData)[mGridX + mOffsetXL - 1][mOffsetYU][0];
+        (*CurrentData)[mGridX + mOffsetXL - 1][mOffsetYU][4] =
+                (*CurrentData)[mGridX + mOffsetXL - 1][mOffsetYU][4] / (*CurrentData)[mGridX + mOffsetXL - 1][mOffsetYU][0] -
+                ResGrid[mGridX + mOffsetXL - 1][mOffsetYU + 1] / (2.0 * mStepY) *
+                (*CurrentData)[mGridX + mOffsetXL - 1][mOffsetYU][0];
+
+        (*CurrentData)[mOffsetXL][mGridY + mOffsetYU - 1][3] =
+                (*CurrentData)[mOffsetXL][mGridY + mOffsetYU - 1][3] / (*CurrentData)[mOffsetXL][mGridY + mOffsetYU - 1][0] -
+                ResGrid[mOffsetXL + 1][mGridY + mOffsetYU - 1] / (2.0 * mStepX) *
+                (*CurrentData)[mOffsetXL][mGridY + mOffsetYU - 1][0];
+        (*CurrentData)[mOffsetXL][mGridY + mOffsetYU - 1][4] =
+                (*CurrentData)[mOffsetXL][mGridY + mOffsetYU - 1][4] / (*CurrentData)[mOffsetXL][mGridY + mOffsetYU - 1][0] +
+                ResGrid[mOffsetXL][mGridY + mOffsetYU - 2] / (2.0 * mStepY) *
+                (*CurrentData)[mOffsetXL][mGridY + mOffsetYU - 1][0];
+
+        (*CurrentData)[mGridX + mOffsetXL - 1][mGridY + mOffsetYU - 1][3] =
+                (*CurrentData)[mGridX + mOffsetXL - 1][mGridY + mOffsetYU - 1][3] / (*CurrentData)[mGridX + mOffsetXL - 1][mGridY + mOffsetYU - 1][0] +
+                ResGrid[mGridX + mOffsetXL - 2][mGridY + mOffsetYU - 1] / (2.0 * mStepX) *
+                (*CurrentData)[mGridX + mOffsetXL - 1][mGridY + mOffsetYU - 1][0];
+        (*CurrentData)[mGridX + mOffsetXL - 1][mGridY + mOffsetYU - 1][4] =
+                (*CurrentData)[mGridX + mOffsetXL - 1][mGridY + mOffsetYU - 1][4] / (*CurrentData)[mGridX + mOffsetXL - 1][mGridY + mOffsetYU - 1][0] +
+                ResGrid[mGridX + mOffsetXL - 1][mGridY + mOffsetYU - 2] / (2.0 * mStepY) *
+                (*CurrentData)[mGridX + mOffsetXL - 1][mGridY + mOffsetYU - 1][0];
+
+        //----------//
     }
     void save() {
         for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
@@ -465,7 +529,7 @@ private:
 
     double mStepTime = 60.0;
 
-    double mTimeLimit = 10000;
+    double mTimeLimit = 92160;
 
     std::vector <std::vector <double>> Bottom;
     std::vector <double> mCorParam;
@@ -488,6 +552,8 @@ private:
     std::vector <double> p;
     std::vector <double> Ap;
     std::vector <double> ResOpt;
+
+    std::vector <std::vector <double>> ResGrid;
     //---Divergence---//
 
     //----------//
@@ -647,15 +713,29 @@ private:
             //---Bx---//
             
             //---By---//
-            (*TempData)[i][0][4] = mHorizFieldY[0] * (*TempData)[i][0][0];
-            (*TempData)[i][1][4] = mHorizFieldY[1] * (*TempData)[i][1][0];
+//            (*TempData)[i][0][4] = mHorizFieldY[0] * (*TempData)[i][0][0];
+//            (*TempData)[i][1][4] = mHorizFieldY[1] * (*TempData)[i][1][0];
+//
+//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][4] =
+//                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 1] *
+//                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
+//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] =
+//                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 2] *
+//                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
 
-            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][4] =
-                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 1] *
-                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
-            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] =
-                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 2] *
-                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
+            (*TempData)[i][1][4] = extrapolate(
+                    (*TempData)[i][mOffsetYU][4] / (*TempData)[i][mOffsetYU][0],
+                    (*TempData)[i][mOffsetYU + 1][4] / (*TempData)[i][mOffsetYU + 1][0],
+                    (*TempData)[i][mOffsetYU + 2][4] / (*TempData)[i][mOffsetYU + 2][0],
+                    (*TempData)[i][mOffsetYU + 3][4] / (*TempData)[i][mOffsetYU + 3][0]
+            ) * (*TempData)[i][1][0];
+
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] = extrapolate(
+                    (*TempData)[i][mGridY + mOffsetYU - 1][4] / (*TempData)[i][mGridY + mOffsetYU - 1][0],
+                    (*TempData)[i][mGridY + mOffsetYU - 2][4] / (*TempData)[i][mGridY + mOffsetYU - 2][0],
+                    (*TempData)[i][mGridY + mOffsetYU - 3][4] / (*TempData)[i][mGridY + mOffsetYU - 3][0],
+                    (*TempData)[i][mGridY + mOffsetYU - 4][4] / (*TempData)[i][mGridY + mOffsetYU - 4][0]
+            ) * (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
             //---By---//
             
             //---Psi---//
