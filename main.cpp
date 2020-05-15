@@ -15,8 +15,8 @@
 #include "Renderer.h"
 //-----------------------------//
 
-using dGrid = std::vector <std::vector <dVector <double, 6>>>;
-using dVec = dVector <double, 6>;
+using dGrid = std::vector <std::vector <dVector <double, 5>>>;
+using dVec = dVector <double, 5>;
 
 class Solver {
 public:
@@ -313,7 +313,7 @@ public:
             for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
                 for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
                     Elevation[i - mOffsetXL][j - mOffsetYU] = (*CurrentData)[i][j][0] + Bottom[i][j];
-
+//
 //                    double dBx_dx = (
 //                            (*CurrentData)[i + 1][j][3] / (*CurrentData)[i + 1][j][0] -
 //                            (*CurrentData)[i - 1][j][3] / (*CurrentData)[i - 1][j][0]
@@ -324,13 +324,15 @@ public:
 //                            ) / (mStepY * 2.0);
 //
 //                    Elevation[i - mOffsetXL][j - mOffsetYU] = dBx_dx + dBy_dy;
-
-                    double Bx2 = pow((*CurrentData)[i][j][3] / (*CurrentData)[i][j][0], 2.0);
-                    double By2 = pow((*CurrentData)[i][j][4] / (*CurrentData)[i][j][0], 2.0);
-
-                    Elevation[i - mOffsetXL][j - mOffsetYU] = sqrt(Bx2 + By2);
+//
+//                    double Bx2 = pow((*CurrentData)[i][j][3] / (*CurrentData)[i][j][0], 2.0);
+//                    double By2 = pow((*CurrentData)[i][j][4] / (*CurrentData)[i][j][0], 2.0);
+//
+//                    Elevation[i - mOffsetXL][j - mOffsetYU] = sqrt(By2);
                 }
             }
+
+        //---Poisson---//
 
         for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
             for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
@@ -347,8 +349,6 @@ public:
                 mDivergence[(i - mOffsetXL) * mGridY + j - mOffsetYU] = 0.0;
             }
         }
-
-        //---Poisson---//
 
         double rsold = 0.0;
         AxOpt(mDivergence, ResOpt, mGridY, mGridX);
@@ -529,7 +529,7 @@ private:
 
     double mStepTime = 60.0;
 
-    double mTimeLimit = 92160;
+    double mTimeLimit = 10000;
 
     std::vector <std::vector <double>> Bottom;
     std::vector <double> mCorParam;
@@ -560,8 +560,8 @@ private:
 
     const double mGrav  = 9.81;
     const double mCorParam_0 = 1.0e-04;
-    const double mBetaParam = 1.6e-11;
-//    const double mBetaParam = 0.0;
+//    const double mBetaParam = 1.6e-11;
+    const double mBetaParam = 0.0;
 
     //----------//
 
@@ -583,30 +583,33 @@ private:
         mVertField.resize(mGridY + mOffsetYU + mOffsetYD);
 
         for (size_t i = 0; i < mGridY + mOffsetYU + mOffsetYD; i++) {
-            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * i;
-            mVertField[i] = 1.27e-05 + 1.46e-06 * i - 1.38e-08 * pow(i, 2.0);
-//            mHorizFieldY[i] = 0.0;
+//            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * i;
+//            mVertField[i] = 1.27e-05 + 1.46e-06 * i - 1.38e-08 * pow(i, 2.0);
+//            mVertField[i] = 12.7 + 1.46 * i - 1.38e-02 * pow(i, 2.0);
+            mHorizFieldY[i] = 0.0;
 //            mVertField[i] = 0.0;
+            mVertField[i] = 21.0;
         }
     }
     void bottomFunc() {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_real_distribution <> dis(0.0, 500.0);
+        std::uniform_real_distribution <> dis(0.0, 250.0);
 
-        double StdX = 5.0 * mStepX;
-        double StdY = 5.0 * mStepY;
+        double StdX = 5 * mStepX;
+        double StdY = 5 * mStepY;
 
         double MeanX = int((mGridX + mOffsetXL + mOffsetXR) / 2) * mStepX;
         double MeanY = int((mGridY + mOffsetYU + mOffsetYD) / 2) * mStepY;
 
         for (size_t i = 0; i < mGridX + mOffsetXL + mOffsetXR; i++) {
             for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
-//                Bottom[i][j] = 0.0;
+                Bottom[i][j] = 0.0;
 //                Bottom[i][j] = dis(gen);
                 Bottom[i][j] = 4000 * exp(
                         -0.5 * pow((i * mStepX - MeanX) / StdX, 2.0)
                         -0.5 * pow((j * mStepY - MeanY) / StdY, 2.0));
+//                Bottom[i][j] = 4000 * pow(sin(i / 10.0), 2.0) + pow(sin(j / 10.0), 2.0);
             }
         }
     }
@@ -697,61 +700,64 @@ private:
             //---vy---//
 
             //---Bx---//
-            (*TempData)[i][1][3] = extrapolate(
-                    (*TempData)[i][mOffsetYU][3] / (*TempData)[i][mOffsetYU][0],
-                    (*TempData)[i][mOffsetYU + 1][3] / (*TempData)[i][mOffsetYU + 1][0],
-                    (*TempData)[i][mOffsetYU + 2][3] / (*TempData)[i][mOffsetYU + 2][0],
-                    (*TempData)[i][mOffsetYU + 3][3] / (*TempData)[i][mOffsetYU + 3][0]
-                    ) * (*TempData)[i][1][0];
+            (*TempData)[i][1][3] = 0.0;
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][3] = 0.0;
 
-            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][3] = extrapolate(
-                    (*TempData)[i][mGridY + mOffsetYU - 1][3] / (*TempData)[i][mGridY + mOffsetYU - 1][0],
-                    (*TempData)[i][mGridY + mOffsetYU - 2][3] / (*TempData)[i][mGridY + mOffsetYU - 2][0],
-                    (*TempData)[i][mGridY + mOffsetYU - 3][3] / (*TempData)[i][mGridY + mOffsetYU - 3][0],
-                    (*TempData)[i][mGridY + mOffsetYU - 4][3] / (*TempData)[i][mGridY + mOffsetYU - 4][0]
-                    ) * (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
+//            (*TempData)[i][1][3] = extrapolate(
+//                    (*TempData)[i][mOffsetYU][3] / (*TempData)[i][mOffsetYU][0],
+//                    (*TempData)[i][mOffsetYU + 1][3] / (*TempData)[i][mOffsetYU + 1][0],
+//                    (*TempData)[i][mOffsetYU + 2][3] / (*TempData)[i][mOffsetYU + 2][0],
+//                    (*TempData)[i][mOffsetYU + 3][3] / (*TempData)[i][mOffsetYU + 3][0]
+//                    ) * (*TempData)[i][1][0];
+//
+//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][3] = extrapolate(
+//                    (*TempData)[i][mGridY + mOffsetYU - 1][3] / (*TempData)[i][mGridY + mOffsetYU - 1][0],
+//                    (*TempData)[i][mGridY + mOffsetYU - 2][3] / (*TempData)[i][mGridY + mOffsetYU - 2][0],
+//                    (*TempData)[i][mGridY + mOffsetYU - 3][3] / (*TempData)[i][mGridY + mOffsetYU - 3][0],
+//                    (*TempData)[i][mGridY + mOffsetYU - 4][3] / (*TempData)[i][mGridY + mOffsetYU - 4][0]
+//                    ) * (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
             //---Bx---//
             
             //---By---//
-//            (*TempData)[i][0][4] = mHorizFieldY[0] * (*TempData)[i][0][0];
-//            (*TempData)[i][1][4] = mHorizFieldY[1] * (*TempData)[i][1][0];
+            (*TempData)[i][0][4] = mHorizFieldY[0] * (*TempData)[i][0][0];
+            (*TempData)[i][1][4] = mHorizFieldY[1] * (*TempData)[i][1][0];
+
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][4] =
+                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 1] *
+                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] =
+                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 2] *
+                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
 //
-//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][4] =
-//                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 1] *
-//                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
-//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] =
-//                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 2] *
-//                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
-
-            (*TempData)[i][1][4] = extrapolate(
-                    (*TempData)[i][mOffsetYU][4] / (*TempData)[i][mOffsetYU][0],
-                    (*TempData)[i][mOffsetYU + 1][4] / (*TempData)[i][mOffsetYU + 1][0],
-                    (*TempData)[i][mOffsetYU + 2][4] / (*TempData)[i][mOffsetYU + 2][0],
-                    (*TempData)[i][mOffsetYU + 3][4] / (*TempData)[i][mOffsetYU + 3][0]
-            ) * (*TempData)[i][1][0];
-
-            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] = extrapolate(
-                    (*TempData)[i][mGridY + mOffsetYU - 1][4] / (*TempData)[i][mGridY + mOffsetYU - 1][0],
-                    (*TempData)[i][mGridY + mOffsetYU - 2][4] / (*TempData)[i][mGridY + mOffsetYU - 2][0],
-                    (*TempData)[i][mGridY + mOffsetYU - 3][4] / (*TempData)[i][mGridY + mOffsetYU - 3][0],
-                    (*TempData)[i][mGridY + mOffsetYU - 4][4] / (*TempData)[i][mGridY + mOffsetYU - 4][0]
-            ) * (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
+//            (*TempData)[i][1][4] = extrapolate(
+//                    (*TempData)[i][mOffsetYU][4] / (*TempData)[i][mOffsetYU][0],
+//                    (*TempData)[i][mOffsetYU + 1][4] / (*TempData)[i][mOffsetYU + 1][0],
+//                    (*TempData)[i][mOffsetYU + 2][4] / (*TempData)[i][mOffsetYU + 2][0],
+//                    (*TempData)[i][mOffsetYU + 3][4] / (*TempData)[i][mOffsetYU + 3][0]
+//            ) * (*TempData)[i][1][0];
+//
+//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] = extrapolate(
+//                    (*TempData)[i][mGridY + mOffsetYU - 1][4] / (*TempData)[i][mGridY + mOffsetYU - 1][0],
+//                    (*TempData)[i][mGridY + mOffsetYU - 2][4] / (*TempData)[i][mGridY + mOffsetYU - 2][0],
+//                    (*TempData)[i][mGridY + mOffsetYU - 3][4] / (*TempData)[i][mGridY + mOffsetYU - 3][0],
+//                    (*TempData)[i][mGridY + mOffsetYU - 4][4] / (*TempData)[i][mGridY + mOffsetYU - 4][0]
+//            ) * (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
             //---By---//
             
             //---Psi---//
-            (*TempData)[i][1][5] = extrapolate(
-                    (*TempData)[i][mOffsetYU][5] / (*TempData)[i][mOffsetYU][0],
-                    (*TempData)[i][mOffsetYU + 1][5] / (*TempData)[i][mOffsetYU + 1][0],
-                    (*TempData)[i][mOffsetYU + 2][5] / (*TempData)[i][mOffsetYU + 2][0],
-                    (*TempData)[i][mOffsetYU + 3][5] / (*TempData)[i][mOffsetYU + 3][0]
-                    ) * (*TempData)[i][1][0];
-
-            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][5] = extrapolate(
-                    (*TempData)[i][mGridY + mOffsetYU - 1][5] / (*TempData)[i][mGridY + mOffsetYU - 1][0],
-                    (*TempData)[i][mGridY + mOffsetYU - 2][5] / (*TempData)[i][mGridY + mOffsetYU - 2][0],
-                    (*TempData)[i][mGridY + mOffsetYU - 3][5] / (*TempData)[i][mGridY + mOffsetYU - 3][0],
-                    (*TempData)[i][mGridY + mOffsetYU - 4][5] / (*TempData)[i][mGridY + mOffsetYU - 4][0]
-                    ) * (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
+//            (*TempData)[i][1][5] = extrapolate(
+//                    (*TempData)[i][mOffsetYU][5] / (*TempData)[i][mOffsetYU][0],
+//                    (*TempData)[i][mOffsetYU + 1][5] / (*TempData)[i][mOffsetYU + 1][0],
+//                    (*TempData)[i][mOffsetYU + 2][5] / (*TempData)[i][mOffsetYU + 2][0],
+//                    (*TempData)[i][mOffsetYU + 3][5] / (*TempData)[i][mOffsetYU + 3][0]
+//                    ) * (*TempData)[i][1][0];
+//
+//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][5] = extrapolate(
+//                    (*TempData)[i][mGridY + mOffsetYU - 1][5] / (*TempData)[i][mGridY + mOffsetYU - 1][0],
+//                    (*TempData)[i][mGridY + mOffsetYU - 2][5] / (*TempData)[i][mGridY + mOffsetYU - 2][0],
+//                    (*TempData)[i][mGridY + mOffsetYU - 3][5] / (*TempData)[i][mGridY + mOffsetYU - 3][0],
+//                    (*TempData)[i][mGridY + mOffsetYU - 4][5] / (*TempData)[i][mGridY + mOffsetYU - 4][0]
+//                    ) * (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
             //---Psi---//
         }
         
@@ -794,8 +800,8 @@ private:
                         0.0,
                         0.0,
                         0.0,
-                        TempHeight * mHorizFieldY[j],
-                        0.0
+                        TempHeight * mHorizFieldY[j]
+//                        0.0
                         );
             }
         }
@@ -835,9 +841,10 @@ private:
                 tVal[1],
                 (tVal[1] * tVal[1] - tVal[3] * tVal[3]) / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
                 (tVal[1] * tVal[2] - tVal[3] * tVal[4]) / tVal[0],
-                tVal[5],
-                -(tVal[1] * tVal[4] - tVal[2] * tVal[3]) / tVal[0],
-                mMaxAlpha * mMaxAlpha * tVal[3]
+                0.0,
+//                tVal[5],
+                -(tVal[1] * tVal[4] - tVal[2] * tVal[3]) / tVal[0]
+//                mMaxAlpha * mMaxAlpha * tVal[3]
         );
     }
     dVec funcY(const dVec& tVal) {
@@ -846,8 +853,9 @@ private:
                 (tVal[1] * tVal[2] - tVal[3] * tVal[4]) / tVal[0],
                 (tVal[2] * tVal[2] - tVal[4] * tVal[4]) / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
                 -(tVal[2] * tVal[3] - tVal[1] * tVal[4]) / tVal[0],
-                tVal[5],
-                mMaxAlpha * mMaxAlpha * tVal[4]
+                0.0
+//                tVal[5],
+//                mMaxAlpha * mMaxAlpha * tVal[4]
         );
     }
     dVec source(int tPosX, int tPosY) {
@@ -884,8 +892,9 @@ private:
                 -mCorParam[tPosY] * (*CurrentData)[tPosX][tPosY][1] -
                 mGrav * (*CurrentData)[tPosX][tPosY][0] * dh_dy,
                 Bz * vx,
-                Bz * vy,
-                -mMaxAlpha * mMaxAlpha * Bz
+                Bz * vy
+//                Bz * vy,
+//                -mMaxAlpha * mMaxAlpha * Bz
                 );
     }
     dVec viscosity(int tPosX, int tPosY) {
@@ -915,7 +924,7 @@ private:
                 (*CurrentData)[tPosX][tPosY][0] * (v_x_xx + v_x_yy),
                 (*CurrentData)[tPosX][tPosY][0] * (v_y_xx + v_y_yy),
                 0.0,
-                0.0,
+//                0.0,
                 0.0);
     }
 
@@ -931,7 +940,7 @@ private:
         dVec fPlus(0.0, 0.0, 0.0, 0.0, 0.0);
         dVec fMinus(0.0, 0.0, 0.0, 0.0, 0.0);
 
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 5; i++) {
             double Beta0 = pow(tPosVal_minus_1[i] - tPosVal[i], 2.0);
             double Beta1 = pow(tPosVal[i] - tPosVal_plus_1[i], 2.0);
 
@@ -949,7 +958,7 @@ private:
                     Omega1 * (0.5 * tPosVal[i] + 0.5 * tPosVal_plus_1[i]);
         }
 
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 5; i++) {
             double Beta0 = pow(tNegVal[i] - tNegVal_plus_1[i], 2.0);
             double Beta1 = pow(tNegVal_plus_1[i] - tNegVal_plus_2[i], 2.0);
 
@@ -1028,6 +1037,8 @@ int main(int argc, char** argv) {
 
     try {
         Renderer Rend(Window, true);
+        int Steps = 0;
+        int Limit = 10000;
 
         while (Run) {
             while (SDL_PollEvent(&Event)) {
@@ -1040,7 +1051,14 @@ int main(int argc, char** argv) {
                 }
             }
 
-            Test.solve();
+            if (Steps < Limit) {
+                Test.solve();
+                Steps++;
+
+                if (Steps == Limit) {
+                    std::cout << std::endl << "Calculations finished!" << std::endl;
+                }
+            }
 
             Rend.drawFrame(Test.getElevation());
 //            break;
