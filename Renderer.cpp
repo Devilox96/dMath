@@ -2,7 +2,8 @@
 //-----------------------------//
 Renderer::Renderer(SDL_Window* tWindow, bool tDebug) : mWindow(tWindow), mDebug(tDebug) {
     loadPlot("Amplitude2.dat");
-    fillGrid(254, 50);
+    fillGrid(360, 50);
+    fillArrows(42, 10);
 
     setLayers();
     setExtensions();
@@ -37,6 +38,7 @@ Renderer::~Renderer() {
     }
 
     vkDestroyPipeline(mDevice, mPipeline, nullptr);
+    vkDestroyPipeline(mDevice, mArrowPipeline, nullptr);
     vkDestroyPipelineLayout(mDevice, mLayout, nullptr);
     vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 
@@ -52,6 +54,12 @@ Renderer::~Renderer() {
     vkDestroyBuffer(mDevice, mVertexBuffer, nullptr);
     vkFreeMemory(mDevice, mVertexBufferMemory, nullptr);
 
+    vkDestroyBuffer(mDevice, mIndexBufferLines, nullptr);
+    vkFreeMemory(mDevice, mIndexBufferMemoryLines, nullptr);
+
+    vkDestroyBuffer(mDevice, mVertexBufferLines, nullptr);
+    vkFreeMemory(mDevice, mVertexBufferMemoryLines, nullptr);
+
     vkDestroyDevice(mDevice, nullptr);
     destroyDebug();
     vkDestroySurfaceKHR(mInstance, mSurface, nullptr);
@@ -59,10 +67,13 @@ Renderer::~Renderer() {
     vkDestroyInstance(mInstance, nullptr);
 }
 //-----------------------------//
-void Renderer::drawFrame(const std::vector <std::vector <double>>& tData) {
+void Renderer::drawFrame(
+        const std::vector <std::vector <double>>& tData,
+        const std::vector <std::vector <double>>& tDataLinesX,
+        const std::vector <std::vector <double>>& tDataLinesY) {
     vkWaitForFences(mDevice, 1, &mFences[mCurrentFrame], VK_TRUE, UINT64_MAX);
 
-    uint16_t tSizeX = 254;
+    uint16_t tSizeX = 360;
     uint16_t tSizeY = 50;
     
     for (uint16_t i = 0; i < tSizeX; i++) {
@@ -111,6 +122,41 @@ void Renderer::drawFrame(const std::vector <std::vector <double>>& tData) {
         memcpy(Data, Vertices.data(), size_t(BufferSize));
     }
     vkUnmapMemory(mDevice, mVertexBufferMemory);
+
+    //----------//
+
+    tSizeX = 42;
+    tSizeY = 10;
+
+//    float Mult = 5.0e+07;
+    float Mult = 2.5e+05;
+
+    for (uint16_t i = 0; i < tSizeX; i++) {
+        for (uint16_t j = 0; j < tSizeY * 2; j += 2) {
+            VerticesLines[j * tSizeX + i].pos[0] = -1 + float(i) / float(tSizeX - 1) * 2 + 1.0 / float(tSizeX - 1);
+            VerticesLines[j * tSizeX + i].pos[1] = -1 + float(j / 2) / float(tSizeY - 1) * 2 + 1.0 / float(tSizeY - 1);
+
+            VerticesLines[j * tSizeX + i].color[0] = 0.0f;
+            VerticesLines[j * tSizeX + i].color[1] = 0.0f;
+            VerticesLines[j * tSizeX + i].color[2] = 0.0f;
+
+            VerticesLines[(j + 1) * tSizeX + i].pos[0] = -1 + float(i) / float(tSizeX - 1) * 2 + 1.0 / float(tSizeX - 1) + tDataLinesX[i][j / 2] * Mult / float(tSizeX - 1);
+            VerticesLines[(j + 1) * tSizeX + i].pos[1] = -1 + float(j / 2) / float(tSizeY - 1) * 2 + 1.0 / float(tSizeY - 1) - tDataLinesY[i][j / 2] * Mult / float(tSizeY - 1);
+
+            VerticesLines[(j + 1) * tSizeX + i].color[0] = 0.7f;
+            VerticesLines[(j + 1) * tSizeX + i].color[1] = 0.0f;
+            VerticesLines[(j + 1) * tSizeX + i].color[2] = 0.7f;
+        }
+    }
+
+    VkDeviceSize BufferSizeLines = sizeof(float) * 5 * VerticesLines.size();
+
+    void* DataLines;
+    vkMapMemory(mDevice, mVertexBufferMemoryLines, 0, BufferSizeLines, 0, &DataLines);
+    {
+        memcpy(DataLines, VerticesLines.data(), size_t(BufferSizeLines));
+    }
+    vkUnmapMemory(mDevice, mVertexBufferMemoryLines);
 
     //----------//
 
@@ -231,6 +277,7 @@ void Renderer::reinitSwapchain() {
             mCommandBuffers.data());
 
     vkDestroyPipeline(mDevice, mPipeline, nullptr);
+    vkDestroyPipeline(mDevice, mArrowPipeline, nullptr);
     vkDestroyPipelineLayout(mDevice, mLayout, nullptr);
     vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 
@@ -384,6 +431,20 @@ void Renderer::loadPlot(const std::string& tPath) {
     }
 
     File.close();
+
+    //----------//
+
+    for (size_t i = 0; i < 10; i++) {
+        mDataLinesX.emplace_back(std::vector <double>());
+        mDataLinesY.emplace_back(std::vector <double>());
+
+        for (size_t j = 0; j < 42; j++) {
+            mDataLinesX[i].emplace_back(1);
+            mDataLinesY[i].emplace_back(1);
+        }
+    }
+
+    //----------//
 }
 void Renderer::fillGrid(uint16_t tSizeX, uint16_t tSizeY) {
     Vertices.resize(tSizeX * tSizeY);
@@ -445,6 +506,34 @@ void Renderer::fillGrid(uint16_t tSizeX, uint16_t tSizeY) {
             Indices.emplace_back((j + 1) * tSizeX + i);
             Indices.emplace_back(j * tSizeX + (i + 1));
             Indices.emplace_back((j + 1) * tSizeX + (i + 1));
+        }
+    }
+}
+void Renderer::fillArrows(uint16_t tSizeX, uint16_t tSizeY) {
+    VerticesLines.resize(tSizeX * tSizeY * 2);
+
+    for (uint16_t i = 0; i < tSizeX; i++) {
+        for (uint16_t j = 0; j < tSizeY * 2; j += 2) {
+            VerticesLines[j * tSizeX + i].pos[0] = -1 + float(i) / float(tSizeX - 1) * 2 + 1.0 / float(tSizeX - 1);
+            VerticesLines[j * tSizeX + i].pos[1] = -1 + float(j / 2) / float(tSizeY - 1) * 2 + 1.0 / float(tSizeY - 1);
+
+            VerticesLines[j * tSizeX + i].color[0] = 0.0f;
+            VerticesLines[j * tSizeX + i].color[1] = 0.0f;
+            VerticesLines[j * tSizeX + i].color[2] = 0.0f;
+
+            VerticesLines[(j + 1) * tSizeX + i].pos[0] = -1 + float(i) / float(tSizeX - 1) * 2 + 1.0 / float(tSizeX - 1) + mDataLinesX[j / 2][i] / float(tSizeX - 1);
+            VerticesLines[(j + 1) * tSizeX + i].pos[1] = -1 + float(j / 2) / float(tSizeY - 1) * 2 + 1.0 / float(tSizeY - 1) + mDataLinesY[j / 2][i] / float(tSizeY - 1);
+
+            VerticesLines[(j + 1) * tSizeX + i].color[0] = 0.7f;
+            VerticesLines[(j + 1) * tSizeX + i].color[1] = 0.0f;
+            VerticesLines[(j + 1) * tSizeX + i].color[2] = 0.7f;
+        }
+    }
+
+    for (uint16_t i = 0; i < tSizeX; i++) {
+        for (uint16_t j = 0; j < tSizeY * 2 - 1; j += 2) {
+            IndicesLines.emplace_back(j * tSizeX + i);
+            IndicesLines.emplace_back((j + 1) * tSizeX + i);
         }
     }
 }
@@ -854,6 +943,16 @@ void Renderer::initGraphicsPipeline() {
     InputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     InputAssembly.primitiveRestartEnable = VK_FALSE;
 
+    //----------//
+
+    VkPipelineInputAssemblyStateCreateInfo InputAssemblyLines = {};
+
+    InputAssemblyLines.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    InputAssemblyLines.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+    InputAssemblyLines.primitiveRestartEnable = VK_FALSE;
+
+    //----------//
+
     VkViewport Viewport = {};
 
     Viewport.x = 0.0f;
@@ -882,7 +981,7 @@ void Renderer::initGraphicsPipeline() {
     Rasterizer.depthBiasEnable = VK_FALSE;
     Rasterizer.rasterizerDiscardEnable = VK_FALSE;
     Rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    Rasterizer.lineWidth = 1.0f;
+    Rasterizer.lineWidth = 2.0f;
     Rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     Rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
     Rasterizer.depthBiasEnable = VK_FALSE;
@@ -968,6 +1067,39 @@ void Renderer::initGraphicsPipeline() {
         std::cout << "Failed to create graphics pipeline!" << std::endl;
         exit(-1);
     }
+    
+    //----------//
+
+    VkGraphicsPipelineCreateInfo PipelineInfoLines = {};
+
+    PipelineInfoLines.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    PipelineInfoLines.stageCount = 2;
+    PipelineInfoLines.pStages = ShaderStages;
+    PipelineInfoLines.pVertexInputState = &VertexInputInfo;
+    PipelineInfoLines.pInputAssemblyState = &InputAssemblyLines;
+    PipelineInfoLines.pViewportState = &ViewportState;
+    PipelineInfoLines.pRasterizationState = &Rasterizer;
+    PipelineInfoLines.pMultisampleState = &Multisampling;
+    PipelineInfoLines.pDepthStencilState = nullptr;
+    PipelineInfoLines.pColorBlendState = &ColorBlending;
+    PipelineInfoLines.pDynamicState = nullptr;
+    PipelineInfoLines.layout = mLayout;
+    PipelineInfoLines.renderPass = mRenderPass;
+    PipelineInfoLines.subpass = 0;
+    PipelineInfoLines.basePipelineHandle = VK_NULL_HANDLE;
+    PipelineInfoLines.basePipelineIndex = -1;
+
+    if (vkCreateGraphicsPipelines(
+            mDevice,
+            VK_NULL_HANDLE,
+            1, &PipelineInfoLines,
+            nullptr,
+            &mArrowPipeline) != VK_SUCCESS) {
+        std::cout << "Failed to create graphics pipeline!" << std::endl;
+        exit(-1);
+    }
+    
+    //----------//
 
     vkDestroyShaderModule(mDevice, FragShaderModule, nullptr);
     vkDestroyShaderModule(mDevice, VertShaderModule, nullptr);
@@ -1008,6 +1140,7 @@ void Renderer::initCommandPool() {
 }
 void Renderer::initVertexBuffer() {
     VkDeviceSize BufferSize = sizeof(float) * 5 * Vertices.size();
+    VkDeviceSize BufferSizeLines = sizeof(float) * 5 * VerticesLines.size();
 
 //    VkBuffer StagingBuffer;
 //    VkDeviceMemory StagingBufferMemory;
@@ -1052,6 +1185,22 @@ void Renderer::initVertexBuffer() {
         memcpy(Data, Vertices.data(), size_t(BufferSize));
     }
     vkUnmapMemory(mDevice, mVertexBufferMemory);
+
+    //----------//
+
+    createBuffer(
+            BufferSizeLines,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+            mVertexBufferLines,
+            mVertexBufferMemoryLines);
+
+    void* DataLines;
+    vkMapMemory(mDevice, mVertexBufferMemoryLines, 0, BufferSizeLines, 0, &DataLines);
+    {
+        memcpy(DataLines, VerticesLines.data(), size_t(BufferSizeLines));
+    }
+    vkUnmapMemory(mDevice, mVertexBufferMemoryLines);
 }
 void Renderer::initIndexBuffer() {
     VkDeviceSize bufferSize = sizeof(Indices[0]) * Indices.size();
@@ -1071,15 +1220,44 @@ void Renderer::initIndexBuffer() {
     vkUnmapMemory(mDevice, stagingBufferMemory);
 
     createBuffer(bufferSize,
-            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            mIndexBuffer,
-            mIndexBufferMemory);
+                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                 mIndexBuffer,
+                 mIndexBufferMemory);
 
     copyBuffer(stagingBuffer, mIndexBuffer, bufferSize);
 
     vkDestroyBuffer(mDevice, stagingBuffer, nullptr);
     vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
+
+    //----------//
+
+    VkDeviceSize bufferSizeLines = sizeof(IndicesLines[0]) * IndicesLines.size();
+
+    VkBuffer stagingBufferLines;
+    VkDeviceMemory stagingBufferMemoryLines;
+    createBuffer(
+            bufferSizeLines,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            stagingBufferLines,
+            stagingBufferMemoryLines);
+
+    void* dataLines;
+    vkMapMemory(mDevice, stagingBufferMemoryLines, 0, bufferSizeLines, 0, &dataLines);
+    memcpy(dataLines, IndicesLines.data(), (size_t) bufferSizeLines);
+    vkUnmapMemory(mDevice, stagingBufferMemoryLines);
+
+    createBuffer(bufferSizeLines,
+                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                 mIndexBufferLines,
+                 mIndexBufferMemoryLines);
+
+    copyBuffer(stagingBufferLines, mIndexBufferLines, bufferSizeLines);
+
+    vkDestroyBuffer(mDevice, stagingBufferLines, nullptr);
+    vkFreeMemory(mDevice, stagingBufferMemoryLines, nullptr);
 }
 void Renderer::initCommandBuffers() {
     mCommandBuffers.resize(mSwapchainFramebuffers.size());
@@ -1130,6 +1308,20 @@ void Renderer::initCommandBuffers() {
         vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
 
         vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(Indices.size()), 1, 0, 0, 0);
+
+        //----------//
+
+//        VkBuffer vertexBuffersLines[] = {mVertexBufferLines};
+//        VkDeviceSize offsetsLines[] = {0};
+//
+//        vkCmdBindPipeline(mCommandBuffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, mArrowPipeline);
+//        vkCmdBindVertexBuffers(mCommandBuffers[i], 0, 1, vertexBuffersLines, offsetsLines);
+//
+//        vkCmdBindIndexBuffer(mCommandBuffers[i], mIndexBufferLines, 0, VK_INDEX_TYPE_UINT16);
+//
+//        vkCmdDrawIndexed(mCommandBuffers[i], static_cast<uint32_t>(IndicesLines.size()), 1, 0, 0, 0);
+
+        //----------//
 
         vkCmdEndRenderPass(mCommandBuffers[i]);
 

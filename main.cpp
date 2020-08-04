@@ -5,10 +5,9 @@
 #include <fstream>
 #include <chrono>
 #include <omp.h>
-
+//-----------------------------//
 #include "Core/dVector.h"
 #include "Core/dMatrix.h"
-
 //-----------------------------//
 #include <vulkan/vulkan.h>
 #include <SDL2/SDL.h>
@@ -16,7 +15,6 @@
 //-----------------------------//
 #include "Renderer.h"
 //-----------------------------//
-
 using dGrid = std::vector <std::vector <dVector <double, 5>>>;
 using dVec = dVector <double, 5>;
 
@@ -44,6 +42,9 @@ public:
         AlphaY.resize(mGridX + mOffsetXL + mOffsetXR);
 
         mOutput.resize(mGridX);
+
+        mOutputBx.resize(42);
+        mOutputBy.resize(42);
 
         //---Divergence---//
         mDivergence.resize(mGridX * mGridY);
@@ -77,6 +78,13 @@ public:
             iRow.resize(mGridY);
         }
 
+        for (auto& iRow : mOutputBx) {
+            iRow.resize(10);
+        }
+        for (auto& iRow : mOutputBy) {
+            iRow.resize(10);
+        }
+
         initCoriolis();
         initFields();
         bottomFunc();
@@ -89,12 +97,18 @@ public:
         std::swap(CurrentData, TempData);
 
         EOutput.open("Amplitude.dat");
+
+        FieldOutputX.open("FieldX.dat");
+        FieldOutputY.open("FieldY.dat");
     }
     ~Solver() {
         CurrentData = nullptr;
         TempData = nullptr;
 
         EOutput.close();
+
+        FieldOutputX.close();
+        FieldOutputY.close();
     }
 
     void solve() {
@@ -267,24 +281,44 @@ public:
 
             std::swap(CurrentData, TempData);
 
-//        fixFieldDivergence();
+        fixFieldDivergence();
         fillOutput(DISPLAY_ELEVATION);
+//        fillOutput(DISPLAY_FIELD_DIVERGENCE);
     }
     void save() {
         for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
             for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
                 EOutput << (*CurrentData)[i][j][0] + Bottom[i][j] << " ";
+
+                FieldOutputX << (*CurrentData)[i][j][3] / (*CurrentData)[i][j][0] << " ";
+                FieldOutputY << (*CurrentData)[i][j][4] / (*CurrentData)[i][j][0] << " ";
             }
 
             EOutput << std::endl;
+
+            FieldOutputX << std::endl;
+            FieldOutputY << std::endl;
         }
     }
     void fillOutput(DisplayOutput tType) {
+        int iStepX = static_cast <int>(mGridX / 42.0);
+        int iStepY = static_cast <int>(mGridY / 10.0);
+
         switch (tType) {
             case DISPLAY_ELEVATION:
                 for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
                     for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
                         mOutput[i - mOffsetXL][j - mOffsetYU] = (*CurrentData)[i][j][0] + Bottom[i][j];
+                    }
+                }
+
+                for (size_t j = 0; j < 10; j++) {
+                    for (size_t i = 0; i < 42; i++) {
+                        mOutputBx[i][j] = (*CurrentData)[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][3] / (*CurrentData)[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][0];
+                        mOutputBy[i][j] = (*CurrentData)[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][4] / (*CurrentData)[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][0];
+
+//                        mOutputBx[i][j] = InputFields[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][0];
+//                        mOutputBy[i][j] = InputFields[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][1];
                     }
                 }
 
@@ -324,8 +358,14 @@ public:
     const std::vector <std::vector <double>>& getElevation() const {
         return mOutput;
     }
+    const std::vector <std::vector <double>>& getFieldX() const {
+        return mOutputBx;
+    }
+    const std::vector <std::vector <double>>& getFieldY() const {
+        return mOutputBy;
+    }
 private:
-    size_t mGridX = 254;
+    size_t mGridX = 360;
     size_t mGridY = 50;
 
     size_t mOffsetXL = 2;
@@ -362,6 +402,9 @@ private:
 
     std::vector <std::vector <double>> mOutput;
 
+    std::vector <std::vector <double>> mOutputBx;
+    std::vector <std::vector <double>> mOutputBy;
+
     //---Divergence---//
     std::vector <double> mDivergence;
     std::vector <double> B;
@@ -384,6 +427,13 @@ private:
 
     std::ofstream EOutput;
 
+    std::ofstream FieldOutputX;
+    std::ofstream FieldOutputY;
+
+    //----------//
+
+    std::vector <std::vector <dVector3D <double>>> InputFields;
+
     //----------//
 
     void initCoriolis() {
@@ -400,12 +450,60 @@ private:
         mVertField.resize(mGridY + mOffsetYU + mOffsetYD);
 
         for (size_t i = 0; i < mGridY + mOffsetYU + mOffsetYD; i++) {
-//            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * i;
-//            mVertField[i] = 1.27e-05 + 1.46e-06 * i - 1.38e-08 * pow(i, 2.0);
-            mHorizFieldY[i] = 0.0;
-            mVertField[i] = 0.0;
+            mHorizFieldY[i] = 3.5e-05 - 4.87e-07 * i;
+            mVertField[i] = 1.27e-05 + 1.46e-06 * i - 1.38e-08 * pow(i, 2.0);
+//            mHorizFieldY[i] = 0.0;
+//            mVertField[i] = 0.0;
 //            mVertField[i] = 21.0;
         }
+
+        InputFields.resize(mGridX);
+
+        for (auto& iRow : InputFields) {
+            iRow.resize(mGridY + mOffsetYU + mOffsetYD);
+        }
+
+        //----------//
+
+        std::ifstream FieldX("BxData.csv");
+        std::string Line;
+
+        while (std::getline(FieldX, Line)) {
+            std::stringstream Stream(Line);
+            double Lat, Lon, Val;
+            char Delimiter;
+
+            Stream >> Lat >> Delimiter >> Lon >> Delimiter >> Val;
+            InputFields[Lon + 180][Lat - 18][0] = Val * 1.0e-09;
+        }
+
+        FieldX.close();
+
+        std::ifstream FieldY("ByData.csv");
+
+        while (std::getline(FieldY, Line)) {
+            std::stringstream Stream(Line);
+            double Lat, Lon, Val;
+            char Delimiter;
+
+            Stream >> Lat >> Delimiter >> Lon >> Delimiter >> Val;
+            InputFields[Lon + 180][Lat - 18][1] = Val * 1.0e-09;
+        }
+
+        FieldY.close();
+
+        std::ifstream FieldZ("BzData.csv");
+
+        while (std::getline(FieldZ, Line)) {
+            std::stringstream Stream(Line);
+            double Lat, Lon, Val;
+            char Delimiter;
+
+            Stream >> Lat >> Delimiter >> Lon >> Delimiter >> Val;
+            InputFields[Lon + 180][Lat - 18][2] = Val * 1.0e-09;
+        }
+
+        FieldZ.close();
     }
     void bottomFunc() {
         std::random_device rd;
@@ -425,7 +523,6 @@ private:
                 Bottom[i][j] = 4000 * exp(
                         -0.5 * pow((i * mStepX - MeanX) / StdX, 2.0)
                         -0.5 * pow((j * mStepY - MeanY) / StdY, 2.0));
-//                Bottom[i][j] = 4000 * pow(sin(i / 10.0), 2.0) + pow(sin(j / 10.0), 2.0);
             }
         }
     }
@@ -522,22 +619,42 @@ private:
             //---vy---//
 
             //---Bx---//
-            (*TempData)[i][0][3] = 0.0;
-            (*TempData)[i][1][3] = 0.0;
+//            (*TempData)[i][0][3] = 0.0;
+//            (*TempData)[i][1][3] = 0.0;
+//
+//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][3] = 0.0;
+//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][3] = 0.0;
 
-            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][3] = 0.0;
-            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][3] = 0.0;
+            (*TempData)[i][0][3] = InputFields[i - mOffsetXL][0][0] * (*TempData)[i][0][0];
+            (*TempData)[i][1][3] = InputFields[i - mOffsetXL][1][0] * (*TempData)[i][1][0];
+
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][3] =
+                    InputFields[i - mOffsetXL][mGridY + mOffsetYU + mOffsetYD - 1][0] *
+                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][3] =
+                    InputFields[i - mOffsetXL][mGridY + mOffsetYU + mOffsetYD - 2][0] *
+                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
             //---Bx---//
             
             //---By---//
-            (*TempData)[i][0][4] = mHorizFieldY[0] * (*TempData)[i][0][0];
-            (*TempData)[i][1][4] = mHorizFieldY[1] * (*TempData)[i][1][0];
+//            (*TempData)[i][0][4] = mHorizFieldY[0] * (*TempData)[i][0][0];
+//            (*TempData)[i][1][4] = mHorizFieldY[1] * (*TempData)[i][1][0];
+//
+//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][4] =
+//                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 1] *
+//                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
+//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] =
+//                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 2] *
+//                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
+
+            (*TempData)[i][0][4] = InputFields[i - mOffsetXL][0][1] * (*TempData)[i][0][0];
+            (*TempData)[i][1][4] = InputFields[i - mOffsetXL][1][1] * (*TempData)[i][1][0];
 
             (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][4] =
-                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 1] *
+                    InputFields[i - mOffsetXL][mGridY + mOffsetYU + mOffsetYD - 1][1] *
                     (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
             (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] =
-                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 2] *
+                    InputFields[i - mOffsetXL][mGridY + mOffsetYU + mOffsetYD - 2][1] *
                     (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
             //---By---//
             
@@ -597,9 +714,18 @@ private:
                         0.0,
                         0.0,
                         0.0,
-                        TempHeight * mHorizFieldY[j]
+//                        TempHeight * mHorizFieldY[j],
+                        0.0
 //                        0.0
                         );
+            }
+        }
+
+        for (size_t i = 0; i < mGridX; i++) {
+            for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
+
+                GridCurrentData[i][j][3] = GridCurrentData[i][j][0] * InputFields[i][j][0];
+                GridCurrentData[i][j][4] = GridCurrentData[i][j][0] * InputFields[i][j][1];
             }
         }
 
@@ -656,7 +782,8 @@ private:
         );
     }
     dVec source(int tPosX, int tPosY) {
-        double Bz = -mVertField[tPosY];
+//        double Bz = -mVertField[tPosY];
+        double Bz = -InputFields[tPosX - mOffsetXL][tPosY][2] * 1.0e-09;
 //        double Bz = -(((*CurrentData)[tPosX + 1][tPosY][3] - (*CurrentData)[tPosX - 1][tPosY][3]) / mStepX / 2.0 +
 //                 ((*CurrentData)[tPosX][tPosY + 1][4] - (*CurrentData)[tPosX][tPosY - 1][4]) / mStepY / 2.0);
 
@@ -693,36 +820,6 @@ private:
 //                Bz * vy,
 //                -mMaxAlpha * mMaxAlpha * Bz
                 );
-    }
-    dVec viscosity(int tPosX, int tPosY) {
-        double v_x_xx = (
-                (*CurrentData)[tPosX - 1][tPosY][1] / (*CurrentData)[tPosX - 1][tPosY][0] +
-                (*CurrentData)[tPosX][tPosY][1] / (*CurrentData)[tPosX][tPosY][0] * 2.0 +
-                (*CurrentData)[tPosX + 1][tPosY][1] / (*CurrentData)[tPosX + 1][tPosY][0]) /
-                pow(mStepX, 2.0);
-        double v_x_yy = (
-                (*CurrentData)[tPosX][tPosY - 1][1] / (*CurrentData)[tPosX][tPosY - 1][0] +
-                (*CurrentData)[tPosX][tPosY][1] / (*CurrentData)[tPosX][tPosY][0] * 2.0 +
-                (*CurrentData)[tPosX][tPosY + 1][1] / (*CurrentData)[tPosX][tPosY + 1][0]) /
-                pow(mStepY, 2.0);
-        double v_y_xx = (
-                (*CurrentData)[tPosX - 1][tPosY][2] / (*CurrentData)[tPosX - 1][tPosY][0] +
-                (*CurrentData)[tPosX][tPosY][2] / (*CurrentData)[tPosX][tPosY][0] * 2.0 +
-                (*CurrentData)[tPosX + 1][tPosY][2] / (*CurrentData)[tPosX + 1][tPosY][0]) /
-                pow(mStepX, 2.0);
-        double v_y_yy = (
-                (*CurrentData)[tPosX][tPosY - 1][2] / (*CurrentData)[tPosX][tPosY - 1][0] +
-                (*CurrentData)[tPosX][tPosY][2] / (*CurrentData)[tPosX][tPosY][0] * 2.0 +
-                (*CurrentData)[tPosX][tPosY + 1][2] / (*CurrentData)[tPosX][tPosY + 1][0]) /
-                pow(mStepY, 2.0);
-
-        return dVec (
-                0.0,
-                (*CurrentData)[tPosX][tPosY][0] * (v_x_xx + v_x_yy),
-                (*CurrentData)[tPosX][tPosY][0] * (v_y_xx + v_y_yy),
-                0.0,
-//                0.0,
-                0.0);
     }
 
     //----------//
@@ -852,7 +949,7 @@ private:
                         ) / (mStepY * 2.0);
 
                 B[(i - mOffsetXL) * mGridY + j - mOffsetYU] = -(dBx_dx + dBy_dy) * mStepX * mStepX;
-//                mDivergence[(i - mOffsetXL) * mGridY + j - mOffsetYU] = 0.0;
+                mDivergence[(i - mOffsetXL) * mGridY + j - mOffsetYU] = 0.0;
             }
         }
 
@@ -1002,7 +1099,9 @@ int main(int argc, char** argv) {
     try {
         Renderer Rend(Window, true);
         int Steps = 0;
-        int Limit = 10000;
+//        int Limit = 10000;
+//        int Limit = 10;
+        int Limit = 1440 * 15;
 
         auto Start = std::chrono::system_clock::now();
         auto End = std::chrono::system_clock::now();
@@ -1037,15 +1136,16 @@ int main(int argc, char** argv) {
                 }
             }
 
-            Rend.drawFrame(Test.getElevation());
+            Rend.drawFrame(Test.getElevation(), Test.getFieldX(), Test.getFieldY());
+
 //            break;
         }
 
         //----------//
 
-        vkDeviceWaitIdle(Rend.getDevice());
-
         Test.save();
+
+        vkDeviceWaitIdle(Rend.getDevice());
 
         SDL_DestroyWindow(Window);
         SDL_Quit();

@@ -61,7 +61,10 @@ public:
     explicit Renderer(SDL_Window* tWindow, bool tDebug = false);
     ~Renderer();
 
-    void drawFrame(const std::vector <std::vector <double>>& tData);
+    void drawFrame(
+            const std::vector <std::vector <double>>& tData,
+            const std::vector <std::vector <double>>& tDataLinesX,
+            const std::vector <std::vector <double>>& tDataLinesY);
     VkDevice getDevice() {
         return mDevice;
     }
@@ -98,7 +101,10 @@ private:
     VkSwapchainKHR mSwapChain                       = VK_NULL_HANDLE;
     VkRenderPass mRenderPass                        = VK_NULL_HANDLE;
     VkPipelineLayout mLayout                        = VK_NULL_HANDLE;
+
     VkPipeline mPipeline                            = VK_NULL_HANDLE;
+    VkPipeline mArrowPipeline                       = VK_NULL_HANDLE;   //---Arrows---//
+
     uint32_t mSwapChainImageCount                   = 0;
 
     uint32_t mGraphicsFamilyIndex                   = 0;
@@ -118,6 +124,11 @@ private:
     VkDeviceMemory mVertexBufferMemory;
     VkBuffer mIndexBuffer;
     VkDeviceMemory mIndexBufferMemory;
+
+    VkBuffer mVertexBufferLines;
+    VkDeviceMemory mVertexBufferMemoryLines;
+    VkBuffer mIndexBufferLines;
+    VkDeviceMemory mIndexBufferMemoryLines;
 
     std::vector <VkSemaphore>  mImageAvailableSemaphores;
     std::vector <VkSemaphore>  mRenderFinishedSemaphores;
@@ -144,17 +155,23 @@ private:
     std::vector <Vertex> Vertices;
     std::vector <uint16_t> Indices;
 
-//    double mDarkBlue = -1.0e-09;
+    std::vector <Vertex> VerticesLines;
+    std::vector <uint16_t> IndicesLines;
+
+//    double mDarkBlue = -1.0e-12;
     double mDarkBlue = 9500;
     double mBlue;
     double mCyan;
     double mGreen;
     double mYellow;
     double mRed;
-//    double mDarkRed = 1.0e-09;
+//    double mDarkRed = 1.0e-12;
     double mDarkRed = 10500;
 
     std::vector <std::vector <double>> mData;
+
+    std::vector <std::vector <double>> mDataLinesX;
+    std::vector <std::vector <double>> mDataLinesY;
 
     //----------//
 
@@ -171,6 +188,7 @@ private:
     void copyBuffer(VkBuffer tSrcBuffer, VkBuffer tDstBuffer, VkDeviceSize  tSize);
     void loadPlot(const std::string& tPath);
     void fillGrid(uint16_t tSizeX, uint16_t tSizeY);
+    void fillArrows(uint16_t tSizeX, uint16_t tSizeY);
 
     void setLayers();
     void setExtensions();
