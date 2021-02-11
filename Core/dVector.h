@@ -6,6 +6,7 @@
 #include <numeric>
 #include <functional>
 #include <cmath>
+#include <typeinfo>
 
 #include "util.h"
 //-----------------------------//
@@ -39,20 +40,25 @@ public:
     dVector(const std::array<T, SizeT>& tArr): mData(tArr) {}
 
 
-    dVector(const_reference tVal) {
+    dVector(const T& tVal) {
         fill(tVal);
     }
 
+    constexpr
     dVector() = default;
+    constexpr
     dVector(const dVector& tCopy) = default;
+    constexpr
     dVector(dVector&& tMove) noexcept = default;
 
     ~dVector() = default;
 
     //----------//
 
+    constexpr
     dVector& operator=(const dVector& tCopy) = default;
-    constexpr dVector& operator=(dVector&& tMove) noexcept = default;
+    constexpr
+    dVector& operator=(dVector&& tMove) noexcept = default;
 
     // Addition --->
     constexpr
@@ -61,35 +67,35 @@ public:
     }
 
     constexpr
-    dVector operator+(const dVector& tAdd) const {
-        dVector Temp(*this);
-        Temp += tAdd;
+    dVector operator+(const dVector& tOther) const {
+        dVector Temp;
+        std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::plus<T>());
         return Temp;
     }
-    template <typename NumberT>
+
     constexpr friend
-    dVector operator+(const dVector& tVec, const NumberT& tNum) {
-        dVector Temp(tVec);
-        Temp += tNum;
+    dVector operator+(const dVector& tVec, const T& tScalar) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryPlus<T>(tScalar));
         return Temp;
     }
-    template <typename NumberT>
+
     constexpr
-    friend dVector operator+(const NumberT& tNum, const dVector& tVec) {
-        return tVec + tNum;
+    friend dVector operator+(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryPlus<T>(tScalar));
+        return Temp;
     }
 
     constexpr
     dVector& operator+=(const dVector& tAdd) {
-        std::transform(mData.cbegin(), mData.cend(), tAdd.mData.cbegin(), mData.begin(), std::plus<T>());
-
+        std::transform(cbegin(), cend(), tAdd.cbegin(), begin(), std::plus<T>());
         return *this;
     }
-    template <typename NumberT>
-    constexpr
-    dVector& operator+=(const NumberT& tNum) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryPlus<T>(tNum));
 
+    constexpr
+    dVector& operator+=(const T& tScalar) {
+        std::transform(cbegin(), cend(), begin(), RightUnaryPlus<T>(tScalar));
         return *this;
     }
     // <--- Addition
@@ -98,37 +104,41 @@ public:
     constexpr
     dVector operator-() const {
         dVector Temp;
-        std::transform(mData.cbegin(), mData.cend(), Temp.mData.begin(), std::negate<T>());
-
+        std::transform(cbegin(), cend(), Temp.begin(), std::negate<T>());
         return Temp;
     }
 
     constexpr
     dVector operator-(const dVector& tOther) const {
-        dVector Temp(*this);
-        Temp -= tOther;
-
+        dVector Temp;
+        std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::minus<T>());
         return Temp;
     }
 
-    template <typename NumberT>
     constexpr
-    friend dVector operator-(const dVector& tVec, const NumberT& tNum) {
-        dVector Temp(tVec);
-        Temp -= tNum;
+    friend dVector operator-(const dVector& tVec, const T& tScalar) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryMinus<T>(tScalar));
+        return Temp;
+    }
+
+    constexpr
+    friend dVector operator-(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryMinus<T>(tScalar));
         return Temp;
     }
 
     constexpr
     dVector& operator-=(const dVector& tOther) {
-        std::transform(mData.cbegin(), mData.cend(), tOther.mData.cbegin(), mData.begin(), std::minus<T>());
+        std::transform(cbegin(), cend(), tOther.cbegin(), begin(), std::minus<T>());
 
         return *this;
     }
-    template <typename NumberT>
+
     constexpr
-    dVector& operator-=(const NumberT& tNum) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryMinus<T>(tNum));
+    dVector& operator-=(const T& tScalar) {
+        std::transform(cbegin(), cend(), begin(), RightUnaryMinus<T>(tScalar));
 
         return *this;
     }
@@ -136,39 +146,38 @@ public:
 
     // Multiplication --->
     friend value_type dot(const dVector& lhs, const dVector& rhs) {
-        return std::inner_product(lhs.mData.cbegin(), lhs.mData.cend(), rhs.mData.cbegin(), T(0));
+        return std::inner_product(lhs.cbegin(), lhs.cend(), rhs.cbegin(), T(0));
     }
 
     constexpr
     dVector operator*(const dVector& tOther) const {
-        dVector Temp(*this);
-        Temp *= tOther;
-
+        dVector Temp;
+        std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::multiplies<T>());
         return Temp;
     }
 
-    template <typename NumberT>
-    friend dVector operator*(const dVector& tVec, const NumberT& tNum) {
-        dVector Temp(tVec);
-        return Temp *= tNum;
+
+    friend dVector operator*(const dVector& tVec, const T& tScalar) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryMultiplies<T>(tScalar));
+        return Temp;
     }
-    template <typename NumberT>
-    friend dVector operator*(const NumberT& tNum, const dVector& tVec) {
-        return tVec * tNum;
+
+    friend dVector operator*(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryMultiplies<T>(tScalar));
+        return Temp;
     }
 
     constexpr
     dVector& operator*=(const dVector& tOther) {
-        std::transform(mData.cbegin(), mData.cend(), tOther.mData.begin(), mData.begin(), std::multiplies<T>());
-
+        std::transform(cbegin(), cend(), tOther.begin(), begin(), std::multiplies<T>());
         return *this;
     }
 
-    template <typename NumberT>
     constexpr
-    dVector& operator*=(const NumberT& tNum) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryMultiplies<T>(tNum));
-
+    dVector& operator*=(const T& tScalar) {
+        std::transform(cbegin(), cend(), begin(), RightUnaryMultiplies<T>(tScalar));
         return *this;
     }
     // <--- Multiplication
@@ -176,38 +185,34 @@ public:
     // Division --->
     constexpr
     dVector operator/(const dVector& tOther) const {
-        dVector Temp(*this);
-        Temp /= tOther;
-
-        return Temp;
-    }
-
-    template <typename NumberT>
-    friend dVector operator/(const NumberT& tNum, const dVector& tVec) {
         dVector Temp;
-        std::transform(tVec.mData.cbegin(), tVec.mData.cend(), Temp.mData.begin(), LeftUnaryDivides<T>(tNum));
-
+        std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::divides<T>());
         return Temp;
     }
 
-    template <typename NumberT>
-    friend dVector operator/(const dVector& tVec, const NumberT& tNum) {
-        dVector Temp(tVec);
-        return Temp /= tNum;
+
+    friend dVector operator/(const dVector& tVec, const T& tScalar) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryDivides<T>(tScalar));
+        return Temp;
+    }
+
+    friend dVector operator/(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryDivides<T>(tScalar));
+        return Temp;
     }
 
     constexpr
     dVector& operator/=(const dVector& tOther) {
-        std::transform(mData.cbegin(), mData.cend(), tOther.mData.begin(), mData.begin(), std::divides<T>());
-
+        std::transform(cbegin(), cend(), tOther.begin(), begin(), std::divides<T>());
         return *this;
     }
 
-    template <typename NumberT>
-    constexpr
-    dVector& operator/=(const NumberT& tNum) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryDivides<T>(tNum));
 
+    constexpr
+    dVector& operator/=(const T& tScalar) {
+        std::transform(cbegin(), cend(), begin(), RightUnaryDivides<T>(tScalar));
         return *this;
     }
     // <--- Division
@@ -227,32 +232,23 @@ public:
 
     [[nodiscard]] constexpr
     double abs() const {
-        return sqrt(std::inner_product(mData.cbegin(), mData.cend(), mData.cbegin(), double(0)));
+        return std::sqrt(std::inner_product(cbegin(), cend(), cbegin(), double(0)));
     }
 
     [[nodiscard]] constexpr
     float absf() const {
-        return sqrtf(std::inner_product(mData.cbegin(), mData.cend(), mData.cbegin(), float(0)));
+        return std::sqrt(std::inner_product(cbegin(), cend(), cbegin(), float(0)));
     }
 
-    constexpr
+    [[nodiscard]] constexpr
     value_type abs2() const {
-        return std::inner_product(mData.cbegin(), mData.cend(), mData.cbegin(), T(0));
+        return std::inner_product(cbegin(), cend(), cbegin(), T(0));
     }
 
     //----------//
     constexpr
-    static  dVector null() {
-        dVector Temp;
-        Temp.fill(T(0));
-        return Temp;
-    }
-
-    template<class Func>
-    constexpr dVector apply() {
-        dVector Temp;
-        Temp.fill(T(0));
-        return Temp;
+    static dVector zero() {
+        return dVector{T(0)};
     }
 
     //----------//
@@ -260,18 +256,14 @@ public:
     constexpr
     dVector<double, SizeT> norm() const {
         dVector<double, SizeT> Temp;
-        double s = abs();
-        std::transform(mData.cbegin(), mData.cend(), Temp.mData.begin(),
-                       [&s](const T& tIter) { return tIter / s; });
+        std::transform(cbegin(), cend(), Temp.begin(), RightUnaryDivides<double>(abs()));
         return Temp;
     }
 
     constexpr
     dVector<float, SizeT> normf() const {
         dVector<float, SizeT> Temp;
-        float s = absf();
-        std::transform(mData.cbegin(), mData.cend(), Temp.mData.begin(),
-                       [&s](const T& tIter) { return tIter / s; });
+        std::transform(cbegin(), cend(), Temp.begin(), RightUnaryDivides<float>(absf()));
         return Temp;
     }
 
@@ -279,21 +271,21 @@ public:
 
     constexpr
     value_type max() const {
-        return *std::max_element(mData.begin(), mData.end());
+        return *std::max_element(begin(), end());
     }
     constexpr
     value_type min() const {
-        return *std::min_element(mData.begin(), mData.end());
+        return *std::min_element(begin(), end());
     }
     constexpr
     value_type sum() const {
-        return std::accumulate(mData.begin(), mData.end(), T(0));
+        return std::accumulate(begin(), end(), T(0));
     }
     //----------//
 
     constexpr
     void fill(const T& tValue) {
-        std::fill(mData.begin(), mData.end(), tValue);
+        std::fill(begin(), end(), tValue);
     }
 
     constexpr
@@ -390,11 +382,11 @@ public:
 
     friend std::ostream &operator<<(std::ostream &tStream, const dVector &tVec) {
         auto i = tVec.cbegin();
-        tStream << "Vector<" << SizeT << ">(" << *i++;
+        tStream << "dVector<" << typeid(T).name() << ", " << SizeT << ">({" << *i++;
         for (; i != tVec.cend(); ++i) {
             tStream << ", " << *i;
         }
-        return tStream << ')';
+        return tStream << "})";
     }
 
     friend std::istream& operator>>(std::istream& tStream, dVector& tVec) {
