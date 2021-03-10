@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "gtest/gtest.h"
 #include "../dMatrix.h"
 
@@ -18,8 +20,8 @@ TEST_F(TestMatrix, Constructor) {
         doubleSMatrix2 double2D(10.);
         EXPECT_EQ(double2D, doubleSMatrix2(10.));
     } {
-//        doubleSMatrix2 double2D({10., 10.});
-//        EXPECT_EQ(double2D, doubleSMatrix2(10.));
+        doubleSMatrix2 double2D({10., 10., 10., 10.});
+        EXPECT_EQ(double2D, doubleSMatrix2(10.));
     }
 }
 
@@ -177,3 +179,38 @@ TEST_F(TestMatrix, DivisionAssignment) {
         EXPECT_EQ(double2D, doubleSMatrix2(2.));
     }
 }
+
+TEST_F(TestMatrix, Dot) {
+    {
+        doubleSMatrix2 double2D({1, 0, 0, 1});
+        doubleSMatrix2 double2D_2(10.);
+        EXPECT_EQ(dot(double2D, double2D_2), doubleSMatrix2(10.));
+    } {
+        doubleSMatrix2 double2D({1, 0, 0, 1});
+        doubleSMatrix2 double2D_2(10.);
+        EXPECT_EQ(double2D.dot(double2D_2), doubleSMatrix2(10.));
+    } {
+        doubleSMatrix2 double2D({1, 0, 0, 1});
+        doubleSMatrix2 double2D_2(10.);
+        EXPECT_EQ(double2D_2.dot(double2D), doubleSMatrix2(10.));
+    }
+}
+
+TEST_F(TestMatrix, Identity) {
+    {
+        doubleSMatrix2 double2D({1, 0, 0, 1});
+        EXPECT_EQ(double2D, doubleSMatrix2::identity());
+    }
+}
+
+TEST_F(TestMatrix, Print) {
+    std::stringstream out;
+    out << dMatrix<int, 2, 2>(10.);
+    EXPECT_EQ(out.str(), "dMatrix <i, 2, 2>({\n10 10 \n10 10 \n})");
+}
+
+TEST_F(TestMatrix, IterateRow) {
+    doubleSMatrix2 double2D(10.);
+//    EXPECT_EQ(out.str(), "dMatrix <i, 2, 2>({\n10 10 \n10 10 \n})");
+}
+
