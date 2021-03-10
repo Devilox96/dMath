@@ -5,16 +5,18 @@
 #ifndef DMATH_DMATRIX_H
 #define DMATH_DMATRIX_H
 
-
 #include <cstddef>
 #include <array>
 #include <iostream>
 #include <memory>
 #include <numeric>
 #include <algorithm>
-#include "util.h"
+#include <typeinfo>
+#include <type_traits>
 
 //#define DMATH_ONLY_MATRIX
+
+#include "util.h"
 
 #ifndef DMATH_ONLY_MATRIX
     #include "dVector.h"
@@ -26,23 +28,150 @@ class dMatrix;
 template <typename T, std::size_t M>
 using dSMatrix = dMatrix<T, M, M>;
 
+enum class Iterate {Row, Col, Val};
 
 template<typename T, std::size_t M, std::size_t N>
 class dMatrix {
-public:
-    typedef T 	    			                    value_type;
-    typedef value_type*			                    pointer;
-    typedef const value_type*                       const_pointer;
-    typedef value_type&                   	        reference;
-    typedef const value_type&             	        const_reference;
-//    typedef std::array<T, N>*          		        iterator;
-//    typedef const value_type*			            const_iterator;
-//    typedef std::size_t                    	        size_type;
-//    typedef std::ptrdiff_t                   	    difference_type;
-//    typedef std::reverse_iterator<iterator>	        reverse_iterator;
-//    typedef std::reverse_iterator<const_iterator>   const_reverse_iterator;
+protected:
+// TODO make SFINAE
+//    static constexpr std::size_t SizeOnlyForVector = std::max(M, N);
+
+    template<typename ReturnType = void>
+    using is_square_t = std::enable_if_t<M == N, ReturnType>;
+
+    template<typename ReturnType = void>
+    using is_scalar_t = std::enable_if_t<M == 1 && N == 1, ReturnType>;
+
+#ifndef DMATH_ONLY_MATRIX
+    template<typename ReturnType = dVector<T, M*N>>
+    using is_vector_t = std::enable_if_t<M == 1 || N == 1, ReturnType>;
+#endif // DMATH_ONLY_MATRIX
+
 
 public:
+    using value_type             = T;
+    using pointer                = value_type*;
+    using const_pointer          = const pointer;
+    using reference              = value_type&;
+    using const_reference        = const value_type&;
+    using iterator               = value_type*;
+    using const_iterator         = const value_type*;
+    using size_type              = std::size_t;
+    using difference_type        = std::ptrdiff_t;
+    using reverse_iterator       = std::reverse_iterator<iterator> ;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator> ;
+
+    template<typename Type, typename UnqualifiedType = std::remove_cv_t<Type>>
+    struct iterator_col {
+        using iterator_category     = std::forward_iterator_tag;
+        using value_type            = UnqualifiedType;
+        using difference_type       = std::ptrdiff_t;
+        using pointer               = Type*;
+        using reference             = Type&;
+
+        constexpr
+        explicit iterator_col() : m_ptr(nullptr) {}
+
+        constexpr
+        explicit iterator_col(pointer ptr) : m_ptr(ptr) {}
+
+        constexpr
+        reference operator*() const { return *m_ptr; }
+        constexpr
+        pointer operator->() { return m_ptr; }
+
+        // Prefix increment
+        constexpr
+        iterator_col& operator++() { m_ptr += N; return *this; }
+
+        // Postfix increment
+        constexpr
+        iterator_col operator++(int) { auto tmp(*this); ++(*this); return tmp; }
+
+        template<typename Other>
+        constexpr
+        bool operator== (const iterator_col<Other>& rhs) { return m_ptr == rhs.m_ptr; }
+        template<typename Other>
+        constexpr
+        bool operator!= (const iterator_col<Other>& rhs) { return m_ptr != rhs.m_ptr; }
+
+        bool operator== (pointer& rhs) { return m_ptr == rhs; }
+        bool operator!= (pointer& rhs) { return m_ptr != rhs; }
+
+        operator iterator_col<const Type>() const {
+            return iterator_col<const Type>(m_ptr);
+        }
+
+        operator pointer() const {
+            return m_ptr;
+        }
+
+        friend std::ostream &operator<<(std::ostream &tStream, const iterator_col &iter) {
+            return tStream << iter.m_ptr;
+        }
+
+    private:
+        pointer m_ptr;
+    };
+
+    struct column_view {
+        using column_iterator       = iterator_col<value_type>;
+        using const_column_iterator = iterator_col<const value_type>;
+
+        constexpr
+        explicit column_view(pointer ptr): m_ptr(ptr) {}
+
+        constexpr
+        column_view& operator*() const { return *this; }
+        constexpr
+        column_view* operator->() { return this; }
+
+        // Prefix increment
+        constexpr
+        column_view& operator++() { ++m_ptr; return *this; }
+
+        // Postfix increment
+        constexpr
+        column_view operator++(int) { auto tmp(*this); ++(*this); return tmp; }
+
+        constexpr friend
+        bool operator== (const column_view& a, const column_view& b) { return a.m_ptr == b.m_ptr; };
+        constexpr friend
+        bool operator!= (const column_view& a, const column_view& b) { return a.m_ptr != b.m_ptr; };
+
+        constexpr
+        const_column_iterator begin() const {
+            return const_column_iterator(m_ptr);
+        }
+
+        constexpr
+        column_iterator begin() {
+            return column_iterator(m_ptr);
+        }
+
+        constexpr
+        const_column_iterator end() const {
+            return const_column_iterator(m_ptr + N * M);
+        }
+
+        constexpr
+        column_iterator end() {
+            return column_iterator(m_ptr + N * M);
+        }
+
+    private:
+        pointer m_ptr;
+    };
+
+
+public:
+    constexpr
+    explicit dMatrix(const std::array<std::array<T, N>, M>& tMat) : mData(tMat) {}
+
+    constexpr
+    explicit dMatrix(std::array<std::array<T, N>, M>&& tMat) : mData(std::move(tMat)) {}
+
+
     constexpr
     explicit dMatrix(const T& tVal) {
         fill(tVal);
@@ -55,11 +184,12 @@ public:
     constexpr
     dMatrix(dMatrix&& tMove) noexcept = default;
 
-    constexpr
     ~dMatrix() = default;
 
+    constexpr
     dMatrix& operator=(const dMatrix& tCopy) = default;
 
+    constexpr
     dMatrix& operator=(dMatrix &&tMove) noexcept = default;
 
     constexpr
@@ -70,78 +200,77 @@ public:
     constexpr
     friend dMatrix operator+(const dMatrix& tMat, const T& tScalar) {
         dMatrix Temp;
-//        std::transform(tMat.cbegin()->cbegin(), (tMat.cend() - 1)->cend(), Temp.begin()->begin(), RightUnaryPlus<T>(tScalar));
-        std::transform(tMat.cbegin<Iterate::Val>(), tMat.cend<Iterate::Val>(), Temp.begin<Iterate::Val>(), RightUnaryPlus<T>(tScalar));
+        std::transform(tMat.cbegin(), tMat.cend(), Temp.begin(), RightUnaryPlus<T>(tScalar));
         return Temp;
     }
 
     constexpr
     friend dMatrix operator+(const T& tScalar, const dMatrix& tMat) {
         dMatrix Temp;
-        std::transform(tMat.cbegin()->cbegin(), (tMat.cend() - 1)->cend(), Temp.begin()->begin(), LeftUnaryPlus<T>(tScalar));
+        std::transform(tMat.cbegin(), tMat.cend(), Temp.begin(), LeftUnaryPlus<T>(tScalar));
         return Temp;
     }
 
     constexpr
     dMatrix operator+(const dMatrix& tOther) const {
         dMatrix Temp;
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(), tOther.cbegin()->cbegin(), Temp.begin()->begin(), std::plus<T>());
+        std::transform(cbegin(), cend(), tOther.cbegin(), Temp.begin(), std::plus<T>());
         return Temp;
     }
 
     constexpr
     dMatrix& operator+=(const dMatrix& tOther) {
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(), tOther.cbegin()->cbegin(), begin()->begin(), std::plus<T>());
+        std::transform(cbegin(), cend(), tOther.cbegin(), begin(), std::plus<T>());
         return *this;
     }
 
     constexpr
     dMatrix& operator+=(const T& tScalar) {
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(),
-                       begin()->begin(), RightUnaryPlus<T>(tScalar));
+        std::transform(cbegin(), cend(),
+                       begin(), RightUnaryPlus<T>(tScalar));
         return *this;
     }
 
     constexpr
     dMatrix operator-() const {
         dMatrix Temp;
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(), Temp.begin()->begin(), std::negate<T>());
+        std::transform(cbegin(), cend(), Temp.begin(), std::negate<T>());
         return Temp;
     }
 
     constexpr
     friend dMatrix operator-(const dMatrix& tMat, const T& tScalar) {
         dMatrix Temp;
-        std::transform(tMat.cbegin()->cbegin(), (tMat.cend() - 1)->cend(), Temp.begin()->begin(), RightUnaryMinus<T>(tScalar));
+        std::transform(tMat.cbegin(), tMat.cend(), Temp.begin(), RightUnaryMinus<T>(tScalar));
         return Temp;
     }
 
     constexpr
     friend dMatrix operator-(const T& tScalar, const dMatrix& tMat) {
         dMatrix Temp;
-        std::transform(tMat.cbegin()->cbegin(), (tMat.cend() - 1)->cend(), Temp.begin()->begin(), LeftUnaryMinus<T>(tScalar));
+        std::transform(tMat.cbegin(), tMat.cend(), Temp.begin(), LeftUnaryMinus<T>(tScalar));
         return Temp;
     }
 
     constexpr
     dMatrix operator-(const dMatrix& tOther) const {
         dMatrix Temp;
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(),
-                       tOther.cbegin()->cbegin(), Temp.begin()->begin(), std::minus<T>());
+        std::transform(cbegin(), cend(),
+                       tOther.cbegin(), Temp.begin(), std::minus<T>());
         return Temp;
     }
 
     constexpr
     dMatrix& operator-=(const dMatrix& tOther) {
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(),
-                       tOther.cbegin()->cbegin(), begin()->begin(), std::minus<T>());
+        std::transform(cbegin(), cend(),
+                       tOther.cbegin(), begin(), std::minus<T>());
         return *this;
     }
 
     constexpr
     dMatrix& operator-=(const T& tScalar) {
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(),
-                       begin()->begin(), RightUnaryMinus<T>(tScalar));
+        std::transform(cbegin(), cend(),
+                       begin(), RightUnaryMinus<T>(tScalar));
         return *this;
     }
 
@@ -149,38 +278,38 @@ public:
     constexpr
     dMatrix operator*(const dMatrix& tOther) {
         dMatrix Temp;
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(),
-                       tOther.cbegin()->cbegin(), Temp.begin()->begin(), std::multiplies<T>());
+        std::transform(cbegin(), cend(),
+                       tOther.cbegin(), Temp.begin(), std::multiplies<T>());
         return Temp;
     }
 
     constexpr
     friend dMatrix operator*(const dMatrix &tMat, const T& tScalar) {
         dMatrix Temp;
-        std::transform(tMat.cbegin()->cbegin(), (tMat.cend() - 1)->cend(),
-                       Temp.begin()->begin(), RightUnaryMultiplies<T>(tScalar));
+        std::transform(tMat.cbegin(), tMat.cend(),
+                       Temp.begin(), RightUnaryMultiplies<T>(tScalar));
         return Temp;
     }
     
     constexpr
     friend dMatrix operator*(const T& tScalar, const dMatrix &tMat) {
         dMatrix Temp;
-        std::transform(tMat.cbegin()->cbegin(), (tMat.cend() - 1)->cend(),
-                       Temp.begin()->begin(), LeftUnaryMultiplies<T>(tScalar));
+        std::transform(tMat.cbegin(), tMat.cend(),
+                       Temp.begin(), LeftUnaryMultiplies<T>(tScalar));
         return Temp;
     }
 
     constexpr
     dMatrix& operator*=(const dMatrix& tOther) {
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(),
-                       tOther.cbegin()->cbegin(), begin()->begin(), std::multiplies<T>());
+        std::transform(cbegin(), cend(),
+                       tOther.cbegin(), begin(), std::multiplies<T>());
         return *this;
     }
 
     constexpr
     dMatrix& operator*=(const T& tScalar) {
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(),
-                       begin()->begin(), RightUnaryMultiplies<T>(tScalar));
+        std::transform(cbegin(), cend(),
+                       begin(), RightUnaryMultiplies<T>(tScalar));
         return *this;
     }
 
@@ -188,38 +317,38 @@ public:
     constexpr
     dMatrix operator/(const dMatrix& tOther) {
         dMatrix Temp;
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(),
-                       tOther.cbegin()->cbegin(), Temp.begin()->begin(), std::divides<T>());
+        std::transform(cbegin(), cend(),
+                       tOther.cbegin(), Temp.begin(), std::divides<T>());
         return Temp;
     }
 
     constexpr
     friend dMatrix operator/(const dMatrix &tMat, const T& tScalar) {
         dMatrix Temp;
-        std::transform(tMat.cbegin()->cbegin(), (tMat.cend() - 1)->cend(),
-                       Temp.begin()->begin(), RightUnaryDivides<T>(tScalar));
+        std::transform(tMat.cbegin(), tMat.cend(),
+                       Temp.begin(), RightUnaryDivides<T>(tScalar));
         return Temp;
     }
 
     constexpr
     friend dMatrix operator/(const T& tScalar, const dMatrix &tMat) {
         dMatrix Temp;
-        std::transform(tMat.cbegin()->cbegin(), (tMat.cend() - 1)->cend(),
-                       Temp.begin()->begin(), LeftUnaryDivides<T>(tScalar));
+        std::transform(tMat.cbegin(), tMat.cend(),
+                       Temp.begin(), LeftUnaryDivides<T>(tScalar));
         return Temp;
     }
 
     constexpr
     dMatrix& operator/=(const dMatrix& tOther) {
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(),
-                       tOther.cbegin()->cbegin(), begin()->begin(), std::divides<T>());
+        std::transform(cbegin(), cend(),
+                       tOther.cbegin(), begin(), std::divides<T>());
         return *this;
     }
 
     constexpr
     dMatrix& operator/=(const T& tScalar) {
-        std::transform(cbegin()->cbegin(), (cend() - 1)->cend(),
-                       begin()->begin(), RightUnaryDivides<T>(tScalar));
+        std::transform(cbegin(), cend(),
+                       begin(), RightUnaryDivides<T>(tScalar));
         return *this;
     }
 
@@ -233,29 +362,37 @@ public:
         dMatrix <T, N, M> Temp;
         for(std::size_t i = 0; i < N; ++i) {
             for(std::size_t j = 0; j < M; ++j) {
-                Temp[i][j] = mData[j][i];
+                Temp[i][j] = *this[j][i];
             }
         }
         return Temp;
     }
 
     template<std::size_t K>
-    friend dMatrix <T, M, K> dot(const dMatrix &lhs, const dMatrix <T, N, K> &rhs) {
-        dMatrix <T, M, K> Temp(0);
+    constexpr
+    dMatrix <T, M, K> dot(const dMatrix <T, N, K> &rhs) const {
+        dMatrix <T, M, K> Temp(T(0));
 //        TODO add fast algorithm
         for(std::size_t i = 0; i < M; ++i) {
             for(std::size_t j = 0; j < K; ++j) {
                 for(std::size_t k = 0; k < N; ++k) {
-                    Temp[i][j] += lhs[i][k] * rhs[k][j];
+                    Temp[i][j] += (*this)[i][k] * rhs[k][j];
                 }
             }
         }
         return Temp;
     }
 
+    template<std::size_t K>
+    constexpr
+    friend dMatrix <T, M, K> dot(const dMatrix &lhs, const dMatrix <T, N, K> &rhs) {;
+        return lhs.dot(rhs);
+    }
+
     #ifndef DMATH_ONLY_MATRIX
+    constexpr
     friend dVector<T, M> dot(const dVector<T, M> &vec, const dMatrix &mat) {
-        dVector<T, M> Temp(0);
+        dVector<T, M> Temp(T(0));
 //        TODO add fast algorithm
         for(std::size_t j = 0; j < N; ++j) {
             for(std::size_t k = 0; k < M; ++k) {
@@ -266,16 +403,14 @@ public:
         return Temp;
     }
 
-    friend dVector<T, M> dot(const dMatrix &mat, const dVector<T, M> &vec) {
-        return dot(vec, mat);
-    }
     #endif // DMATH_ONLY_MATRIX
 
     // only for square tMat
     template<typename Q = T>
-    static std::enable_if_t<N == M, dMatrix <Q, M, M>> identity() {
+    constexpr
+    static is_square_t <dMatrix <Q, M, M>> identity() {
         dMatrix<Q, M, M> Temp(Q(0));
-        auto iter = Temp.begin()->begin();
+        auto iter = Temp.begin();
         for (std::size_t i = 0; i < N; ++i) {
             iter += i + i * N;
             *iter = Q(1);
@@ -284,7 +419,8 @@ public:
     }
 
     template<typename Q = T>
-    std::enable_if_t<N == M, Q> det() {
+    constexpr
+    is_square_t <Q> det() {
 //        TODO
         return 0;
     }
@@ -300,7 +436,7 @@ public:
 
     constexpr
     void fill(const T& value) {
-        std::fill(begin()->begin(), (end() - 1)->end(), value);
+        std::fill(begin(), end(), value);
     }
 
 //    constexpr std::size_t size() const noexcept {
@@ -322,39 +458,123 @@ public:
         return mData.at(index);
     }
 
-    constexpr
-    const std::array<T, N>& at(std::size_t index) const {
-        return mData.at(index);
+    [[nodiscard]] constexpr
+    size_type rows() const {
+        return M;
+    }
+
+    [[nodiscard]] constexpr
+    size_type cols() const {
+        return M;
     }
 
     constexpr
-    const std::array<T, N>* cbegin() const noexcept {
-        return mData.cbegin();
+    const_iterator cbegin() const noexcept {
+        return mData.cbegin()->cbegin();
     }
 
     constexpr
-    const std::array<T, N>* begin() const noexcept {
-        return mData.begin();
+    const_iterator begin() const noexcept {
+        return const_cast<dMatrix&>(*this).begin();
     }
 
     constexpr
-    std::array<T, N>* begin() noexcept {
-        return mData.begin();
+    iterator begin() noexcept {
+        return mData.begin()->begin();
     }
 
     constexpr
-    const std::array<T, N>* cend() const noexcept {
-        return mData.cend();
+    const_iterator cend() const noexcept {
+        return (mData.cend() - 1)->cend();
     }
 
     constexpr
-    const std::array<T, N>* end() const noexcept {
-        return mData.end();
+    const_iterator end() const noexcept {
+        return const_cast<dMatrix&>(*this).end();
     }
 
     constexpr
-    std::array<T, N>* end() noexcept {
-        return mData.end();
+    iterator end() noexcept {
+        return (mData.end() - 1)->end();
+    }
+
+    constexpr
+    const_iterator crbegin() const noexcept {
+        return mData.crbegin()->crbegin();
+    }
+
+    constexpr
+    const_iterator rbegin() const noexcept {
+        return const_cast<dMatrix&>(*this).rbegin();
+    }
+
+    constexpr
+    iterator rbegin() noexcept {
+        return mData.rbegin()->rbegin();
+    }
+
+    constexpr
+    const_iterator crend() const noexcept {
+        return (mData.crend() - 1)->crend();
+    }
+
+    constexpr
+    const_iterator rend() const noexcept {
+        return const_cast<dMatrix&>(*this).rend();
+    }
+
+    constexpr
+    iterator rend() noexcept {
+        return (mData.rend() - 1)->rend();
+    }
+
+
+    template<Iterate iter>
+    constexpr
+    auto begin() const {
+        if constexpr (iter == Iterate::Row) {
+            return mData.begin();
+        } else if constexpr (iter == Iterate::Col) {
+            return column_view(begin());
+        } else {
+            return begin();
+        }
+    }
+
+    template<Iterate iter>
+    constexpr
+    auto begin() {
+        if constexpr (iter == Iterate::Row) {
+            return mData.begin();
+        } else if constexpr (iter == Iterate::Col) {
+            return column_view(begin());
+        } else {
+            return begin();
+        }
+    }
+
+    template<Iterate iter>
+    constexpr
+    auto end() const {
+        if constexpr (iter == Iterate::Row) {
+            return mData.end();
+        } else if constexpr (iter == Iterate::Col) {
+            return column_view(mData.begin()->end());
+        } else {
+            return end();
+        }
+    }
+
+    template<Iterate iter>
+    constexpr
+    auto end() {
+        if constexpr (iter == Iterate::Row) {
+            return mData.end();
+        } else if constexpr (iter == Iterate::Col) {
+            return column_view(mData.begin()->end());
+        } else {
+            return end();
+        }
     }
 
     constexpr
@@ -363,94 +583,19 @@ public:
     }
 
     friend std::ostream &operator<<(std::ostream &tStream, const dMatrix &tMat) {
-        tStream << "dMatrix <" << M << ", " << N << ">(" << std::endl;
-        for(const std::array<T, N>& row : tMat.mData) {
-            for(const T& item : row) {
-                tStream << item << " ";
+        tStream << "dMatrix <" << typeid(T).name() << ", " << M << ", " << N << ">({" << std::endl;
+        for(size_type i = 0; i < tMat.rows(); ++i) {
+            for(size_type j = 0; j < tMat.cols(); ++j) {
+                tStream << tMat[i][j] << " ";
             }
             tStream << std::endl;
         }
-        return tStream << ')';
+        return tStream << "})";
     }
 
 protected:
     std::array<std::array<T, N>, M> mData;
 
-    enum class Iterate { Row, Col, Val };
-
-    template<Iterate iterate>
-    constexpr
-    const auto cbegin() const noexcept {
-        if constexpr (iterate == Iterate::Row) {
-            return cbegin();
-//        } else if constexpr (iterate == Iterate::Col) {
-//            return begin();
-        } else if constexpr (iterate == Iterate::Val) {
-            return cbegin()->cbegin();
-        }
-    }
-
-    template<Iterate iterate>
-    constexpr
-    const auto begin() const noexcept {
-        if constexpr (iterate == Iterate::Row) {
-            return begin();
-//        } else if constexpr (iterate == Iterate::Col) {
-//            return begin();
-        } else if constexpr (iterate == Iterate::Val) {
-            return begin()->begin();
-        }
-    }
-
-    template<Iterate iterate>
-    constexpr
-    auto begin() noexcept {
-        if constexpr (iterate == Iterate::Row) {
-            return begin();
-//        } else if constexpr (iterate == Iterate::Col) {
-//            return begin();
-        } else if constexpr (iterate == Iterate::Val) {
-            return begin()->begin();
-        }
-    }
-
-    template<Iterate iterate>
-    constexpr
-    const auto cend() const noexcept {
-        if constexpr (iterate == Iterate::Row) {
-            return cend();
-//        } else if constexpr (iterate == Iterate::Col) {
-//            return begin();
-        } else if constexpr (iterate == Iterate::Val) {
-            return (cend()-1)->cend();
-        }
-    }
-
-    template<Iterate iterate>
-    constexpr
-    const auto end() const noexcept {
-        if constexpr (iterate == Iterate::Row) {
-            return end();
-//        } else if constexpr (iterate == Iterate::Col) {
-//            return begin();
-        } else if constexpr (iterate == Iterate::Val) {
-            return (end()-1)->end();
-        }
-    }
-
-    template<Iterate iterate>
-    constexpr
-    auto end() noexcept {
-        if constexpr (iterate == Iterate::Row) {
-            return end();
-//        } else if constexpr (iterate == Iterate::Col) {
-//            return begin();
-        } else if constexpr (iterate == Iterate::Val) {
-            return (end()-1)->end();
-        }
-    }
-
 };
 
-#include <optional>
 #endif //DMATH_DMATRIX_H
