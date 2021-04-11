@@ -831,44 +831,45 @@ private:
             const dVec& tNegVal,
             const dVec& tNegVal_plus_1,
             const dVec& tNegVal_plus_2) {
-        dVec fPlus(0.0, 0.0, 0.0, 0.0, 0.0);
-        dVec fMinus(0.0, 0.0, 0.0, 0.0, 0.0);
+        dVec fPlus, fMinus;
+        dVec Beta0, Beta1;
+        double d0, d1;
+        dVec Alpha0, Alpha1;
+        dVec Omega0, Omega1;
 
-        for (int i = 0; i < 5; i++) {
-            double Beta0 = pow(tPosVal_minus_1[i] - tPosVal[i], 2.0);
-            double Beta1 = pow(tPosVal[i] - tPosVal_plus_1[i], 2.0);
+        //----------//
 
-            double d0 = 1.0 / 3.0;
-            double d1 = 2.0 / 3.0;
+        Beta0 = pow(tPosVal_minus_1 - tPosVal, 2.0);
+        Beta1 = pow(tPosVal - tPosVal_plus_1, 2.0);
 
-            double Alpha0 = d0 / pow(1.0e-06 + Beta0, 2.0);
-            double Alpha1 = d1 / pow(1.0e-06 + Beta1, 2.0);
+        d0 = 1.0 / 3.0;
+        d1 = 2.0 / 3.0;
 
-            double Omega0 = Alpha0 / (Alpha0 + Alpha1);
-            double Omega1 = Alpha1 / (Alpha0 + Alpha1);
+        Alpha0 = d0 / pow(1.0e-06 + Beta0, 2.0);
+        Alpha1 = d1 / pow(1.0e-06 + Beta1, 2.0);
 
-            fPlus[i] =
-                    Omega0 * (-0.5 * tPosVal_minus_1[i] + 1.5 * tPosVal[i]) +
-                    Omega1 * (0.5 * tPosVal[i] + 0.5 * tPosVal_plus_1[i]);
-        }
+        Omega0 = Alpha0 / (Alpha0 + Alpha1);
+        Omega1 = Alpha1 / (Alpha0 + Alpha1);
 
-        for (int i = 0; i < 5; i++) {
-            double Beta0 = pow(tNegVal[i] - tNegVal_plus_1[i], 2.0);
-            double Beta1 = pow(tNegVal_plus_1[i] - tNegVal_plus_2[i], 2.0);
+        fPlus = Omega0 * (-0.5 * tPosVal_minus_1 + 1.5 * tPosVal) + Omega1 * (0.5 * tPosVal + 0.5 * tPosVal_plus_1);
 
-            double d0 = 2.0 / 3.0;
-            double d1 = 1.0 / 3.0;
+        //----------//
 
-            double Alpha0 = d0 / pow(1.0e-06 + Beta0, 2.0);
-            double Alpha1 = d1 / pow(1.0e-06 + Beta1, 2.0);
+        Beta0 = pow(tNegVal - tNegVal_plus_1, 2.0);
+        Beta1 = pow(tNegVal_plus_1 - tNegVal_plus_2, 2.0);
 
-            double Omega0 = Alpha0 / (Alpha0 + Alpha1);
-            double Omega1 = Alpha1 / (Alpha0 + Alpha1);
+        d0 = 2.0 / 3.0;
+        d1 = 1.0 / 3.0;
 
-            fMinus[i] =
-                    Omega0 * (0.5 * tNegVal[i] + 0.5 * tNegVal_plus_1[i]) +
-                    Omega1 * (1.5 * tNegVal_plus_1[i] - 0.5 * tNegVal_plus_2[i]);
-        }
+        Alpha0 = d0 / pow(1.0e-06 + Beta0, 2.0);
+        Alpha1 = d1 / pow(1.0e-06 + Beta1, 2.0);
+
+        Omega0 = Alpha0 / (Alpha0 + Alpha1);
+        Omega1 = Alpha1 / (Alpha0 + Alpha1);
+
+        fMinus = Omega0 * (0.5 * tNegVal + 0.5 * tNegVal_plus_1) + Omega1 * (1.5 * tNegVal_plus_1 - 0.5 * tNegVal_plus_2);
+
+        //----------//
 
         return fPlus + fMinus;
     }
@@ -1066,42 +1067,36 @@ private:
                 mMaxAlpha = std::max(fabs(vy + SqrY), mMaxAlpha);
             }
         }
-
-//            if (mMaxAlpha > 500) {
-//                break;
-//            }
-
-//            mStepTime = 0.2 * mStepX / mMaxAlpha;
     }
 };
 
 int main(int argc, char** argv) {
     Solver Test;
 
-    SDL_Init(SDL_INIT_VIDEO);
-
-    auto Window = SDL_CreateWindow(
-            "My App",
-            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-            1500, 300,
-            SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
-
-    if (!Window) {
-        std::cout << "Couldn't create the window: " << SDL_GetError() << std::endl;
-        exit(-1);
-    }
-
+//    SDL_Init(SDL_INIT_VIDEO);
+//
+//    auto Window = SDL_CreateWindow(
+//            "My App",
+//            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+//            1500, 300,
+//            SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+//
+//    if (!Window) {
+//        std::cout << "Couldn't create the window: " << SDL_GetError() << std::endl;
+//        exit(-1);
+//    }
+//
     bool Run = true;
-    SDL_Event Event;
+//    SDL_Event Event;
 
     //----------//
 
     try {
-        Renderer Rend(Window, true);
+//        Renderer Rend(Window, true);
         int Steps = 0;
 //        int Limit = 10000;
-//        int Limit = 10;
-        int Limit = 1440 * 15;
+        int Limit = 1;
+//        int Limit = 1440 * 15;
 
         auto Start = std::chrono::system_clock::now();
         auto End = std::chrono::system_clock::now();
@@ -1109,15 +1104,15 @@ int main(int argc, char** argv) {
         std::chrono::duration <double> DurSeconds;
 
         while (Run) {
-            while (SDL_PollEvent(&Event)) {
-                if (Event.type == SDL_QUIT) {
-                    Run = false;
-                } else if (Event.type == SDL_WINDOWEVENT) {
-                    if (Event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                        Rend.setResized();
-                    }
-                }
-            }
+//            while (SDL_PollEvent(&Event)) {
+//                if (Event.type == SDL_QUIT) {
+//                    Run = false;
+//                } else if (Event.type == SDL_WINDOWEVENT) {
+//                    if (Event.window.event == SDL_WINDOWEVENT_RESIZED) {
+//                        Rend.setResized();
+//                    }
+//                }
+//            }
 
             if (Steps < Limit) {
                 Test.solve();
@@ -1127,16 +1122,18 @@ int main(int argc, char** argv) {
                     std::cout << std::endl << "Calculations finished!" << std::endl;
                 }
 
-                if (Steps % 1440 == 0 && Steps != 0) {
+//                if (Steps % 10 == 0 && Steps != 0) {
                     End = std::chrono::system_clock::now();
                     DurSeconds = End - Start;
 
                     std::cout << DurSeconds.count() << "s" << std::endl;
                     Start = End;
-                }
+//                }
+            } else {
+                break;
             }
 
-            Rend.drawFrame(Test.getElevation(), Test.getFieldX(), Test.getFieldY());
+//            Rend.drawFrame(Test.getElevation(), Test.getFieldX(), Test.getFieldY());
 
 //            break;
         }
@@ -1144,11 +1141,11 @@ int main(int argc, char** argv) {
         //----------//
 
         Test.save();
-
-        vkDeviceWaitIdle(Rend.getDevice());
-
-        SDL_DestroyWindow(Window);
-        SDL_Quit();
+//
+//        vkDeviceWaitIdle(Rend.getDevice());
+//
+//        SDL_DestroyWindow(Window);
+//        SDL_Quit();
     } catch (const std::exception& tExcept) {
         std::cerr << tExcept.what() << std::endl;
         return -1;

@@ -540,7 +540,7 @@ void Renderer::fillArrows(uint16_t tSizeX, uint16_t tSizeY) {
 //-----------------------------//
 void Renderer::setLayers() {
     if (mDebug) {
-        mLayersInstance.emplace_back("VK_LAYER_LUNARG_standard_validation");
+        mLayersInstance.emplace_back("VK_LAYER_KHRONOS_validation");
     }
 }
 void Renderer::setExtensions() {
@@ -981,7 +981,7 @@ void Renderer::initGraphicsPipeline() {
     Rasterizer.depthBiasEnable = VK_FALSE;
     Rasterizer.rasterizerDiscardEnable = VK_FALSE;
     Rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    Rasterizer.lineWidth = 2.0f;
+    Rasterizer.lineWidth = 1.0f;
     Rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     Rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
     Rasterizer.depthBiasEnable = VK_FALSE;
@@ -1142,65 +1142,65 @@ void Renderer::initVertexBuffer() {
     VkDeviceSize BufferSize = sizeof(float) * 5 * Vertices.size();
     VkDeviceSize BufferSizeLines = sizeof(float) * 5 * VerticesLines.size();
 
-//    VkBuffer StagingBuffer;
-//    VkDeviceMemory StagingBufferMemory;
-//
-//    createBuffer(
-//            BufferSize,
-//            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-//            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-//            StagingBuffer,
-//            StagingBufferMemory);
-//
-//    void* Data;
-//    vkMapMemory(mDevice, StagingBufferMemory, 0, BufferSize, 0, &Data);
-//    {
-//        memcpy(Data, Vertices.data(), size_t(BufferSize));
-//    }
-//    vkUnmapMemory(mDevice, StagingBufferMemory);
-
-//
-//    createBuffer(
-//            BufferSize,
-//            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-//            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-//            mVertexBuffer,
-//            mVertexBufferMemory);
-
-//    copyBuffer(StagingBuffer, mVertexBuffer, BufferSize);
-
-//    vkDestroyBuffer(mDevice, StagingBuffer, nullptr);
-//    vkFreeMemory(mDevice, StagingBufferMemory, nullptr);
+    VkBuffer StagingBuffer;
+    VkDeviceMemory StagingBufferMemory;
 
     createBuffer(
             BufferSize,
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+            VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+            StagingBuffer,
+            StagingBufferMemory);
+
+    void* Data;
+    vkMapMemory(mDevice, StagingBufferMemory, 0, BufferSize, 0, &Data);
+    {
+        memcpy(Data, Vertices.data(), size_t(BufferSize));
+    }
+    vkUnmapMemory(mDevice, StagingBufferMemory);
+
+
+    createBuffer(
+            BufferSize,
+            VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
             mVertexBuffer,
             mVertexBufferMemory);
 
-    void* Data;
-    vkMapMemory(mDevice, mVertexBufferMemory, 0, BufferSize, 0, &Data);
-    {
-        memcpy(Data, Vertices.data(), size_t(BufferSize));
-    }
-    vkUnmapMemory(mDevice, mVertexBufferMemory);
+    copyBuffer(StagingBuffer, mVertexBuffer, BufferSize);
+
+    vkDestroyBuffer(mDevice, StagingBuffer, nullptr);
+    vkFreeMemory(mDevice, StagingBufferMemory, nullptr);
+
+//    createBuffer(
+//            BufferSize,
+//            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+//            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+//            mVertexBuffer,
+//            mVertexBufferMemory);
+//
+//    void* Data;
+//    vkMapMemory(mDevice, mVertexBufferMemory, 0, BufferSize, 0, &Data);
+//    {
+//        memcpy(Data, Vertices.data(), size_t(BufferSize));
+//    }
+//    vkUnmapMemory(mDevice, mVertexBufferMemory);
 
     //----------//
 
-    createBuffer(
-            BufferSizeLines,
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-            mVertexBufferLines,
-            mVertexBufferMemoryLines);
-
-    void* DataLines;
-    vkMapMemory(mDevice, mVertexBufferMemoryLines, 0, BufferSizeLines, 0, &DataLines);
-    {
-        memcpy(DataLines, VerticesLines.data(), size_t(BufferSizeLines));
-    }
-    vkUnmapMemory(mDevice, mVertexBufferMemoryLines);
+//    createBuffer(
+//            BufferSizeLines,
+//            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+//            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+//            mVertexBufferLines,
+//            mVertexBufferMemoryLines);
+//
+//    void* DataLines;
+//    vkMapMemory(mDevice, mVertexBufferMemoryLines, 0, BufferSizeLines, 0, &DataLines);
+//    {
+//        memcpy(DataLines, VerticesLines.data(), size_t(BufferSizeLines));
+//    }
+//    vkUnmapMemory(mDevice, mVertexBufferMemoryLines);
 }
 void Renderer::initIndexBuffer() {
     VkDeviceSize bufferSize = sizeof(Indices[0]) * Indices.size();

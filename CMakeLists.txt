@@ -3,18 +3,6 @@ project(dMath)
 
 set(CMAKE_CXX_STANDARD 17)
 
-#set(QtPath /home/devilox/DeviloxDocuments/ProgTools/Qt/5.12.0/gcc_64/lib/cmake)
-#set(QtPackages
-#        Qt5::Core
-#        Qt5::Widgets
-#        Qt5::Network)
-#set(QtComponents
-#        Core
-#        Widgets
-#        Network)
-#find_package(Qt5 COMPONENTS ${QtComponents} PATHS ${QtPath} NO_DEFAULT_PATH)
-#---Qt---#
-
 find_package(Vulkan REQUIRED FATAL_ERROR)
 find_package(SDL2 REQUIRED FATAL_ERROR)
 find_package(OpenMP REQUIRED)

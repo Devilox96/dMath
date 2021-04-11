@@ -112,12 +112,18 @@ public:
         return std::inner_product(tFirst.mData.cbegin(), tFirst.mData.cend(), tSecond.mData.cbegin(), toT(0));
     }
 
-    T operator*(const dVector <T, SizeT>& tOther) const {
-        return dot(*this, tOther);
+    friend dVector <T, SizeT> operator*(const dVector <T, SizeT>& tLeft, const dVector <T, SizeT>& tRight) {
+        dVector <T, SizeT> Temp;
+
+        for (int i = 0; i < tLeft.size(); i++) {
+            Temp[i] = tLeft[i] * tRight[i];
+        }
+
+        return Temp;
     }
 
     template <typename NumberT>
-    friend dVector <T, SizeT> operator*(const dVector <T, SizeT>& tVec, const NumberT&  tNum) {
+    friend dVector <T, SizeT> operator*(const dVector <T, SizeT>& tVec, const NumberT& tNum) {
         dVector <T, SizeT> Temp;
         std::transform(tVec.mData.cbegin(), tVec.mData.cend(), Temp.mData.begin(),
                        [&tNum](const T& tIter) { return tIter * toT(tNum); });
@@ -145,6 +151,25 @@ public:
         dVector <T, SizeT> Temp;
         std::transform(tVec.mData.cbegin(), tVec.mData.cend(), Temp.mData.begin(),
                        [&tNum](const T& tIter) { return tIter / toT(tNum); });
+
+        return Temp;
+    }
+
+    friend dVector <T, SizeT> operator/(const dVector <T, SizeT>& tNumer, const dVector <T, SizeT>& tDenom) {
+        dVector <T, SizeT> Temp;
+
+        for (int i = 0; i < tNumer.size(); i++) {
+            Temp[i] = tNumer[i] / tDenom[i];
+        }
+
+        return Temp;
+    }
+
+    template <typename NumberT>
+    friend dVector <T, SizeT> operator/(const NumberT& tNum, const dVector <T, SizeT>& tVec) {
+        dVector <T, SizeT> Temp;
+        std::transform(tVec.mData.cbegin(), tVec.mData.cend(), Temp.mData.begin(),
+                       [&tNum](const T& tIter) { return toT(tNum) / tIter; });
 
         return Temp;
     }
@@ -288,6 +313,16 @@ public:
             tStream >> item;
         }
         return tStream;
+    }
+
+    friend dVector <double, SizeT> pow(const dVector <T, SizeT>& tVec, double tDegree) {
+        dVector <double, SizeT> Temp;
+
+        for (int i = 0; i < tVec.size(); i++) {
+            Temp[i] = pow(tVec[i], tDegree);
+        }
+
+        return Temp;
     }
 
     template <typename Q = T>
