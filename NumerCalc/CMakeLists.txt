@@ -11,7 +11,8 @@ set(Source
         dLeapFrog1D.cpp
         dLeapFrog2D.cpp
         dRichtmyer1D.cpp
-        dRichtmyer2D.cpp)
+        dRichtmyer2D.cpp
+        dWENO2D.cpp)
 
 add_library(dMathNumerCalcLib ${Source} ${dMathCoreSource})
 target_link_libraries(dMathNumerCalcLib dMathCoreLib)

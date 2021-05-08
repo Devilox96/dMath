@@ -3,6 +3,8 @@
 //-----------------------------//
 #include <stdexcept>
 //-----------------------------//
+///---TODO: do smth with applications to approximated right part---///
+///---TODO: get rid of callbacks, substitute for function overloading---///
 template <class T>
 class dRungeKutta1D {
 public:
