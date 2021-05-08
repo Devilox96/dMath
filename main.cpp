@@ -2,21 +2,48 @@
 #include <cmath>
 #include <utility>
 #include <ctime>
-#include <fstream>
 #include <chrono>
-#include <omp.h>
-//-----------------------------//
 #include "Core/dVector.h"
-#include "Core/dMatrix.h"
 //-----------------------------//
-#include <vulkan/vulkan.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 //-----------------------------//
 #include "Renderer.h"
+#include "NumerCalc/dWENO2D.h"
 //-----------------------------//
 using dGrid = std::vector <std::vector <dVector <double, 5>>>;
 using dVec = dVector <double, 5>;
+
+class SolverWENO : public dWENO2D <dVec> {
+public:
+    SolverWENO() {
+        setTimeStep(60.0);
+
+        setXStep(100.0e+03);
+        setYStep(100.0e+03);
+    }
+public:
+    dVec funcX(const dVec& tVal) override {
+        return dVec(
+                tVal[1],
+                (tVal[1] * tVal[1] - tVal[3] * tVal[3]) / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
+                (tVal[1] * tVal[2] - tVal[3] * tVal[4]) / tVal[0],
+                0.0,
+                -(tVal[1] * tVal[4] - tVal[2] * tVal[3]) / tVal[0]
+        );
+    }
+    dVec funcY(const dVec& tVal) override {
+        return dVec(
+                tVal[2],
+                (tVal[1] * tVal[2] - tVal[3] * tVal[4]) / tVal[0],
+                (tVal[2] * tVal[2] - tVal[4] * tVal[4]) / tVal[0] + 0.5 * mGrav * tVal[0] * tVal[0],
+                -(tVal[2] * tVal[3] - tVal[1] * tVal[4]) / tVal[0],
+                0.0
+        );
+    }
+private:
+    static constexpr double mGrav  = 9.81;
+};
 
 class Solver {
     enum DisplayOutput {
@@ -42,9 +69,6 @@ public:
         AlphaY.resize(mGridX + mOffsetXL + mOffsetXR);
 
         mOutput.resize(mGridX);
-
-        mOutputBx.resize(42);
-        mOutputBy.resize(42);
 
         //---Divergence---//
         mDivergence.resize(mGridX * mGridY);
@@ -78,13 +102,6 @@ public:
             iRow.resize(mGridY);
         }
 
-        for (auto& iRow : mOutputBx) {
-            iRow.resize(10);
-        }
-        for (auto& iRow : mOutputBy) {
-            iRow.resize(10);
-        }
-
         initCoriolis();
         initFields();
         bottomFunc();
@@ -97,228 +114,132 @@ public:
         std::swap(CurrentData, TempData);
 
         EOutput.open("Amplitude.dat");
-
-        FieldOutputX.open("FieldX.dat");
-        FieldOutputY.open("FieldY.dat");
     }
     ~Solver() {
         CurrentData = nullptr;
         TempData = nullptr;
 
         EOutput.close();
-
-        FieldOutputX.close();
-        FieldOutputY.close();
     }
 
     void solve() {
         findAlpha();
 
-            TimePassed += mStepTime;
+        TimePassed += mStepTime;
 
-            if (int(TimePassed) % (60 * 15) == 0) {
-                std::cout << "Time: " << TimePassed / 3600 / 24 << " Step - " << mStepTime << " Alpha - " << mMaxAlpha
-                          << std::endl;
-            }
+        if (int(TimePassed) % (60 * 15) == 0) {
+            std::cout << "Time: " << TimePassed / 3600 / 24 << " Step - " << mStepTime << " Alpha - " << mMaxAlpha
+                      << std::endl;
+        }
 
-            #pragma omp parallel for default(none) firstprivate(mMaxAlpha) collapse(2) num_threads(4)
-            for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
-                for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
-                    dVec Val = (*CurrentData)[i][j];
+#pragma omp parallel for default(none) firstprivate(mMaxAlpha) collapse(2) num_threads(4)
+        for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
+            for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
+                dVec Val = (*CurrentData)[i][j];
 
-                    dVec Val_xpl_2 = (*CurrentData)[i + 2][j];
-                    dVec Val_xpl_1 = (*CurrentData)[i + 1][j];
-                    dVec Val_xmin_1 = (*CurrentData)[i - 1][j];
-                    dVec Val_xmin_2 = (*CurrentData)[i - 2][j];
+                dVec Val_xmin_1 = (*CurrentData)[i - 1][j];
+                dVec Val_xmin_2 = (*CurrentData)[i - 2][j];
+                dVec Val_xpl_1 = (*CurrentData)[i + 1][j];
+                dVec Val_xpl_2 = (*CurrentData)[i + 2][j];
 
-                    dVec Val_ypl_2 = (*CurrentData)[i][j + 2];
-                    dVec Val_ypl_1 = (*CurrentData)[i][j + 1];
-                    dVec Val_ymin_1 = (*CurrentData)[i][j - 1];
-                    dVec Val_ymin_2 = (*CurrentData)[i][j - 2];
+                dVec Val_ymin_1 = (*CurrentData)[i][j - 1];
+                dVec Val_ymin_2 = (*CurrentData)[i][j - 2];
+                dVec Val_ypl_1 = (*CurrentData)[i][j + 1];
+                dVec Val_ypl_2 = (*CurrentData)[i][j + 2];
 
-                    if (i == mOffsetXL) {
-                        Val_xpl_2[1] = Val[1] / Val[0] * Val_xpl_2[0];
-                        Val_xpl_1[1] = Val[1] / Val[0] * Val_xpl_1[0];
-                        Val_xmin_1[1] = Val[1] / Val[0] * Val_xmin_1[0];
-                        Val_xmin_2[1] = Val[1] / Val[0] * Val_xmin_2[0];
+                if (i == mOffsetXL) {
+                    Val_xpl_2[1] = Val[1] / Val[0] * Val_xpl_2[0];
+                    Val_xpl_1[1] = Val[1] / Val[0] * Val_xpl_1[0];
+                    Val_xmin_1[1] = Val[1] / Val[0] * Val_xmin_1[0];
+                    Val_xmin_2[1] = Val[1] / Val[0] * Val_xmin_2[0];
 
-                        Val_xpl_2[2] = Val[2] / Val[0] * Val_xpl_2[0];
-                        Val_xpl_1[2] = Val[2] / Val[0] * Val_xpl_1[0];
-                        Val_xmin_1[2] = Val[2] / Val[0] * Val_xmin_1[0];
-                        Val_xmin_2[2] = Val[2] / Val[0] * Val_xmin_2[0];
-                    }
-
-                    if (j == mOffsetYU || j == mGridY + mOffsetYU - 1) {
-                        Val_ypl_2[1] = Val[1] / Val[0] * Val_ypl_2[0];
-                        Val_ypl_1[1] = Val[1] / Val[0] * Val_ypl_1[0];
-                        Val_ymin_1[1] = Val[1] / Val[0] * Val_ymin_1[0];
-                        Val_ymin_2[1] = Val[1] / Val[0] * Val_ymin_2[0];
-                    }
-
-                    auto PlusX = WENO(
-                            (funcX(Val_xmin_1) + mMaxAlpha * Val_xmin_1) / 2.0,
-                            (funcX(Val) + mMaxAlpha * Val) / 2.0,
-                            (funcX(Val_xpl_1) + mMaxAlpha * Val_xpl_1) / 2.0,
-                            (funcX(Val) - mMaxAlpha * Val) / 2.0,
-                            (funcX(Val_xpl_1) - mMaxAlpha * Val_xpl_1) / 2.0,
-                            (funcX(Val_xpl_2) - mMaxAlpha * Val_xpl_2) / 2.0
-                    );
-                    auto MinusX = WENO(
-                            (funcX(Val_xmin_2) + mMaxAlpha * Val_xmin_2) / 2.0,
-                            (funcX(Val_xmin_1) + mMaxAlpha * Val_xmin_1) / 2.0,
-                            (funcX(Val) + mMaxAlpha * Val) / 2.0,
-                            (funcX(Val_xmin_1) - mMaxAlpha * Val_xmin_1) / 2.0,
-                            (funcX(Val) - mMaxAlpha * Val) / 2.0,
-                            (funcX(Val_xpl_1) - mMaxAlpha * Val_xpl_1) / 2.0
-                    );
-
-                    auto PlusY = WENO(
-                            (funcY(Val_ymin_1) + mMaxAlpha * Val_ymin_1) / 2.0,
-                            (funcY(Val) + mMaxAlpha * Val) / 2.0,
-                            (funcY(Val_ypl_1) + mMaxAlpha * Val_ypl_1) / 2.0,
-                            (funcY(Val) - mMaxAlpha * Val) / 2.0,
-                            (funcY(Val_ypl_1) - mMaxAlpha * Val_ypl_1) / 2.0,
-                            (funcY(Val_ypl_2) - mMaxAlpha * Val_ypl_2) / 2.0
-                    );
-                    auto MinusY = WENO(
-                            (funcY(Val_ymin_2) + mMaxAlpha * Val_ymin_2) / 2.0,
-                            (funcY(Val_ymin_1) + mMaxAlpha * Val_ymin_1) / 2.0,
-                            (funcY(Val) + mMaxAlpha * Val) / 2.0,
-                            (funcY(Val_ymin_1) - mMaxAlpha * Val_ymin_1) / 2.0,
-                            (funcY(Val) - mMaxAlpha * Val) / 2.0,
-                            (funcY(Val_ypl_1) - mMaxAlpha * Val_ypl_1) / 2.0
-                    );
-
-                    (*TempData)[i][j] =
-                            (*CurrentData)[i][j] -
-                            mStepTime *
-                            ((PlusX - MinusX) / mStepX + (PlusY - MinusY) / mStepY -
-                            source(i, j));
+                    Val_xpl_2[2] = Val[2] / Val[0] * Val_xpl_2[0];
+                    Val_xpl_1[2] = Val[2] / Val[0] * Val_xpl_1[0];
+                    Val_xmin_1[2] = Val[2] / Val[0] * Val_xmin_1[0];
+                    Val_xmin_2[2] = Val[2] / Val[0] * Val_xmin_2[0];
                 }
-            }
 
-            updateBoundaries();
-            std::swap(TempData2, TempData);
-
-            #pragma omp parallel for default(none) firstprivate(mMaxAlpha) collapse(2) num_threads(4)
-            for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
-                for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
-                    dVec Val = (*TempData2)[i][j];
-
-                    dVec Val_xpl_2 = (*TempData2)[i + 2][j];
-                    dVec Val_xpl_1 = (*TempData2)[i + 1][j];
-                    dVec Val_xmin_1 = (*TempData2)[i - 1][j];
-                    dVec Val_xmin_2 = (*TempData2)[i - 2][j];
-
-                    dVec Val_ypl_2 = (*TempData2)[i][j + 2];
-                    dVec Val_ypl_1 = (*TempData2)[i][j + 1];
-                    dVec Val_ymin_1 = (*TempData2)[i][j - 1];
-                    dVec Val_ymin_2 = (*TempData2)[i][j - 2];
-
-                    if (i == mOffsetXL) {
-                        Val_xpl_2[1] = Val[1] / Val[0] * Val_xpl_2[0];
-                        Val_xpl_1[1] = Val[1] / Val[0] * Val_xpl_1[0];
-                        Val_xmin_1[1] = Val[1] / Val[0] * Val_xmin_1[0];
-                        Val_xmin_2[1] = Val[1] / Val[0] * Val_xmin_2[0];
-
-                        Val_xpl_2[2] = Val[2] / Val[0] * Val_xpl_2[0];
-                        Val_xpl_1[2] = Val[2] / Val[0] * Val_xpl_1[0];
-                        Val_xmin_1[2] = Val[2] / Val[0] * Val_xmin_1[0];
-                        Val_xmin_2[2] = Val[2] / Val[0] * Val_xmin_2[0];
-                    }
-
-                    if (j == mOffsetYU || j == mGridY + mOffsetYU - 1) {
-                        Val_ypl_2[1] = Val[1] / Val[0] * Val_ypl_2[0];
-                        Val_ypl_1[1] = Val[1] / Val[0] * Val_ypl_1[0];
-                        Val_ymin_1[1] = Val[1] / Val[0] * Val_ymin_1[0];
-                        Val_ymin_2[1] = Val[1] / Val[0] * Val_ymin_2[0];
-                    }
-
-                    auto PlusX = WENO(
-                            (funcX(Val_xmin_1) + mMaxAlpha * Val_xmin_1) / 2.0,
-                            (funcX(Val) + mMaxAlpha * Val) / 2.0,
-                            (funcX(Val_xpl_1) + mMaxAlpha * Val_xpl_1) / 2.0,
-                            (funcX(Val) - mMaxAlpha * Val) / 2.0,
-                            (funcX(Val_xpl_1) - mMaxAlpha * Val_xpl_1) / 2.0,
-                            (funcX(Val_xpl_2) - mMaxAlpha * Val_xpl_2) / 2.0
-                    );
-                    auto MinusX = WENO(
-                            (funcX(Val_xmin_2) + mMaxAlpha * Val_xmin_2) / 2.0,
-                            (funcX(Val_xmin_1) + mMaxAlpha * Val_xmin_1) / 2.0,
-                            (funcX(Val) + mMaxAlpha * Val) / 2.0,
-                            (funcX(Val_xmin_1) - mMaxAlpha * Val_xmin_1) / 2.0,
-                            (funcX(Val) - mMaxAlpha * Val) / 2.0,
-                            (funcX(Val_xpl_1) - mMaxAlpha * Val_xpl_1) / 2.0
-                    );
-
-                    auto PlusY = WENO(
-                            (funcY(Val_ymin_1) + mMaxAlpha * Val_ymin_1) / 2.0,
-                            (funcY(Val) + mMaxAlpha * Val) / 2.0,
-                            (funcY(Val_ypl_1) + mMaxAlpha * Val_ypl_1) / 2.0,
-                            (funcY(Val) - mMaxAlpha * Val) / 2.0,
-                            (funcY(Val_ypl_1) - mMaxAlpha * Val_ypl_1) / 2.0,
-                            (funcY(Val_ypl_2) - mMaxAlpha * Val_ypl_2) / 2.0
-                    );
-                    auto MinusY = WENO(
-                            (funcY(Val_ymin_2) + mMaxAlpha * Val_ymin_2) / 2.0,
-                            (funcY(Val_ymin_1) + mMaxAlpha * Val_ymin_1) / 2.0,
-                            (funcY(Val) + mMaxAlpha * Val) / 2.0,
-                            (funcY(Val_ymin_1) - mMaxAlpha * Val_ymin_1) / 2.0,
-                            (funcY(Val) - mMaxAlpha * Val) / 2.0,
-                            (funcY(Val_ypl_1) - mMaxAlpha * Val_ypl_1) / 2.0
-                    );
-
-                    (*TempData)[i][j] =
-                            0.5 * (*CurrentData)[i][j] +
-                            0.5 * (*TempData2)[i][j] -
-                            0.5 * mStepTime *
-                            ((PlusX - MinusX) / mStepX + (PlusY - MinusY) / mStepY -
-                             source(i, j));
+                if (j == mOffsetYU || j == mGridY + mOffsetYU - 1) {
+                    Val_ypl_2[1] = Val[1] / Val[0] * Val_ypl_2[0];
+                    Val_ypl_1[1] = Val[1] / Val[0] * Val_ypl_1[0];
+                    Val_ymin_1[1] = Val[1] / Val[0] * Val_ymin_1[0];
+                    Val_ymin_2[1] = Val[1] / Val[0] * Val_ymin_2[0];
                 }
+
+                (*TempData)[i][j] =
+                        (*CurrentData)[i][j] -
+                        (mSpartialSolver.solve(Val, Val_xmin_2, Val_xmin_1, Val_xpl_1, Val_xpl_2, Val_ymin_2, Val_ymin_1, Val_ypl_1, Val_ypl_2, mMaxAlpha) -
+                                mStepTime * source(i, j));
             }
+        }
 
-            updateBoundaries();
+        updateBoundaries();
+        std::swap(TempData2, TempData);
 
-            std::swap(CurrentData, TempData);
+#pragma omp parallel for default(none) firstprivate(mMaxAlpha) collapse(2) num_threads(4)
+        for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
+            for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
+                dVec Val = (*TempData2)[i][j];
 
-        fixFieldDivergence();
+                dVec Val_xpl_2 = (*TempData2)[i + 2][j];
+                dVec Val_xpl_1 = (*TempData2)[i + 1][j];
+                dVec Val_xmin_1 = (*TempData2)[i - 1][j];
+                dVec Val_xmin_2 = (*TempData2)[i - 2][j];
+
+                dVec Val_ypl_2 = (*TempData2)[i][j + 2];
+                dVec Val_ypl_1 = (*TempData2)[i][j + 1];
+                dVec Val_ymin_1 = (*TempData2)[i][j - 1];
+                dVec Val_ymin_2 = (*TempData2)[i][j - 2];
+
+                if (i == mOffsetXL) {
+                    Val_xpl_2[1] = Val[1] / Val[0] * Val_xpl_2[0];
+                    Val_xpl_1[1] = Val[1] / Val[0] * Val_xpl_1[0];
+                    Val_xmin_1[1] = Val[1] / Val[0] * Val_xmin_1[0];
+                    Val_xmin_2[1] = Val[1] / Val[0] * Val_xmin_2[0];
+
+                    Val_xpl_2[2] = Val[2] / Val[0] * Val_xpl_2[0];
+                    Val_xpl_1[2] = Val[2] / Val[0] * Val_xpl_1[0];
+                    Val_xmin_1[2] = Val[2] / Val[0] * Val_xmin_1[0];
+                    Val_xmin_2[2] = Val[2] / Val[0] * Val_xmin_2[0];
+                }
+
+                if (j == mOffsetYU || j == mGridY + mOffsetYU - 1) {
+                    Val_ypl_2[1] = Val[1] / Val[0] * Val_ypl_2[0];
+                    Val_ypl_1[1] = Val[1] / Val[0] * Val_ypl_1[0];
+                    Val_ymin_1[1] = Val[1] / Val[0] * Val_ymin_1[0];
+                    Val_ymin_2[1] = Val[1] / Val[0] * Val_ymin_2[0];
+                }
+
+                (*TempData)[i][j] = 0.5 * (
+                        (*CurrentData)[i][j] +
+                        (*TempData2)[i][j] -
+                        (mSpartialSolver.solve(Val, Val_xmin_2, Val_xmin_1, Val_xpl_1, Val_xpl_2, Val_ymin_2, Val_ymin_1, Val_ypl_1, Val_ypl_2, mMaxAlpha) -
+                                mStepTime * source(i, j)));
+            }
+        }
+
+        updateBoundaries();
+
+        std::swap(CurrentData, TempData);
+
+//        fixFieldDivergence();
         fillOutput(DISPLAY_ELEVATION);
-//        fillOutput(DISPLAY_FIELD_DIVERGENCE);
     }
     void save() {
         for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
             for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
                 EOutput << (*CurrentData)[i][j][0] + Bottom[i][j] << " ";
-
-                FieldOutputX << (*CurrentData)[i][j][3] / (*CurrentData)[i][j][0] << " ";
-                FieldOutputY << (*CurrentData)[i][j][4] / (*CurrentData)[i][j][0] << " ";
             }
 
             EOutput << std::endl;
-
-            FieldOutputX << std::endl;
-            FieldOutputY << std::endl;
         }
     }
     void fillOutput(DisplayOutput tType) {
-        int iStepX = static_cast <int>(mGridX / 42.0);
-        int iStepY = static_cast <int>(mGridY / 10.0);
-
         switch (tType) {
             case DISPLAY_ELEVATION:
                 for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
                     for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
                         mOutput[i - mOffsetXL][j - mOffsetYU] = (*CurrentData)[i][j][0] + Bottom[i][j];
-                    }
-                }
-
-                for (size_t j = 0; j < 10; j++) {
-                    for (size_t i = 0; i < 42; i++) {
-                        mOutputBx[i][j] = (*CurrentData)[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][3] / (*CurrentData)[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][0];
-                        mOutputBy[i][j] = (*CurrentData)[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][4] / (*CurrentData)[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][0];
-
-//                        mOutputBx[i][j] = InputFields[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][0];
-//                        mOutputBy[i][j] = InputFields[(i + 1) * iStepX - 1][(j + 1) * iStepY - 1][1];
                     }
                 }
 
@@ -338,13 +259,13 @@ public:
                 for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
                     for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
                         double dBx_dx = (
-                                (*CurrentData)[i + 1][j][3] / (*CurrentData)[i + 1][j][0] -
-                                (*CurrentData)[i - 1][j][3] / (*CurrentData)[i - 1][j][0]
-                                ) / (mStepX * 2.0);
+                                                (*CurrentData)[i + 1][j][3] / (*CurrentData)[i + 1][j][0] -
+                                                (*CurrentData)[i - 1][j][3] / (*CurrentData)[i - 1][j][0]
+                                        ) / (mStepX * 2.0);
                         double dBy_dy = (
-                                (*CurrentData)[i][j + 1][4] / (*CurrentData)[i][j + 1][0] -
-                                (*CurrentData)[i][j - 1][4] / (*CurrentData)[i][j - 1][0]
-                                ) / (mStepY * 2.0);
+                                                (*CurrentData)[i][j + 1][4] / (*CurrentData)[i][j + 1][0] -
+                                                (*CurrentData)[i][j - 1][4] / (*CurrentData)[i][j - 1][0]
+                                        ) / (mStepY * 2.0);
 
                         mOutput[i - mOffsetXL][j - mOffsetYU] = dBx_dx + dBy_dy;
                     }
@@ -355,14 +276,8 @@ public:
                 break;
         }
     }
-    const std::vector <std::vector <double>>& getElevation() const {
+    std::vector <std::vector <double>> getElevation() const {
         return mOutput;
-    }
-    const std::vector <std::vector <double>>& getFieldX() const {
-        return mOutputBx;
-    }
-    const std::vector <std::vector <double>>& getFieldY() const {
-        return mOutputBy;
     }
 private:
     size_t mGridX = 360;
@@ -392,7 +307,7 @@ private:
     std::vector <double> mCorParam;
     std::vector <double> mHorizFieldY;
     std::vector <double> mVertField;
-    
+
     double mMaxAlpha = 0.0;
 
     std::vector <double> AlphaX;
@@ -401,9 +316,6 @@ private:
     double TimePassed = 0.0;
 
     std::vector <std::vector <double>> mOutput;
-
-    std::vector <std::vector <double>> mOutputBx;
-    std::vector <std::vector <double>> mOutputBy;
 
     //---Divergence---//
     std::vector <double> mDivergence;
@@ -423,16 +335,13 @@ private:
     const double mBetaParam = 1.6e-11;
 //    const double mBetaParam = 0.0;
 
+
+
+    SolverWENO mSpartialSolver;
+
     //----------//
 
     std::ofstream EOutput;
-
-    std::ofstream FieldOutputX;
-    std::ofstream FieldOutputY;
-
-    //----------//
-
-    std::vector <std::vector <dVector3D <double>>> InputFields;
 
     //----------//
 
@@ -456,54 +365,6 @@ private:
 //            mVertField[i] = 0.0;
 //            mVertField[i] = 21.0;
         }
-
-        InputFields.resize(mGridX);
-
-        for (auto& iRow : InputFields) {
-            iRow.resize(mGridY + mOffsetYU + mOffsetYD);
-        }
-
-        //----------//
-
-        std::ifstream FieldX("BxData.csv");
-        std::string Line;
-
-        while (std::getline(FieldX, Line)) {
-            std::stringstream Stream(Line);
-            double Lat, Lon, Val;
-            char Delimiter;
-
-            Stream >> Lat >> Delimiter >> Lon >> Delimiter >> Val;
-            InputFields[Lon + 180][Lat - 18][0] = Val * 1.0e-09;
-        }
-
-        FieldX.close();
-
-        std::ifstream FieldY("ByData.csv");
-
-        while (std::getline(FieldY, Line)) {
-            std::stringstream Stream(Line);
-            double Lat, Lon, Val;
-            char Delimiter;
-
-            Stream >> Lat >> Delimiter >> Lon >> Delimiter >> Val;
-            InputFields[Lon + 180][Lat - 18][1] = Val * 1.0e-09;
-        }
-
-        FieldY.close();
-
-        std::ifstream FieldZ("BzData.csv");
-
-        while (std::getline(FieldZ, Line)) {
-            std::stringstream Stream(Line);
-            double Lat, Lon, Val;
-            char Delimiter;
-
-            Stream >> Lat >> Delimiter >> Lon >> Delimiter >> Val;
-            InputFields[Lon + 180][Lat - 18][2] = Val * 1.0e-09;
-        }
-
-        FieldZ.close();
     }
     void bottomFunc() {
         std::random_device rd;
@@ -523,6 +384,7 @@ private:
                 Bottom[i][j] = 4000 * exp(
                         -0.5 * pow((i * mStepX - MeanX) / StdX, 2.0)
                         -0.5 * pow((j * mStepY - MeanY) / StdY, 2.0));
+//                Bottom[i][j] = 4000 * pow(sin(i / 10.0), 2.0) + pow(sin(j / 10.0), 2.0);
             }
         }
     }
@@ -579,7 +441,7 @@ private:
         //---Bx-By-Psi---//
 
         //---Periodic East-West---//
-        
+
         //-----------------------------//
 
         //---Extrapolation East---//
@@ -592,7 +454,7 @@ private:
                         (*TempData)[mOffsetXL + 1][j][iComp] / (*TempData)[mOffsetXL + 1][j][0],
                         (*TempData)[mOffsetXL + 2][j][iComp] / (*TempData)[mOffsetXL + 2][j][0],
                         (*TempData)[mOffsetXL + 3][j][iComp] / (*TempData)[mOffsetXL + 3][j][0]
-                        ) * (*TempData)[1][j][0];
+                ) * (*TempData)[1][j][0];
             }
         }
         //---vx-vy---//
@@ -600,7 +462,7 @@ private:
         //---Extrapolation East---//
 
         //-----------------------------//
-        
+
         //---Fixed North-South---//
 
         for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
@@ -619,45 +481,25 @@ private:
             //---vy---//
 
             //---Bx---//
-//            (*TempData)[i][0][3] = 0.0;
-//            (*TempData)[i][1][3] = 0.0;
-//
-//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][3] = 0.0;
-//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][3] = 0.0;
+            (*TempData)[i][0][3] = 0.0;
+            (*TempData)[i][1][3] = 0.0;
 
-            (*TempData)[i][0][3] = InputFields[i - mOffsetXL][0][0] * (*TempData)[i][0][0];
-            (*TempData)[i][1][3] = InputFields[i - mOffsetXL][1][0] * (*TempData)[i][1][0];
-
-            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][3] =
-                    InputFields[i - mOffsetXL][mGridY + mOffsetYU + mOffsetYD - 1][0] *
-                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
-            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][3] =
-                    InputFields[i - mOffsetXL][mGridY + mOffsetYU + mOffsetYD - 2][0] *
-                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][3] = 0.0;
+            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][3] = 0.0;
             //---Bx---//
-            
-            //---By---//
-//            (*TempData)[i][0][4] = mHorizFieldY[0] * (*TempData)[i][0][0];
-//            (*TempData)[i][1][4] = mHorizFieldY[1] * (*TempData)[i][1][0];
-//
-//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][4] =
-//                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 1] *
-//                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
-//            (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] =
-//                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 2] *
-//                    (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
 
-            (*TempData)[i][0][4] = InputFields[i - mOffsetXL][0][1] * (*TempData)[i][0][0];
-            (*TempData)[i][1][4] = InputFields[i - mOffsetXL][1][1] * (*TempData)[i][1][0];
+            //---By---//
+            (*TempData)[i][0][4] = mHorizFieldY[0] * (*TempData)[i][0][0];
+            (*TempData)[i][1][4] = mHorizFieldY[1] * (*TempData)[i][1][0];
 
             (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][4] =
-                    InputFields[i - mOffsetXL][mGridY + mOffsetYU + mOffsetYD - 1][1] *
+                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 1] *
                     (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 1][0];
             (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][4] =
-                    InputFields[i - mOffsetXL][mGridY + mOffsetYU + mOffsetYD - 2][1] *
+                    mHorizFieldY[mGridY + mOffsetYU + mOffsetYD - 2] *
                     (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
             //---By---//
-            
+
             //---Psi---//
 //            (*TempData)[i][1][5] = extrapolate(
 //                    (*TempData)[i][mOffsetYU][5] / (*TempData)[i][mOffsetYU][0],
@@ -674,9 +516,9 @@ private:
 //                    ) * (*TempData)[i][mGridY + mOffsetYU + mOffsetYD - 2][0];
             //---Psi---//
         }
-        
+
         //---Fixed North-South---//
-        
+
         //-----------------------------//
 
         //---Extrapolation North-South---//
@@ -714,18 +556,9 @@ private:
                         0.0,
                         0.0,
                         0.0,
-//                        TempHeight * mHorizFieldY[j],
+//                        TempHeight * mHorizFieldY[j]
                         0.0
-//                        0.0
-                        );
-            }
-        }
-
-        for (size_t i = 0; i < mGridX; i++) {
-            for (size_t j = 0; j < mGridY + mOffsetYU + mOffsetYD; j++) {
-
-                GridCurrentData[i][j][3] = GridCurrentData[i][j][0] * InputFields[i][j][0];
-                GridCurrentData[i][j][4] = GridCurrentData[i][j][0] * InputFields[i][j][1];
+                );
             }
         }
 
@@ -734,7 +567,7 @@ private:
                 GridCurrentData[i][j][1] =
                         GridCurrentData[i][j][0] *
                         (-0.5 * mGrav / (mCorParam[j] * mStepX) *
-                        (GridCurrentData[i][j + 1][0] - GridCurrentData[i][j - 1][0]));
+                         (GridCurrentData[i][j + 1][0] - GridCurrentData[i][j - 1][0]));
             }
         }
 
@@ -743,7 +576,7 @@ private:
                 GridCurrentData[i][j][2] =
                         GridCurrentData[i][j][0] *
                         (0.5 * mGrav / (mCorParam[j] * mStepX) *
-                        (GridCurrentData[i + 1][j][0] - GridCurrentData[i - 1][j][0]));
+                         (GridCurrentData[i + 1][j][0] - GridCurrentData[i - 1][j][0]));
             }
         }
 
@@ -782,8 +615,7 @@ private:
         );
     }
     dVec source(int tPosX, int tPosY) {
-//        double Bz = -mVertField[tPosY];
-        double Bz = -InputFields[tPosX - mOffsetXL][tPosY][2] * 1.0e-09;
+        double Bz = -mVertField[tPosY];
 //        double Bz = -(((*CurrentData)[tPosX + 1][tPosY][3] - (*CurrentData)[tPosX - 1][tPosY][3]) / mStepX / 2.0 +
 //                 ((*CurrentData)[tPosX][tPosY + 1][4] - (*CurrentData)[tPosX][tPosY - 1][4]) / mStepY / 2.0);
 
@@ -819,60 +651,40 @@ private:
                 Bz * vy
 //                Bz * vy,
 //                -mMaxAlpha * mMaxAlpha * Bz
-                );
+        );
+    }
+    dVec viscosity(int tPosX, int tPosY) {
+        double v_x_xx = (
+                                (*CurrentData)[tPosX - 1][tPosY][1] / (*CurrentData)[tPosX - 1][tPosY][0] +
+                                (*CurrentData)[tPosX][tPosY][1] / (*CurrentData)[tPosX][tPosY][0] * 2.0 +
+                                (*CurrentData)[tPosX + 1][tPosY][1] / (*CurrentData)[tPosX + 1][tPosY][0]) /
+                        pow(mStepX, 2.0);
+        double v_x_yy = (
+                                (*CurrentData)[tPosX][tPosY - 1][1] / (*CurrentData)[tPosX][tPosY - 1][0] +
+                                (*CurrentData)[tPosX][tPosY][1] / (*CurrentData)[tPosX][tPosY][0] * 2.0 +
+                                (*CurrentData)[tPosX][tPosY + 1][1] / (*CurrentData)[tPosX][tPosY + 1][0]) /
+                        pow(mStepY, 2.0);
+        double v_y_xx = (
+                                (*CurrentData)[tPosX - 1][tPosY][2] / (*CurrentData)[tPosX - 1][tPosY][0] +
+                                (*CurrentData)[tPosX][tPosY][2] / (*CurrentData)[tPosX][tPosY][0] * 2.0 +
+                                (*CurrentData)[tPosX + 1][tPosY][2] / (*CurrentData)[tPosX + 1][tPosY][0]) /
+                        pow(mStepX, 2.0);
+        double v_y_yy = (
+                                (*CurrentData)[tPosX][tPosY - 1][2] / (*CurrentData)[tPosX][tPosY - 1][0] +
+                                (*CurrentData)[tPosX][tPosY][2] / (*CurrentData)[tPosX][tPosY][0] * 2.0 +
+                                (*CurrentData)[tPosX][tPosY + 1][2] / (*CurrentData)[tPosX][tPosY + 1][0]) /
+                        pow(mStepY, 2.0);
+
+        return dVec (
+                0.0,
+                (*CurrentData)[tPosX][tPosY][0] * (v_x_xx + v_x_yy),
+                (*CurrentData)[tPosX][tPosY][0] * (v_y_xx + v_y_yy),
+                0.0,
+//                0.0,
+                0.0);
     }
 
     //----------//
-
-    dVec WENO(
-            const dVec& tPosVal_minus_1,
-            const dVec& tPosVal,
-            const dVec& tPosVal_plus_1,
-            const dVec& tNegVal,
-            const dVec& tNegVal_plus_1,
-            const dVec& tNegVal_plus_2) {
-        dVec fPlus, fMinus;
-        dVec Beta0, Beta1;
-        double d0, d1;
-        dVec Alpha0, Alpha1;
-        dVec Omega0, Omega1;
-
-        //----------//
-
-        Beta0 = pow(tPosVal_minus_1 - tPosVal, 2.0);
-        Beta1 = pow(tPosVal - tPosVal_plus_1, 2.0);
-
-        d0 = 1.0 / 3.0;
-        d1 = 2.0 / 3.0;
-
-        Alpha0 = d0 / pow(1.0e-06 + Beta0, 2.0);
-        Alpha1 = d1 / pow(1.0e-06 + Beta1, 2.0);
-
-        Omega0 = Alpha0 / (Alpha0 + Alpha1);
-        Omega1 = Alpha1 / (Alpha0 + Alpha1);
-
-        fPlus = Omega0 * (-0.5 * tPosVal_minus_1 + 1.5 * tPosVal) + Omega1 * (0.5 * tPosVal + 0.5 * tPosVal_plus_1);
-
-        //----------//
-
-        Beta0 = pow(tNegVal - tNegVal_plus_1, 2.0);
-        Beta1 = pow(tNegVal_plus_1 - tNegVal_plus_2, 2.0);
-
-        d0 = 2.0 / 3.0;
-        d1 = 1.0 / 3.0;
-
-        Alpha0 = d0 / pow(1.0e-06 + Beta0, 2.0);
-        Alpha1 = d1 / pow(1.0e-06 + Beta1, 2.0);
-
-        Omega0 = Alpha0 / (Alpha0 + Alpha1);
-        Omega1 = Alpha1 / (Alpha0 + Alpha1);
-
-        fMinus = Omega0 * (0.5 * tNegVal + 0.5 * tNegVal_plus_1) + Omega1 * (1.5 * tNegVal_plus_1 - 0.5 * tNegVal_plus_2);
-
-        //----------//
-
-        return fPlus + fMinus;
-    }
 
     double extrapolate(double tOffset_1, double tOffset_2, double tOffset_3, double tOffset_4) {
         return 4.0 * tOffset_1 - 6.0 * tOffset_2 + 4.0 * tOffset_3 - tOffset_4;
@@ -941,13 +753,13 @@ private:
         for (size_t i = mOffsetXL; i < mGridX + mOffsetXL; i++) {
             for (size_t j = mOffsetYU; j < mGridY + mOffsetYU; j++) {
                 double dBx_dx = (
-                        (*CurrentData)[i + 1][j][3] / (*CurrentData)[i + 1][j][0] -
-                        (*CurrentData)[i - 1][j][3] / (*CurrentData)[i - 1][j][0]
-                        ) / (mStepX * 2.0);
+                                        (*CurrentData)[i + 1][j][3] / (*CurrentData)[i + 1][j][0] -
+                                        (*CurrentData)[i - 1][j][3] / (*CurrentData)[i - 1][j][0]
+                                ) / (mStepX * 2.0);
                 double dBy_dy = (
-                        (*CurrentData)[i][j + 1][4] / (*CurrentData)[i][j + 1][0] -
-                        (*CurrentData)[i][j - 1][4] / (*CurrentData)[i][j - 1][0]
-                        ) / (mStepY * 2.0);
+                                        (*CurrentData)[i][j + 1][4] / (*CurrentData)[i][j + 1][0] -
+                                        (*CurrentData)[i][j - 1][4] / (*CurrentData)[i][j - 1][0]
+                                ) / (mStepY * 2.0);
 
                 B[(i - mOffsetXL) * mGridY + j - mOffsetYU] = -(dBx_dx + dBy_dy) * mStepX * mStepX;
                 mDivergence[(i - mOffsetXL) * mGridY + j - mOffsetYU] = 0.0;
@@ -1073,46 +885,67 @@ private:
 int main(int argc, char** argv) {
     Solver Test;
 
-//    SDL_Init(SDL_INIT_VIDEO);
-//
-//    auto Window = SDL_CreateWindow(
-//            "My App",
-//            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-//            1500, 300,
-//            SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
-//
-//    if (!Window) {
-//        std::cout << "Couldn't create the window: " << SDL_GetError() << std::endl;
-//        exit(-1);
-//    }
-//
-    bool Run = true;
-//    SDL_Event Event;
+    SDL_Init(SDL_INIT_VIDEO);
 
-    //----------//
+    auto Window = SDL_CreateWindow(
+            "My App",
+            SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
+            1500, 300,
+            SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE);
+
+    if (!Window) {
+        std::cout << "Couldn't create the window: " << SDL_GetError() << std::endl;
+        exit(-1);
+    }
+
+    Renderer*   VulkanRenderer;
+    SDL_Event   Event;
+    bool        Run                 = true;
 
     try {
-//        Renderer Rend(Window, true);
         int Steps = 0;
-//        int Limit = 10000;
-        int Limit = 1;
-//        int Limit = 1440 * 15;
+        int Limit = 1440 * 15;
 
         auto Start = std::chrono::system_clock::now();
         auto End = std::chrono::system_clock::now();
 
+        std::vector <std::vector <float>> GraphData;
+        std::vector <std::vector <double>> GraphDataDouble;
+
+        GraphData.resize(360);
+        GraphDataDouble.resize(360);
+
+        for (int i = 0; i < 360; i++) {
+            GraphData[i].resize(50);
+            GraphDataDouble[i].resize(50);
+        }
+
         std::chrono::duration <double> DurSeconds;
 
+        VulkanRenderer = new Renderer(Window);
+
+        VulkanRenderer -> setApplicationName("dPlot");
+        VulkanRenderer -> setApplicationVersion(0, 1, 0);
+        VulkanRenderer -> setDebugMode(true);
+
+        VulkanRenderer -> init();
+
         while (Run) {
-//            while (SDL_PollEvent(&Event)) {
-//                if (Event.type == SDL_QUIT) {
-//                    Run = false;
-//                } else if (Event.type == SDL_WINDOWEVENT) {
-//                    if (Event.window.event == SDL_WINDOWEVENT_RESIZED) {
-//                        Rend.setResized();
-//                    }
-//                }
-//            }
+            while (SDL_PollEvent(&Event)) {
+                if (Event.type == SDL_QUIT) {
+                    Run = false;
+                }
+            }
+
+            GraphDataDouble = Test.getElevation();
+
+            for (int i = 0; i < 360; i++) {
+                for (int j = 0; j < 50; j++) {
+                    GraphData[i][j] = GraphDataDouble[i][j];
+                }
+            }
+
+            VulkanRenderer -> draw(GraphData);
 
             if (Steps < Limit) {
                 Test.solve();
@@ -1122,34 +955,24 @@ int main(int argc, char** argv) {
                     std::cout << std::endl << "Calculations finished!" << std::endl;
                 }
 
-//                if (Steps % 10 == 0 && Steps != 0) {
-                    End = std::chrono::system_clock::now();
-                    DurSeconds = End - Start;
+                End = std::chrono::system_clock::now();
+                DurSeconds = End - Start;
 
-                    std::cout << DurSeconds.count() << "s" << std::endl;
-                    Start = End;
-//                }
+//                std::cout << DurSeconds.count() << "s" << std::endl;
+                Start = End;
             } else {
                 break;
             }
-
-//            Rend.drawFrame(Test.getElevation(), Test.getFieldX(), Test.getFieldY());
-
-//            break;
         }
+    } catch (const std::runtime_error& tExcept) {
+        std::cout << tExcept.what() << std::endl;
 
-        //----------//
-
-        Test.save();
-//
-//        vkDeviceWaitIdle(Rend.getDevice());
-//
-//        SDL_DestroyWindow(Window);
-//        SDL_Quit();
-    } catch (const std::exception& tExcept) {
-        std::cerr << tExcept.what() << std::endl;
-        return -1;
+        SDL_DestroyWindow(Window);
+        SDL_Quit();
     }
+
+    SDL_DestroyWindow(Window);
+    SDL_Quit();
 
     return 0;
 }
