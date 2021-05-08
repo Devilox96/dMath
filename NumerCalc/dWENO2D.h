@@ -117,7 +117,7 @@ private:
     double mRatioY = 0.0;           //---mStepTime / mStepY---//
 
     //----------//
-
+    
     T approximate(
             const T& tPosVal_minus_1,
             const T& tPosVal,
