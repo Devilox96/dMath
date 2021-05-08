@@ -1,13 +1,13 @@
-#ifndef DLEAPFROG1D_H
-#define DLEAPFROG1D_H
+#ifndef DRICHTMYER1D_H
+#define DRICHTMYER1D_H
 //-----------------------------//
 #include <iostream>
 //-----------------------------//
 template <class T>
-class dLeapFrog1D {
+class dRichtmyer1D {
 public:
-    dLeapFrog1D() = default;
-    ~dLeapFrog1D() = default;
+    dRichtmyer1D() = default;
+    ~dRichtmyer1D() = default;
 
     //----------//
 
@@ -28,13 +28,18 @@ public:
 
     //----------//
 
-    T solve(const T& tTimeMinus, const T& tOffsetMinus, const T& tOffsetPlus) {
+    T solve(const T& tOffsetMinus, const T& tOffsetZero, const T& tOffsetPlus) {
         if (mStepTime <= 0 || mStepX <= 0) {
-            std::cout << "ERROR! dLeapFrog1D: Incorrect steps!" << std::endl;
+            std::cout << "ERROR! dRichtmyer1D: Incorrect steps!" << std::endl;
         }
 
-        return tTimeMinus -
-               (func(tOffsetPlus) - func(tOffsetMinus)) * mRatioX;
+        T HalfMinus = (tOffsetMinus + tOffsetZero -
+                       (func(tOffsetZero) - func(tOffsetMinus)) * mRatioX) / 2;
+        T HalfPlus = (tOffsetPlus + tOffsetZero -
+                      (func(tOffsetPlus) - func(tOffsetZero)) * mRatioX) / 2;
+
+        return tOffsetZero -
+               (func(HalfPlus) - func(HalfMinus)) * mRatioX;
     }
 protected:
     virtual T func(const T& tVal) {
