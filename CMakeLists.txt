@@ -14,17 +14,5 @@ set(dMathLibs
         dMathCoreLib
         dMathNumerCalcLib)
 
-add_executable(dMath
-        main.cpp
-        Renderer.cpp
-        dDensityPlot2D.cpp
-        dPlotMeshBase.cpp
-        dVulkanMesh.cpp)
-target_include_directories(dMath PRIVATE Vulkan::Vulkan)
-target_include_directories(dMath PRIVATE ${SDL2_INCLUDE_DIRS})
-target_link_libraries(dMath
-        ${dMathLibs}
-        ${QtPackages}
-        Vulkan::Vulkan
-        ${SDL2_LIBRARIES}
-        OpenMP::OpenMP_CXX)
+add_executable(dMath main.cpp)
+target_link_libraries(dMath ${dMathLibs})
