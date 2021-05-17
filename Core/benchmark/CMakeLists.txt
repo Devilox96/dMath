@@ -1,6 +1,7 @@
 find_package(Threads REQUIRED)
 
 #~~~~~~~~~~~~~~~~
+set(CMAKE_CXX_FLAGS "-O3")
 
 file(GLOB_RECURSE ALL_BENCH_CPP *.cpp)
 

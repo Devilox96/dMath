@@ -88,6 +88,42 @@ public:
     }
 
     constexpr
+    friend dVector plusLambda(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), [&tScalar](const T& val) { return tScalar + val; });
+        return Temp;
+    }
+
+    constexpr
+    friend dVector plusFunctor(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryPlus<T>(tScalar));
+        return Temp;
+    }
+
+
+    constexpr
+    friend dVector plusForSub(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        for (std::size_t i = 0; i < tVec.size(); ++i) {
+            Temp[i] = tScalar + tVec[i] ;
+        }
+        return Temp;
+    }
+
+    constexpr
+    friend dVector plusForPtr(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        auto r = Temp.begin();
+        auto f = tVec.cbegin();
+        auto l = tVec.cend();
+        for (;f != l; ++f, ++r) {
+             *r = tScalar + *f;
+        }
+        return Temp;
+    }
+
+    constexpr
     dVector& operator+=(const dVector& tAdd) {
         std::transform(cbegin(), cend(), tAdd.cbegin(), begin(), std::plus<T>());
         return *this;
