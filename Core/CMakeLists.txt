@@ -14,5 +14,12 @@ fetch_googletest(
         ${PROJECT_BINARY_DIR}/../googletest
 )
 
+include(../cmake/benchmark.cmake)
+fetch_benchmark(
+        ${PROJECT_SOURCE_DIR}/../cmake
+        ${PROJECT_BINARY_DIR}/../benchmark
+)
+
 enable_testing()
 add_subdirectory(test)
+add_subdirectory(benchmark)

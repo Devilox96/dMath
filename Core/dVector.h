@@ -10,305 +10,429 @@
 #include <functional>
 #include <cmath>
 
-
 template<typename T, std::size_t M, std::size_t N>
 class dMatrix;
+#include <typeinfo>
 
+#include "util.h"
 //-----------------------------//
 template <typename T, std::size_t SizeT>
 class dVector;
 //-----------------------------//
 template <typename T>
-using dVector2D = dVector <T, 2>;
+using dVector2D = dVector<T, 2>;
 
 template <typename T>
-using dVector3D = dVector <T, 3>;
+using dVector3D = dVector<T, 3>;
 
 template <typename T>
-using dVector4D = dVector <T, 4>;
+using dVector4D = dVector<T, 4>;
 //-----------------------------//
 
 template <typename T, std::size_t SizeT>
 class dVector {
 public:
-    template <typename ... Args>
-    constexpr dVector <T, SizeT>(Args ... tArgs) : mData({tArgs ...}) {}
+    typedef T 	    			                    value_type;
+    typedef value_type*			                    pointer;
+    typedef const value_type*                       const_pointer;
+    typedef value_type&                   	        reference;
+    typedef const value_type&             	        const_reference;
+    typedef value_type*          		            iterator;
+    typedef const value_type*			            const_iterator;
+    typedef std::size_t                    	        size_type;
+    typedef std::ptrdiff_t                   	    difference_type;
+    typedef std::reverse_iterator<iterator>	        reverse_iterator;
+    typedef std::reverse_iterator<const_iterator>   const_reverse_iterator;
+public:
+    dVector(const std::array<T, SizeT>& tArr): mData(tArr) {}
 
-    constexpr dVector <T, SizeT>() = default;
-    constexpr dVector(const dVector <T, SizeT>& tCopy) = default;
-    dVector(dVector <T, SizeT>&& tMove) = default;
+
+    dVector(const T& tVal) {
+        fill(tVal);
+    }
+
+    constexpr
+    dVector() = default;
+    constexpr
+    dVector(const dVector& tCopy) = default;
+    constexpr
+    dVector(dVector&& tMove) noexcept = default;
 
     ~dVector() = default;
 
     //----------//
 
-    constexpr dVector <T, SizeT>& operator=(const dVector <T, SizeT>& tCopy) = default;
-    constexpr dVector <T, SizeT>& operator=(dVector <T, SizeT>&& tMove) = default;
+    constexpr
+    dVector& operator=(const dVector& tCopy) = default;
+    constexpr
+    dVector& operator=(dVector&& tMove) noexcept = default;
 
-    //----------//
-    dVector <T, SizeT> operator+(const dVector <T, SizeT>& tAdd) const {
-        dVector <T, SizeT> Temp;
-        std::transform(mData.cbegin(), mData.cend(), tAdd.mData.cbegin(), Temp.mData.begin(), std::plus <T>());
+    // Addition --->
+    constexpr
+    dVector operator+() const {
+        return *this;
+    }
+
+    constexpr
+    dVector operator+(const dVector& tOther) const {
+        dVector Temp;
+        std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::plus<T>());
+        return Temp;
+    }
+
+    constexpr friend
+    dVector operator+(const dVector& tVec, const T& tScalar) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryPlus<T>(tScalar));
+        return Temp;
+    }
+
+    constexpr
+    friend dVector operator+(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryPlus<T>(tScalar));
+        return Temp;
+    }
+
+    constexpr
+    friend dVector plusLambda(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), [&tScalar](const T& val) { return tScalar + val; });
+        return Temp;
+    }
+
+    constexpr
+    friend dVector plusFunctor(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryPlus<T>(tScalar));
         return Temp;
     }
 
 
-    template <typename NumberT>
-    friend dVector <T, SizeT> operator+(const dVector <T, SizeT>& tVec, const NumberT& tNum) {
-        dVector <T, SizeT> Temp;
-        std::transform(tVec.mData.cbegin(), tVec.mData.cend(), Temp.mData.begin(),
-                       [&tNum](const T& tIter) { return tIter + toT(tNum); });
-        return Temp;
-    }
-    template <typename NumberT>
-    friend dVector <T, SizeT> operator+(const NumberT& tNum, const dVector <T, SizeT>& tVec) {
-        return tVec + tNum;
-    }
-
-    void operator+=(const dVector <T, SizeT>& tAdd) {
-        std::transform(mData.cbegin(), mData.cend(), tAdd.mData.cbegin(), mData.begin(), std::plus <T>());
-    }
-    template <typename NumberT>
-    void operator+=(const NumberT& tNum) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(),
-                       [&tNum](const T& tIter) { return tIter + toT(tNum); });
-    }
-
-
-    //----------//
-    dVector <T, SizeT> operator-() const {
-        dVector <T, SizeT> Temp;
-        std::transform(mData.cbegin(), mData.cend(), Temp.mData.begin(), std::negate <T>());
-        return Temp;
-    }
-
-
-    dVector <T, SizeT> operator-(const dVector <T, SizeT>& tOther) const {
-        dVector <T, SizeT> Temp;
-        std::transform(mData.cbegin(), mData.cend(), tOther.mData.cbegin(), Temp.mData.begin(), std::minus <T>());
-        return Temp;
-    }
-
-    template <typename NumberT>
-    friend dVector <T, SizeT> operator-(const dVector <T, SizeT>& tVec, const NumberT& tNum) {
-        dVector <T, SizeT> Temp;
-        std::transform(tVec.mData.cbegin(), tVec.mData.cend(), Temp.mData.begin(),
-                       [&tNum](const T& tIter) { return tIter - toT(tNum); });
-
-        return Temp;
-    }
-
-    void operator-=(const dVector <T, SizeT>& tOther) {
-        std::transform(mData.cbegin(), mData.cend(), tOther.mData.cbegin(), mData.begin(), std::minus <T>());
-    }
-    template <typename NumberT>
-    void operator-=(const NumberT& tNum) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(),
-                       [&tNum](const T& tIter) { return tIter - toT(tNum); });
-    }
-
-    //----------//
-    friend T dot(const dVector <T, SizeT>& tFirst, const dVector <T, SizeT>& tSecond) {
-        return std::inner_product(tFirst.mData.cbegin(), tFirst.mData.cend(), tSecond.mData.cbegin(), toT(0));
-    }
-
-    friend dVector <T, SizeT> operator*(const dVector <T, SizeT>& tLeft, const dVector <T, SizeT>& tRight) {
-        dVector <T, SizeT> Temp;
-
-        for (int i = 0; i < tLeft.size(); i++) {
-            Temp[i] = tLeft[i] * tRight[i];
+    constexpr
+    friend dVector plusForSub(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        for (std::size_t i = 0; i < tVec.size(); ++i) {
+            Temp[i] = tScalar + tVec[i] ;
         }
-
         return Temp;
     }
 
-    template <typename NumberT>
-    friend dVector <T, SizeT> operator*(const dVector <T, SizeT>& tVec, const NumberT& tNum) {
-        dVector <T, SizeT> Temp;
-        std::transform(tVec.mData.cbegin(), tVec.mData.cend(), Temp.mData.begin(),
-                       [&tNum](const T& tIter) { return tIter * toT(tNum); });
-
-        return Temp;
-    }
-    template <typename NumberT>
-    friend dVector <T, SizeT> operator*(const NumberT& tNum, const dVector <T, SizeT>& tVec) {
-        return tVec * tNum;
-    }
-
-    template <typename NumberT>
-    void operator*=(const NumberT& tNum) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(), [&tNum](const T& tIter) { return tIter * toT(tNum); });
-    }
-
-    void operator*=(const dVector<T, 1>& tNum) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(), [&tNum](const T& tIter) { return tIter * toT(tNum[0]); });
-    }
-
-
-    //----------//
-    template <typename NumberT>
-    friend dVector <T, SizeT> operator/(const dVector <T, SizeT>& tVec, const NumberT& tNum) {
-        dVector <T, SizeT> Temp;
-        std::transform(tVec.mData.cbegin(), tVec.mData.cend(), Temp.mData.begin(),
-                       [&tNum](const T& tIter) { return tIter / toT(tNum); });
-
-        return Temp;
-    }
-
-    friend dVector <T, SizeT> operator/(const dVector <T, SizeT>& tNumer, const dVector <T, SizeT>& tDenom) {
-        dVector <T, SizeT> Temp;
-
-        for (int i = 0; i < tNumer.size(); i++) {
-            Temp[i] = tNumer[i] / tDenom[i];
+    constexpr
+    friend dVector plusForPtr(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        auto r = Temp.begin();
+        auto f = tVec.cbegin();
+        auto l = tVec.cend();
+        for (;f != l; ++f, ++r) {
+             *r = tScalar + *f;
         }
-
         return Temp;
     }
 
-    template <typename NumberT>
-    friend dVector <T, SizeT> operator/(const NumberT& tNum, const dVector <T, SizeT>& tVec) {
-        dVector <T, SizeT> Temp;
-        std::transform(tVec.mData.cbegin(), tVec.mData.cend(), Temp.mData.begin(),
-                       [&tNum](const T& tIter) { return toT(tNum) / tIter; });
+    constexpr
+    dVector& operator+=(const dVector& tAdd) {
+        std::transform(cbegin(), cend(), tAdd.cbegin(), begin(), std::plus<T>());
+        return *this;
+    }
 
+    constexpr
+    dVector& operator+=(const T& tScalar) {
+        std::transform(cbegin(), cend(), begin(), RightUnaryPlus<T>(tScalar));
+        return *this;
+    }
+    // <--- Addition
+
+    // Subtraction --->
+    constexpr
+    dVector operator-() const {
+        dVector Temp;
+        std::transform(cbegin(), cend(), Temp.begin(), std::negate<T>());
         return Temp;
     }
 
-    template <typename NumberT>
-    void operator/=(const NumberT& tNum) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(), [&tNum](const T& tIter) { return tIter / toT(tNum); });
+    constexpr
+    dVector operator-(const dVector& tOther) const {
+        dVector Temp;
+        std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::minus<T>());
+        return Temp;
     }
+
+    constexpr
+    friend dVector operator-(const dVector& tVec, const T& tScalar) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryMinus<T>(tScalar));
+        return Temp;
+    }
+
+    constexpr
+    friend dVector operator-(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryMinus<T>(tScalar));
+        return Temp;
+    }
+
+    constexpr
+    dVector& operator-=(const dVector& tOther) {
+        std::transform(cbegin(), cend(), tOther.cbegin(), begin(), std::minus<T>());
+
+        return *this;
+    }
+
+    constexpr
+    dVector& operator-=(const T& tScalar) {
+        std::transform(cbegin(), cend(), begin(), RightUnaryMinus<T>(tScalar));
+
+        return *this;
+    }
+    // <--- Subtraction
+
+    // Multiplication --->
+    friend value_type dot(const dVector& lhs, const dVector& rhs) {
+        return std::inner_product(lhs.cbegin(), lhs.cend(), rhs.cbegin(), T(0));
+    }
+
+    constexpr
+    dVector operator*(const dVector& tOther) const {
+        dVector Temp;
+        std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::multiplies<T>());
+        return Temp;
+    }
+
+
+    friend dVector operator*(const dVector& tVec, const T& tScalar) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryMultiplies<T>(tScalar));
+        return Temp;
+    }
+
+    friend dVector operator*(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryMultiplies<T>(tScalar));
+        return Temp;
+    }
+
+    constexpr
+    dVector& operator*=(const dVector& tOther) {
+        std::transform(cbegin(), cend(), tOther.begin(), begin(), std::multiplies<T>());
+        return *this;
+    }
+
+    constexpr
+    dVector& operator*=(const T& tScalar) {
+        std::transform(cbegin(), cend(), begin(), RightUnaryMultiplies<T>(tScalar));
+        return *this;
+    }
+    // <--- Multiplication
+
+    // Division --->
+    constexpr
+    dVector operator/(const dVector& tOther) const {
+        dVector Temp;
+        std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::divides<T>());
+        return Temp;
+    }
+
+
+    friend dVector operator/(const dVector& tVec, const T& tScalar) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryDivides<T>(tScalar));
+        return Temp;
+    }
+
+    friend dVector operator/(const T& tScalar, const dVector& tVec) {
+        dVector Temp;
+        std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryDivides<T>(tScalar));
+        return Temp;
+    }
+
+    constexpr
+    dVector& operator/=(const dVector& tOther) {
+        std::transform(cbegin(), cend(), tOther.begin(), begin(), std::divides<T>());
+        return *this;
+    }
+
+
+    constexpr
+    dVector& operator/=(const T& tScalar) {
+        std::transform(cbegin(), cend(), begin(), RightUnaryDivides<T>(tScalar));
+        return *this;
+    }
+    // <--- Division
 
     //----------//
 
-    bool operator==(const dVector <T, SizeT>& tOther) const {
+    constexpr
+    bool operator==(const dVector& tOther) const {
         return mData == tOther.mData;
     }
-    bool operator!=(const dVector <T, SizeT>& tOther) const {
+    constexpr
+    bool operator!=(const dVector& tOther) const {
         return mData != tOther.mData;
     }
 
     //----------//
 
-    dVector <T, SizeT + 1> addForward(const T& tValue) const {
-        dVector <T, SizeT + 1> Temp;
-        Temp[0] = tValue;
-        std::copy(mData.cbegin(), mData.cend(), (Temp.mData.begin() + 1));
-        return Temp;
+    [[nodiscard]] constexpr
+    double abs() const {
+        return std::sqrt(std::inner_product(cbegin(), cend(), cbegin(), double(0)));
     }
 
-    dVector <T, SizeT - 1> delForward() const{
-        dVector <T, SizeT - 1> Temp;
-        std::copy((mData.cbegin() + 1), mData.cend(), Temp.mData.begin());
-        return Temp;
+    [[nodiscard]] constexpr
+    float absf() const {
+        return std::sqrt(std::inner_product(cbegin(), cend(), cbegin(), float(0)));
+    }
+
+    [[nodiscard]] constexpr
+    value_type abs2() const {
+        return std::inner_product(cbegin(), cend(), cbegin(), T(0));
+    }
+
+    //----------//
+    constexpr
+    static dVector zero() {
+        return dVector{T(0)};
     }
 
     //----------//
 
-    [[nodiscard]] double abs() const {
-        return sqrt(std::inner_product(mData.cbegin(), mData.cend(), mData.cbegin(), double(0)));
+    constexpr
+    dVector<double, SizeT> norm() const {
+        dVector<double, SizeT> Temp;
+        std::transform(cbegin(), cend(), Temp.begin(), RightUnaryDivides<double>(abs()));
+        return Temp;
     }
 
-    [[nodiscard]] float absf() const {
-        return sqrtf(std::inner_product(mData.cbegin(), mData.cend(), mData.cbegin(), float(0)));
-    }
-
-    T abs2() const {
-        return std::inner_product(mData.cbegin(), mData.cend(), mData.cbegin(), toT(0));
-    }
-
-    //----------//
-
-    static constexpr dVector <T, SizeT> null() {
-        dVector <T, SizeT> Temp;
-        Temp.fill(toT(0));
+    constexpr
+    dVector<float, SizeT> normf() const {
+        dVector<float, SizeT> Temp;
+        std::transform(cbegin(), cend(), Temp.begin(), RightUnaryDivides<float>(absf()));
         return Temp;
     }
 
     //----------//
 
-    dVector <double, SizeT> norm() const {
-        dVector <double, SizeT> Temp;
-        double s = abs();
-        std::transform(mData.cbegin(), mData.cend(), Temp.mData.begin(),
-                       [&s](const T& tIter) { return tIter / s; });
-        return Temp;
+    constexpr
+    value_type max() const {
+        return *std::max_element(begin(), end());
     }
-
-    dVector <float, SizeT> normf() const {
-        dVector <float, SizeT> Temp;
-        float s = absf();
-        std::transform(mData.cbegin(), mData.cend(), Temp.mData.begin(),
-                       [&s](const T& tIter) { return tIter / s; });
-        return Temp;
+    constexpr
+    value_type min() const {
+        return *std::min_element(begin(), end());
     }
-
-    //----------//
-    constexpr T max() const {
-        return *std::max_element(mData.begin(), mData.end());
+    constexpr
+    value_type sum() const {
+        return std::accumulate(begin(), end(), T(0));
     }
-    constexpr T min() const {
-        return *std::min_element(mData.begin(), mData.end());
-    }
-
     //----------//
 
+    constexpr
     void fill(const T& tValue) {
-        std::fill(mData.begin(), mData.end(), tValue);
+        std::fill(begin(), end(), tValue);
     }
 
-    constexpr T &operator[](std::size_t tInd) noexcept {
+    constexpr
+    reference operator[](size_type tInd) noexcept {
         return mData[tInd];
     }
 
-    constexpr const T &operator[](std::size_t tInd) const noexcept {
+    constexpr
+    const_reference operator[](size_type tInd) const noexcept {
         return mData[tInd];
     }
 
-    constexpr T &at(std::size_t tInd) {
+    constexpr
+    reference at(size_type tInd) {
         return mData.at(tInd);
     }
 
-    constexpr const T &at(std::size_t tInd) const {
+    constexpr
+    const_reference at(size_type tInd) const {
         return mData.at(tInd);
     }
 
-    [[nodiscard]] constexpr std::size_t size() const noexcept  {
+    [[nodiscard]] constexpr
+    size_type size() const noexcept  {
         return SizeT;
     }
 
-    constexpr const T* cbegin() const noexcept {
+    constexpr
+    const_iterator cbegin() const noexcept {
         return mData.cbegin();
     }
 
-    constexpr T* begin() noexcept {
+    constexpr
+    const_iterator begin() const noexcept {
         return mData.begin();
     }
 
-    constexpr const T* cend() const noexcept {
+    constexpr
+    iterator begin() noexcept {
+        return mData.begin();
+    }
+
+    constexpr
+    const_iterator cend() const noexcept {
         return mData.cend();
     }
 
-    constexpr T* end() noexcept {
+    constexpr
+    const_iterator end() const noexcept {
         return mData.end();
     }
 
-    void swap(dVector<T, SizeT>& tOther) {
+    constexpr
+    iterator end() noexcept {
+        return mData.end();
+    }
+
+    constexpr
+    const_iterator crbegin() const noexcept {
+        return mData.crbegin();
+    }
+
+    constexpr
+    const_iterator rbegin() const noexcept {
+        return mData.rbegin();
+    }
+
+    constexpr
+    iterator rbegin() noexcept {
+        return mData.rbegin();
+    }
+
+    constexpr
+    const_iterator crend() const noexcept {
+        return mData.crend();
+    }
+
+    constexpr
+    const_iterator rend() const noexcept {
+        return mData.rend();
+    }
+
+    constexpr
+    iterator rend() noexcept {
+        return mData.rend();
+    }
+
+    constexpr
+    void swap(dVector& tOther) {
         mData.swap(tOther.data);
     }
 
     //----------//
 
-    friend std::ostream &operator<<(std::ostream &tStream, const dVector <T, SizeT> &tVec) {
+    friend std::ostream &operator<<(std::ostream &tStream, const dVector &tVec) {
         auto i = tVec.cbegin();
-        tStream << "dVector<" << SizeT << ">(" << *i++;
+        tStream << "dVector<" << typeid(T).name() << ", " << SizeT << ">({" << *i++;
         for (; i != tVec.cend(); ++i) {
             tStream << ", " << *i;
         }
-        return tStream << ')';
+        return tStream << "})";
     }
 
-    friend std::istream& operator>>(std::istream& tStream, dVector <T, SizeT>& tVec) {
+    friend std::istream& operator>>(std::istream& tStream, dVector& tVec) {
         for(T& item : tVec.mData) {
             tStream >> item;
         }
@@ -343,23 +467,7 @@ public:
 
 
 protected:
-    std::array <T, SizeT> mData;
-
-    template <typename NumberT>
-    static constexpr T toT(const NumberT& tNum) {
-        if constexpr (std::is_arithmetic_v <NumberT>) {
-            return static_cast<T>(tNum);
-        } else if (std::is_same_v <NumberT, T>) {
-            return tNum[0];
-        } else if (std::is_same_v <NumberT, dVector<T, 1> >) {
-            return tNum[0];
-        } else if (std::is_same_v <NumberT, dMatrix<T, 1, 1> >) {
-            return tNum[0];
-        }
-    }
-
-    template <typename, std::size_t, std::size_t>
-    friend class dMatrix;
+    std::array<T, SizeT> mData;
 };
 
 #endif // DMATH_DVECTOR_H

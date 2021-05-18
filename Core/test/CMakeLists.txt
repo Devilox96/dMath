@@ -2,6 +2,7 @@ add_executable(
     unit_tests
     main.cpp
     vector.cpp
+    matrix.cpp
     )
 
 target_link_libraries(
