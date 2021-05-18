@@ -63,105 +63,105 @@ public:
     using const_reverse_iterator = std::reverse_iterator<const_iterator> ;
 
     template<typename Type, typename UnqualifiedType = std::remove_cv_t<Type>>
-    struct iterator_col {
-        using iterator_category     = std::forward_iterator_tag;
+    struct iteratorCol {
+        using iteratorCategory      = std::forward_iterator_tag;
         using value_type            = UnqualifiedType;
         using difference_type       = std::ptrdiff_t;
         using pointer               = Type*;
         using reference             = Type&;
 
         constexpr
-        explicit iterator_col() : m_ptr(nullptr) {}
+        explicit iteratorCol() : mPtr(nullptr) {}
 
         constexpr
-        explicit iterator_col(pointer ptr) : m_ptr(ptr) {}
+        explicit iteratorCol(Type* ptr) : mPtr(ptr) {}
 
         constexpr
-        reference operator*() const { return *m_ptr; }
+        Type& operator*() const { return *mPtr; }
         constexpr
-        pointer operator->() { return m_ptr; }
+        Type* operator->() { return mPtr; }
 
         // Prefix increment
         constexpr
-        iterator_col& operator++() { m_ptr += N; return *this; }
+        iteratorCol& operator++() { mPtr += N; return *this; }
 
         // Postfix increment
         constexpr
-        iterator_col operator++(int) { auto tmp(*this); ++(*this); return tmp; }
+        iteratorCol operator++(int) { auto tmp(*this); ++(*this); return tmp; }
 
         template<typename Other>
         constexpr
-        bool operator== (const iterator_col<Other>& rhs) { return m_ptr == rhs.m_ptr; }
+        bool operator== (const iteratorCol<Other>& rhs) { return mPtr == rhs.mPtr; }
         template<typename Other>
         constexpr
-        bool operator!= (const iterator_col<Other>& rhs) { return m_ptr != rhs.m_ptr; }
+        bool operator!= (const iteratorCol<Other>& rhs) { return mPtr != rhs.mPtr; }
 
-        bool operator== (pointer& rhs) { return m_ptr == rhs; }
-        bool operator!= (pointer& rhs) { return m_ptr != rhs; }
+        bool operator== (Type*& rhs) { return mPtr == rhs; }
+        bool operator!= (Type*& rhs) { return mPtr != rhs; }
 
-        operator iterator_col<const Type>() const {
-            return iterator_col<const Type>(m_ptr);
+        operator iteratorCol<const Type>() const {
+            return iteratorCol<const Type>(mPtr);
         }
 
-        operator pointer() const {
-            return m_ptr;
+        operator Type*() const {
+            return mPtr;
         }
 
-        friend std::ostream &operator<<(std::ostream &tStream, const iterator_col &iter) {
-            return tStream << iter.m_ptr;
+        friend std::ostream &operator<<(std::ostream &tStream, const iteratorCol &iter) {
+            return tStream << iter.mPtr;
         }
 
     private:
-        pointer m_ptr;
+        Type* mPtr;
     };
 
-    struct column_view {
-        using column_iterator       = iterator_col<value_type>;
-        using const_column_iterator = iterator_col<const value_type>;
+    struct columnView {
+        using columnIterator        = iteratorCol<T>;
+        using constColumnIterator   = iteratorCol<const T>;
 
         constexpr
-        explicit column_view(pointer ptr): m_ptr(ptr) {}
+        explicit columnView(T* ptr): mPtr(ptr) {}
 
         constexpr
-        column_view& operator*() const { return *this; }
+        columnView& operator*() const { return *this; }
         constexpr
-        column_view* operator->() { return this; }
+        columnView* operator->() { return this; }
 
         // Prefix increment
         constexpr
-        column_view& operator++() { ++m_ptr; return *this; }
+        columnView& operator++() { ++mPtr; return *this; }
 
         // Postfix increment
         constexpr
-        column_view operator++(int) { auto tmp(*this); ++(*this); return tmp; }
+        columnView operator++(int) { auto tmp(*this); ++(*this); return tmp; }
 
         constexpr friend
-        bool operator== (const column_view& a, const column_view& b) { return a.m_ptr == b.m_ptr; };
+        bool operator== (const columnView& a, const columnView& b) { return a.mPtr == b.mPtr; };
         constexpr friend
-        bool operator!= (const column_view& a, const column_view& b) { return a.m_ptr != b.m_ptr; };
+        bool operator!= (const columnView& a, const columnView& b) { return a.mPtr != b.mPtr; };
 
         constexpr
-        const_column_iterator begin() const {
-            return const_column_iterator(m_ptr);
+        constColumnIterator begin() const {
+            return constColumnIterator(mPtr);
         }
 
         constexpr
-        column_iterator begin() {
-            return column_iterator(m_ptr);
+        columnIterator begin() {
+            return columnIterator(mPtr);
         }
 
         constexpr
-        const_column_iterator end() const {
-            return const_column_iterator(m_ptr + N * M);
+        constColumnIterator end() const {
+            return constColumnIterator(mPtr + N * M);
         }
 
         constexpr
-        column_iterator end() {
-            return column_iterator(m_ptr + N * M);
+        columnIterator end() {
+            return columnIterator(mPtr + N * M);
         }
 
     private:
-        pointer m_ptr;
+        T* mPtr;
     };
 
 
@@ -454,72 +454,72 @@ public:
     }
 
     [[nodiscard]] constexpr
-    size_type rows() const {
+    std::size_t rows() const {
         return M;
     }
 
     [[nodiscard]] constexpr
-    size_type cols() const {
+    std::size_t cols() const {
         return M;
     }
 
     constexpr
-    const_iterator cbegin() const noexcept {
+    const T* cbegin() const noexcept {
         return mData.cbegin()->cbegin();
     }
 
     constexpr
-    const_iterator begin() const noexcept {
+    const T* begin() const noexcept {
         return const_cast<dMatrix&>(*this).begin();
     }
 
     constexpr
-    iterator begin() noexcept {
+    T* begin() noexcept {
         return mData.begin()->begin();
     }
 
     constexpr
-    const_iterator cend() const noexcept {
+    const T* cend() const noexcept {
         return (mData.cend() - 1)->cend();
     }
 
     constexpr
-    const_iterator end() const noexcept {
+    const T* end() const noexcept {
         return const_cast<dMatrix&>(*this).end();
     }
 
     constexpr
-    iterator end() noexcept {
+    T* end() noexcept {
         return (mData.end() - 1)->end();
     }
 
     constexpr
-    const_iterator crbegin() const noexcept {
+    const T* crbegin() const noexcept {
         return mData.crbegin()->crbegin();
     }
 
     constexpr
-    const_iterator rbegin() const noexcept {
+    const T* rbegin() const noexcept {
         return const_cast<dMatrix&>(*this).rbegin();
     }
 
     constexpr
-    iterator rbegin() noexcept {
+    T* rbegin() noexcept {
         return mData.rbegin()->rbegin();
     }
 
     constexpr
-    const_iterator crend() const noexcept {
+    const T* crend() const noexcept {
         return (mData.crend() - 1)->crend();
     }
 
     constexpr
-    const_iterator rend() const noexcept {
+    const T* rend() const noexcept {
         return const_cast<dMatrix&>(*this).rend();
     }
 
     constexpr
-    iterator rend() noexcept {
+    T* rend() noexcept {
         return (mData.rend() - 1)->rend();
     }
 
@@ -530,7 +530,7 @@ public:
         if constexpr (iter == Iterate::Row) {
             return mData.begin();
         } else if constexpr (iter == Iterate::Col) {
-            return column_view(begin());
+            return columnView(begin());
         } else {
             return begin();
         }
@@ -542,7 +542,7 @@ public:
         if constexpr (iter == Iterate::Row) {
             return mData.begin();
         } else if constexpr (iter == Iterate::Col) {
-            return column_view(begin());
+            return columnView(begin());
         } else {
             return begin();
         }
@@ -554,7 +554,7 @@ public:
         if constexpr (iter == Iterate::Row) {
             return mData.end();
         } else if constexpr (iter == Iterate::Col) {
-            return column_view(mData.begin()->end());
+            return columnView(mData.begin()->end());
         } else {
             return end();
         }
@@ -566,7 +566,7 @@ public:
         if constexpr (iter == Iterate::Row) {
             return mData.end();
         } else if constexpr (iter == Iterate::Col) {
-            return column_view(mData.begin()->end());
+            return columnView(mData.begin()->end());
         } else {
             return end();
         }
@@ -579,8 +579,8 @@ public:
 
     friend std::ostream &operator<<(std::ostream &tStream, const dMatrix &tMat) {
         tStream << "dMatrix <" << typeid(T).name() << ", " << M << ", " << N << ">({" << std::endl;
-        for(size_type i = 0; i < tMat.rows(); ++i) {
-            for(size_type j = 0; j < tMat.cols(); ++j) {
+        for(std::size_t i = 0; i < tMat.rows(); ++i) {
+            for(std::size_t j = 0; j < tMat.cols(); ++j) {
                 tStream << tMat[i][j] << " ";
             }
             tStream << std::endl;
