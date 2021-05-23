@@ -1,52 +1,58 @@
 #include <benchmark/benchmark.h>
-#include "../dVector.h"
+#include "../Vector.h"
 #include <random>
 
+namespace benchmark {
+using dmath::Vector;
 
-constexpr std::size_t NUM = 20'000'000;
-constexpr std::size_t REP = 10;
+constexpr std::size_t NUM = 20'000;
+constexpr std::size_t REP = 5;
 
 template <class T, std::size_t N>
 class VectorFixture : public ::benchmark::Fixture {
 public:
+    static_assert(std::is_floating_point_v<T>);
     void SetUp(const ::benchmark::State& st) {
-        for(int i = 0; i < vector_.size(); ++i) {
-            vector_[i] = distr_(generator_);
-        }
+        mGenerator.seed();
+        mVector = mVector.generate(mGen);
     }
-    std::default_random_engine generator_;
-    std::uniform_real_distribution<double> distr_ = std::uniform_real_distribution<double>(-10.0, 10.0);
-    dVector<T, N> vector_;
+
+    std::default_random_engine mGenerator;
+    std::uniform_real_distribution<T> mDistribution = std::uniform_real_distribution<T>(-10.0, 10.0);
+    std::function<T(void)> mGen = [&](){ return mDistribution(mGenerator); };
+
+    Vector<T, N> mVector;
 };
 
-using dVectorDobule100 = VectorFixture<double, 100>;
+using VectorDobule100 = VectorFixture<double, 100>;
 
-BENCHMARK_DEFINE_F(dVectorDobule100, plusLambda)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(VectorDobule100, plusLambda)(benchmark::State& state) {
     for (auto _ : state) {
-        vector_ = plusLambda(distr_(generator_), vector_);
+        mVector = plusLambda(mGen(), mVector);
     }
 }
-BENCHMARK_REGISTER_F(dVectorDobule100, plusLambda)->Iterations(NUM)->Repetitions(REP);
+BENCHMARK_REGISTER_F(VectorDobule100, plusLambda)->Iterations(NUM)->Repetitions(REP);
 
-BENCHMARK_DEFINE_F(dVectorDobule100, plusFunctor)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(VectorDobule100, plusFunctor)(benchmark::State& state) {
     for (auto _ : state) {
-        vector_ = plusFunctor(distr_(generator_), vector_);
+        mVector = plusFunctor(mGen(), mVector);
     }
 }
-BENCHMARK_REGISTER_F(dVectorDobule100, plusFunctor)->Iterations(NUM)->Repetitions(REP);
+BENCHMARK_REGISTER_F(VectorDobule100, plusFunctor)->Iterations(NUM)->Repetitions(REP);
 
-BENCHMARK_DEFINE_F(dVectorDobule100, plusForSub)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(VectorDobule100, plusForSub)(benchmark::State& state) {
     for (auto _ : state) {
-        vector_ = plusForSub(distr_(generator_), vector_);
+        mVector = plusForSub(mGen(), mVector);
     }
 }
-BENCHMARK_REGISTER_F(dVectorDobule100, plusForSub)->Iterations(NUM)->Repetitions(REP);
+BENCHMARK_REGISTER_F(VectorDobule100, plusForSub)->Iterations(NUM)->Repetitions(REP);
 
-BENCHMARK_DEFINE_F(dVectorDobule100, plusForPtr)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(VectorDobule100, plusForPtr)(benchmark::State& state) {
     for (auto _ : state) {
-        vector_ = plusForPtr(distr_(generator_), vector_);
+        mVector = plusForPtr(mGen(), mVector);
     }
 }
-BENCHMARK_REGISTER_F(dVectorDobule100, plusForPtr)->Iterations(NUM)->Repetitions(REP);
+BENCHMARK_REGISTER_F(VectorDobule100, plusForPtr)->Iterations(NUM)->Repetitions(REP);
 
+} // namespace benchmark
 BENCHMARK_MAIN();

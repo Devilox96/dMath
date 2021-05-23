@@ -99,11 +99,11 @@ public:
         return (PlusX - MinusX) * mRatioX + (PlusY - MinusY) * mRatioY;
     }
 protected:
-    virtual T funcX(const T& tVal) {
-        return tVal;
+    virtual T funcX(const T& tValue) {
+        return tValue;
     }
-    virtual T funcY(const T& tVal) {
-        return tVal;
+    virtual T funcY(const T& tValue) {
+        return tValue;
     }
 
     //----------//

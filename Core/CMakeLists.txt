@@ -1,10 +1,10 @@
 project(dMathCoreLib)
 
 set(Source
-        dVectors.cpp
-        dVector.h
-        dQuaternion.h
-        dMatrix.h)
+        Vector.cpp
+        Vector.h
+        Quaternion.h
+        Matrix.h)
 
 add_library(dMathCoreLib ${Source})
 

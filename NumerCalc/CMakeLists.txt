@@ -2,7 +2,7 @@ project(dMathNumerCalcLib)
 
 set(dMathCoreDir ../Core/)
 set(dMathCoreSource
-        ${dMathCoreDir}/dVectors.cpp)
+        ${dMathCoreDir}/Vector.cpp)
 
 set(Source
         dRungeKutta.cpp
