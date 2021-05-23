@@ -42,8 +42,8 @@ public:
                (func(HalfPlus) - func(HalfMinus)) * mRatioX;
     }
 protected:
-    virtual T func(const T& tVal) {
-        return tVal;
+    virtual T func(const T& tValue) {
+        return tValue;
     }
 private:
     double mStepTime = 0.0;

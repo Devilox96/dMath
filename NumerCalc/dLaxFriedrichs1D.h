@@ -37,8 +37,8 @@ public:
                (func(tOffsetPlus) - func(tOffsetMinus)) * mRatioX / 2.0;
     }
 protected:
-    virtual T func(const T& tVal) {
-        return tVal;
+    virtual T func(const T& tValue) {
+        return tValue;
     }
 private:
     double mStepTime = 0.0;

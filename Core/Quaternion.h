@@ -1,13 +1,18 @@
-#ifndef DQUATERNION_H
-#define DQUATERNION_H
+#ifndef DMATH_QUATERNION_H
+#define DMATH_QUATERNION_H
 //-----------------------------//
-#include <iostream>
 #include <algorithm>
-#include <numeric>
-#include <functional>
+#include <array>
 #include <cmath>
+#include <cstddef>
+#include <functional>
+#include <iostream>
+#include <numeric>
+#include <type_traits>
+#include <typeinfo>
 //-----------------------------//
 #include "util.h"
+//-----------------------------//
 
 namespace dmath {
 
@@ -15,7 +20,7 @@ template <typename T>
 class Quaternion {
 public:
     Quaternion() = default;
-    explicit Quaternion(T tVal) : mData{tVal, tVal, tVal, tVal} {}
+    explicit Quaternion(T tValue) : mData{tValue, tValue, tValue, tValue} {}
     Quaternion(T tW, T tX, T tY, T tZ) : mData{tW, tX, tY, tZ} {}
     Quaternion(const Quaternion&) = default;
     Quaternion(Quaternion&&) noexcept = default;
@@ -24,37 +29,37 @@ public:
 
     //----------//
     constexpr
-    Quaternion& operator=(const Quaternion& tCopy) = default;
+    Quaternion& operator=(const Quaternion&) = default;
     constexpr
-    Quaternion& operator=(Quaternion&& tMove) noexcept = default;
+    Quaternion& operator=(Quaternion&&) noexcept = default;
 
     //----------//
     constexpr
-    void operator+=(const Quaternion& tAdd) {
-        std::transform(mData.cbegin(), mData.cend(), tAdd.mData.cbegin(), mData.begin(), std::plus <T>());
+    void operator+=(const Quaternion& tQuat) {
+        std::transform(mData.cbegin(), mData.cend(), tQuat.mData.cbegin(), mData.begin(), std::plus<T>());
     }
     constexpr
     void operator+=(const T& tScalar) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryPlus<T>(tScalar));
+        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryPlus<T>{tScalar});
     }
     constexpr
-    Quaternion operator+(const Quaternion& tAdd) const {
+    Quaternion operator+(const Quaternion& tQuat) const {
         Quaternion Temp;
-        std::transform(mData.cbegin(), mData.cend(), tAdd.mData.cbegin(), Temp.mData.begin(), std::plus <T>());
+        std::transform(mData.cbegin(), mData.cend(), tQuat.mData.cbegin(), Temp.mData.begin(), std::plus<T>());
 
         return Temp;
     }
     constexpr
     friend Quaternion operator+(const Quaternion& tQuat, const T& tScalar) {
         Quaternion Temp;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), RightUnaryPlus<T>(tScalar));
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), RightUnaryPlus<T>{tScalar});
 
         return Temp;
     }
     constexpr
     friend Quaternion operator+(T tScalar, const Quaternion& tQuat) {
         Quaternion Temp;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), LeftUnaryPlus<T>(tScalar));
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), LeftUnaryPlus<T>{tScalar});
 
         return Temp;
     }
@@ -63,36 +68,36 @@ public:
     constexpr
     Quaternion operator-() const {
         Quaternion Temp;
-        std::transform(mData.cbegin(), mData.cend(), Temp.mData.begin(), std::negate <T>());
+        std::transform(mData.cbegin(), mData.cend(), Temp.mData.begin(), std::negate<T>());
 
         return Temp;
     }
     constexpr
     void operator-=(const Quaternion& tQuat) {
-        std::transform(mData.cbegin(), mData.cend(), tQuat.mData.cbegin(), mData.begin(), std::minus <T>());
+        std::transform(mData.cbegin(), mData.cend(), tQuat.mData.cbegin(), mData.begin(), std::minus<T>());
     }
     constexpr
     void operator-=(const T& tScalar) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryMinus<T>(tScalar));
+        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryMinus<T>{tScalar});
     }
     constexpr
     Quaternion operator-(const Quaternion& tQuat) const {
         Quaternion Temp;
-        std::transform(mData.cbegin(), mData.cend(), tQuat.mData.cbegin(), Temp.mData.begin(), std::minus <T>());
+        std::transform(mData.cbegin(), mData.cend(), tQuat.mData.cbegin(), Temp.mData.begin(), std::minus<T>());
 
         return Temp;
     }
     constexpr
     friend Quaternion operator-(const Quaternion& tQuat, const T& tScalar) {
         Quaternion Temp;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), RightUnaryMinus<T>(tScalar));
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), RightUnaryMinus<T>{tScalar});
 
         return Temp;
     }
     constexpr
     friend Quaternion operator-(const T& tScalar, const Quaternion& tQuat) {
         Quaternion Temp;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), LeftUnaryMinus<T>(tScalar));
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), LeftUnaryMinus<T>{tScalar});
 
         return Temp;
     }
@@ -130,19 +135,19 @@ public:
     }
     constexpr
     void operator*=(const T& tScalar) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryMultiplies<T>(tScalar));
+        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryMultiplies<T>{tScalar});
     }
     constexpr
     friend Quaternion operator*(const Quaternion& tQuat, const T&  tScalar) {
         Quaternion Temp;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), RightUnaryMultiplies<T>(tScalar));
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), RightUnaryMultiplies<T>{tScalar});
 
         return Temp;
     }
     constexpr
     friend Quaternion operator*(const T& tScalar, const Quaternion& tQuat) {
         Quaternion Temp;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), LeftUnaryMultiplies<T>(tScalar));
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), LeftUnaryMultiplies<T>{tScalar});
 
         return Temp;
     }
@@ -150,19 +155,19 @@ public:
     //----------//
     constexpr
     void operator/=(const T tScalar) {
-        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryDivides<T>(tScalar));
+        std::transform(mData.cbegin(), mData.cend(), mData.begin(), RightUnaryDivides<T>{tScalar});
     }
     constexpr
     friend Quaternion operator/(const Quaternion& tQuat, const T& tScalar) {
         Quaternion Temp;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), RightUnaryDivides<T>(tScalar));
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), RightUnaryDivides<T>{tScalar});
 
         return Temp;
     }
     constexpr
     friend Quaternion operator/(const T& tScalar, const Quaternion& tQuat) {
         Quaternion Temp;
-        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), LeftUnaryDivides<T>(tScalar));
+        std::transform(tQuat.mData.cbegin(), tQuat.mData.cend(), Temp.mData.begin(), LeftUnaryDivides<T>{tScalar});
 
         return Temp;
     }
@@ -182,46 +187,40 @@ public:
     Quaternion conjugation() const {
         return Quaternion(mData[0], -mData[1], -mData[2], -mData[3]);
     }
+    constexpr
     void reciprocal() {
-        *this = (this -> conjugation()) /= abs2();
+        *this = (this->conjugation()) /= abs2();
     }
 
     //----------//
 
     [[nodiscard]]
+    constexpr
     double abs() const {
-        double TempRes{0};
-
-        for (std::size_t i = 0; i < 4; i++) {
-            TempRes += mData[i] * mData[i];
-        }
-
-        return sqrt(TempRes);
+        return std::sqrt(std::inner_product(mData.cbegin(), mData.cend(), mData.cbegin(), static_cast<double>(0)));
     }
+
     [[nodiscard]]
-    float absf() const {
-        float TempRes{0};
-
-        for (std::size_t i = 0; i < 4; i++) {
-            TempRes += mData[i] * mData[i];
-        }
-
-        return sqrtf(TempRes);
+    constexpr
+    double absf() const {
+        return std::sqrt(std::inner_product(mData.cbegin(), mData.cend(), mData.cbegin(), static_cast<float>(0)));
     }
+
     [[nodiscard]]
-    T abs2() const {
-        T TempRes{0};
-
-        for (std::size_t i = 0; i < 4; i++) {
-            TempRes += mData[i] * mData[i];
-        }
-
-        return TempRes;
+    constexpr
+    double abs2() const {
+        return std::inner_product(mData.cbegin(), mData.cend(), mData.cbegin(), static_cast<float>(0));
     }
+
+    constexpr
+    void swap(Quaternion& tOther) noexcept(std::is_nothrow_swappable_v<T>) {
+        mData.swap(tOther.data);
+    }
+
 private:
     std::array <T, 4> mData;
 };
 
-} // dmath
+} // namespace dmath
 //-----------------------------//
-#endif
+#endif // DMATH_QUATERNION_H
