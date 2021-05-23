@@ -1,7 +1,7 @@
 #include <sstream>
 
 #include "gtest/gtest.h"
-#include "../dMatrix.h"
+#include "../Matrix.h"
 
 class TestMatrix : public ::testing::Test  {
 protected:
@@ -10,9 +10,7 @@ protected:
     void TearDown() final {
 
     }
-
-    typedef dSMatrix<double, 2> doubleSMatrix2;
-
+    using doubleSMatrix2 = dmath::sMatrix<double, 2>;
 };
 
 TEST_F(TestMatrix, Constructor) {
@@ -205,12 +203,11 @@ TEST_F(TestMatrix, Identity) {
 
 TEST_F(TestMatrix, Print) {
     std::stringstream out;
-    out << dMatrix<int, 2, 2>(10.);
-    EXPECT_EQ(out.str(), "dMatrix <i, 2, 2>({\n10 10 \n10 10 \n})");
+    out << dmath::Matrix<int, 2, 2>(10.);
+    EXPECT_EQ(out.str(), "Matrix <i, 2, 2>({\n10 10 \n10 10 \n})");
 }
 
 TEST_F(TestMatrix, IterateRow) {
     doubleSMatrix2 double2D(10.);
-//    EXPECT_EQ(out.str(), "dMatrix <i, 2, 2>({\n10 10 \n10 10 \n})");
 }
 

@@ -2,8 +2,8 @@
 // Created by skinderev on 24.10.2019.
 //
 
-#ifndef DMATH_DMATRIX_H
-#define DMATH_DMATRIX_H
+#ifndef DMATH_MATRIX_H
+#define DMATH_MATRIX_H
 
 #include <cstddef>
 #include <iostream>
@@ -18,24 +18,25 @@
 
 #include "util.h"
 
+namespace dmath {
 #ifndef DMATH_ONLY_MATRIX
-    #include "dVector.h"
+//    #include "Vector.h"
+    template <typename T, std::size_t SizeT>
+    class Vector;
 #endif // DMATH_ONLY_MATRIX
 
 template<typename T, std::size_t M, std::size_t N>
-class dMatrix;
+class Matrix;
 
 template <typename T, std::size_t M>
-using dSMatrix = dMatrix<T, M, M>;
+using sMatrix = Matrix<T, M, M>;
 
 enum class Iterate {Row, Col, Val};
 
 template<typename T, std::size_t M, std::size_t N>
-class dMatrix {
+class Matrix {
 protected:
 // TODO make SFINAE
-
-    static constexpr std::size_t SizeOnlyForVector = std::max(M, N);
 
     template<typename ReturnType = void>
     using is_square_t = std::enable_if_t<M == N, ReturnType>;
@@ -44,7 +45,7 @@ protected:
     using is_scalar_t = std::enable_if_t<M == 1 && N == 1, ReturnType>;
 
 #ifndef DMATH_ONLY_MATRIX
-    template<typename ReturnType = dVector<T, M*N>>
+    template<typename ReturnType = Vector<T, M*N>>
     using is_vector_t = std::enable_if_t<M == 1 || N == 1, ReturnType>;
 #endif // DMATH_ONLY_MATRIX
 
@@ -167,109 +168,109 @@ public:
 
 public:
     constexpr
-    explicit dMatrix(const std::array<std::array<T, N>, M>& tMat) : mData(tMat) {}
+    explicit Matrix(const std::array<std::array<T, N>, M>& tMat) : mData(tMat) {}
 
     constexpr
-    explicit dMatrix(std::array<std::array<T, N>, M>&& tMat) : mData(std::move(tMat)) {}
+    explicit Matrix(std::array<std::array<T, N>, M>&& tMat) : mData(std::move(tMat)) {}
 
 
     constexpr
-    explicit dMatrix(const T& tVal) {
+    explicit Matrix(const T& tVal) {
         fill(tVal);
     }
 
     constexpr
-    dMatrix() = default;
+    Matrix() = default;
     constexpr
-    dMatrix(const dMatrix& tCopy) = default;
+    Matrix(const Matrix&) = default;
     constexpr
-    dMatrix(dMatrix&& tMove) noexcept = default;
+    Matrix(Matrix&&) noexcept = default;
 
-    ~dMatrix() = default;
-
-    constexpr
-    dMatrix& operator=(const dMatrix& tCopy) = default;
+    ~Matrix() = default;
 
     constexpr
-    dMatrix& operator=(dMatrix &&tMove) noexcept = default;
+    Matrix& operator=(const Matrix&) = default;
 
     constexpr
-    dMatrix operator+() const {
-        return dMatrix(*this);
+    Matrix& operator=(Matrix &&) noexcept = default;
+
+    constexpr
+    Matrix operator+() const {
+        return Matrix(*this);
     }
 
     constexpr
-    friend dMatrix operator+(const dMatrix& tMat, const T& tScalar) {
-        dMatrix Temp;
+    friend Matrix operator+(const Matrix& tMat, const T& tScalar) {
+        Matrix Temp;
         std::transform(tMat.cbegin(), tMat.cend(), Temp.begin(), RightUnaryPlus<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    friend dMatrix operator+(const T& tScalar, const dMatrix& tMat) {
-        dMatrix Temp;
+    friend Matrix operator+(const T& tScalar, const Matrix& tMat) {
+        Matrix Temp;
         std::transform(tMat.cbegin(), tMat.cend(), Temp.begin(), LeftUnaryPlus<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    dMatrix operator+(const dMatrix& tOther) const {
-        dMatrix Temp;
+    Matrix operator+(const Matrix& tOther) const {
+        Matrix Temp;
         std::transform(cbegin(), cend(), tOther.cbegin(), Temp.begin(), std::plus<T>());
         return Temp;
     }
 
     constexpr
-    dMatrix& operator+=(const dMatrix& tOther) {
+    Matrix& operator+=(const Matrix& tOther) {
         std::transform(cbegin(), cend(), tOther.cbegin(), begin(), std::plus<T>());
         return *this;
     }
 
     constexpr
-    dMatrix& operator+=(const T& tScalar) {
+    Matrix& operator+=(const T& tScalar) {
         std::transform(cbegin(), cend(),
                        begin(), RightUnaryPlus<T>(tScalar));
         return *this;
     }
 
     constexpr
-    dMatrix operator-() const {
-        dMatrix Temp;
+    Matrix operator-() const {
+        Matrix Temp;
         std::transform(cbegin(), cend(), Temp.begin(), std::negate<T>());
         return Temp;
     }
 
     constexpr
-    friend dMatrix operator-(const dMatrix& tMat, const T& tScalar) {
-        dMatrix Temp;
+    friend Matrix operator-(const Matrix& tMat, const T& tScalar) {
+        Matrix Temp;
         std::transform(tMat.cbegin(), tMat.cend(), Temp.begin(), RightUnaryMinus<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    friend dMatrix operator-(const T& tScalar, const dMatrix& tMat) {
-        dMatrix Temp;
+    friend Matrix operator-(const T& tScalar, const Matrix& tMat) {
+        Matrix Temp;
         std::transform(tMat.cbegin(), tMat.cend(), Temp.begin(), LeftUnaryMinus<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    dMatrix operator-(const dMatrix& tOther) const {
-        dMatrix Temp;
+    Matrix operator-(const Matrix& tOther) const {
+        Matrix Temp;
         std::transform(cbegin(), cend(),
                        tOther.cbegin(), Temp.begin(), std::minus<T>());
         return Temp;
     }
 
     constexpr
-    dMatrix& operator-=(const dMatrix& tOther) {
+    Matrix& operator-=(const Matrix& tOther) {
         std::transform(cbegin(), cend(),
                        tOther.cbegin(), begin(), std::minus<T>());
         return *this;
     }
 
     constexpr
-    dMatrix& operator-=(const T& tScalar) {
+    Matrix& operator-=(const T& tScalar) {
         std::transform(cbegin(), cend(),
                        begin(), RightUnaryMinus<T>(tScalar));
         return *this;
@@ -277,38 +278,38 @@ public:
 
 
     constexpr
-    dMatrix operator*(const dMatrix& tOther) {
-        dMatrix Temp;
+    Matrix operator*(const Matrix& tOther) {
+        Matrix Temp;
         std::transform(cbegin(), cend(),
                        tOther.cbegin(), Temp.begin(), std::multiplies<T>());
         return Temp;
     }
 
     constexpr
-    friend dMatrix operator*(const dMatrix &tMat, const T& tScalar) {
-        dMatrix Temp;
+    friend Matrix operator*(const Matrix &tMat, const T& tScalar) {
+        Matrix Temp;
         std::transform(tMat.cbegin(), tMat.cend(),
                        Temp.begin(), RightUnaryMultiplies<T>(tScalar));
         return Temp;
     }
     
     constexpr
-    friend dMatrix operator*(const T& tScalar, const dMatrix &tMat) {
-        dMatrix Temp;
+    friend Matrix operator*(const T& tScalar, const Matrix &tMat) {
+        Matrix Temp;
         std::transform(tMat.cbegin(), tMat.cend(),
                        Temp.begin(), LeftUnaryMultiplies<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    dMatrix& operator*=(const dMatrix& tOther) {
+    Matrix& operator*=(const Matrix& tOther) {
         std::transform(cbegin(), cend(),
                        tOther.cbegin(), begin(), std::multiplies<T>());
         return *this;
     }
 
     constexpr
-    dMatrix& operator*=(const T& tScalar) {
+    Matrix& operator*=(const T& tScalar) {
         std::transform(cbegin(), cend(),
                        begin(), RightUnaryMultiplies<T>(tScalar));
         return *this;
@@ -316,51 +317,51 @@ public:
 
 
     constexpr
-    dMatrix operator/(const dMatrix& tOther) {
-        dMatrix Temp;
+    Matrix operator/(const Matrix& tOther) {
+        Matrix Temp;
         std::transform(cbegin(), cend(),
                        tOther.cbegin(), Temp.begin(), std::divides<T>());
         return Temp;
     }
 
     constexpr
-    friend dMatrix operator/(const dMatrix &tMat, const T& tScalar) {
-        dMatrix Temp;
+    friend Matrix operator/(const Matrix &tMat, const T& tScalar) {
+        Matrix Temp;
         std::transform(tMat.cbegin(), tMat.cend(),
                        Temp.begin(), RightUnaryDivides<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    friend dMatrix operator/(const T& tScalar, const dMatrix &tMat) {
-        dMatrix Temp;
+    friend Matrix operator/(const T& tScalar, const Matrix &tMat) {
+        Matrix Temp;
         std::transform(tMat.cbegin(), tMat.cend(),
                        Temp.begin(), LeftUnaryDivides<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    dMatrix& operator/=(const dMatrix& tOther) {
+    Matrix& operator/=(const Matrix& tOther) {
         std::transform(cbegin(), cend(),
                        tOther.cbegin(), begin(), std::divides<T>());
         return *this;
     }
 
     constexpr
-    dMatrix& operator/=(const T& tScalar) {
+    Matrix& operator/=(const T& tScalar) {
         std::transform(cbegin(), cend(),
                        begin(), RightUnaryDivides<T>(tScalar));
         return *this;
     }
 
     constexpr
-    static dMatrix zero() {
-        return dMatrix(T(0));
+    static Matrix zero() {
+        return Matrix(T(0));
     }
 
     constexpr
-    dMatrix <T, N, M> transpose() const {
-        dMatrix <T, N, M> Temp;
+    Matrix <T, N, M> transpose() const {
+        Matrix <T, N, M> Temp;
         for(std::size_t i = 0; i < N; ++i) {
             for(std::size_t j = 0; j < M; ++j) {
                 Temp[i][j] = *this[j][i];
@@ -371,9 +372,9 @@ public:
 
     template<std::size_t K>
     constexpr
-    dMatrix <T, M, K> dot(const dMatrix <T, N, K> &rhs) const {
-        dMatrix <T, M, K> Temp(T(0));
-//        TODO add fast algorithm
+    Matrix <T, M, K> dot(const Matrix <T, N, K> &rhs) const {
+        Matrix <T, M, K> Temp(T(0));
+//      TODO implement fast algorithm.
         for(std::size_t i = 0; i < M; ++i) {
             for(std::size_t j = 0; j < K; ++j) {
                 for(std::size_t k = 0; k < N; ++k) {
@@ -386,31 +387,15 @@ public:
 
     template<std::size_t K>
     constexpr
-    friend dMatrix <T, M, K> dot(const dMatrix &lhs, const dMatrix <T, N, K> &rhs) {;
+    friend Matrix <T, M, K> dot(const Matrix &lhs, const Matrix <T, N, K> &rhs) {;
         return lhs.dot(rhs);
     }
-
-    #ifndef DMATH_ONLY_MATRIX
-    constexpr
-    friend dVector<T, M> dot(const dVector<T, M> &vec, const dMatrix &mat) {
-        dVector<T, M> Temp(T(0));
-//        TODO add fast algorithm
-        for(std::size_t j = 0; j < N; ++j) {
-            for(std::size_t k = 0; k < M; ++k) {
-                Temp[j] += vec[k] * mat[k][j];
-            }
-        }
-
-        return Temp;
-    }
-
-    #endif // DMATH_ONLY_MATRIX
 
     // only for square tMat
     template<typename Q = T>
     constexpr
-    static is_square_t <dMatrix <Q, M, M>> identity() {
-        dMatrix<Q, M, M> Temp(Q(0));
+    static is_square_t <Matrix <Q, M, M>> identity() {
+        Matrix<Q, M, M> Temp(Q(0));
         auto iter = Temp.begin();
         for (std::size_t i = 0; i < N; ++i) {
             iter += i + i * N;
@@ -421,11 +406,11 @@ public:
 
 
     constexpr
-    bool operator==(const dMatrix& tOther) const {
+    bool operator==(const Matrix& tOther) const {
         return mData == tOther.mData;
     }
     constexpr
-    bool operator!=(const dMatrix& tOther) const {
+    bool operator!=(const Matrix& tOther) const {
         return mData != tOther.mData;
     }
 
@@ -470,7 +455,7 @@ public:
 
     constexpr
     const T* begin() const noexcept {
-        return const_cast<dMatrix&>(*this).begin();
+        return const_cast<Matrix&>(*this).begin();
     }
 
     constexpr
@@ -485,7 +470,7 @@ public:
 
     constexpr
     const T* end() const noexcept {
-        return const_cast<dMatrix&>(*this).end();
+        return const_cast<Matrix&>(*this).end();
     }
 
     constexpr
@@ -500,7 +485,7 @@ public:
 
     constexpr
     const T* rbegin() const noexcept {
-        return const_cast<dMatrix&>(*this).rbegin();
+        return const_cast<Matrix&>(*this).rbegin();
     }
 
     constexpr
@@ -515,7 +500,7 @@ public:
 
     constexpr
     const T* rend() const noexcept {
-        return const_cast<dMatrix&>(*this).rend();
+        return const_cast<Matrix&>(*this).rend();
     }
 
     constexpr
@@ -573,12 +558,12 @@ public:
     }
 
     constexpr
-    void swap(dMatrix& tOther) {
+    void swap(Matrix& tOther) {
         mData.swap(tOther.mData);
     }
 
-    friend std::ostream &operator<<(std::ostream &tStream, const dMatrix &tMat) {
-        tStream << "dMatrix <" << typeid(T).name() << ", " << M << ", " << N << ">({" << std::endl;
+    friend std::ostream &operator<<(std::ostream &tStream, const Matrix &tMat) {
+        tStream << "Matrix <" << typeid(T).name() << ", " << M << ", " << N << ">({" << std::endl;
         for(std::size_t i = 0; i < tMat.rows(); ++i) {
             for(std::size_t j = 0; j < tMat.cols(); ++j) {
                 tStream << tMat[i][j] << " ";
@@ -588,57 +573,58 @@ public:
         return tStream << "})";
     }
 
-    template<typename U = T>
-    is_vector_t < dMatrix <U, M, N> > operator+(const dVector <U, SizeOnlyForVector>& tOther) const {
-        dMatrix <T, M, N> Temp;
-        std::transform(mData.cbegin()->cbegin(), (mData.cend() - 1)->cend(),
-                       tOther.mData.cbegin(), Temp.mData.begin()->begin(), std::plus<U>());
-        return Temp;
-    }
-
-    template<typename U = T>
-    is_vector_t <void> operator+=(const dVector <U, SizeOnlyForVector>& tOther) {
-        std::transform(mData.cbegin()->cbegin(), (mData.cend() - 1)->cend(),
-                       tOther.mData.cbegin(), mData.begin()->begin(), std::plus<U>());
-    }
-
-    template<typename U = T>
-    is_vector_t <dMatrix <U, M, N> > operator-(const dVector <U, SizeOnlyForVector>& tOther) const {
-        dMatrix <T, M, N> Temp;
-        std::transform(mData.cbegin()->cbegin(), (mData.cend() - 1)->cend(),
-                       tOther.mData.cbegin(), Temp.mData.begin()->begin(), std::minus<U>());
-        return Temp;
-    }
-
-    template<typename U = T>
-    is_vector_t <void> operator-=(const dVector <U, SizeOnlyForVector>& tOther) {
-        std::transform(mData.cbegin()->cbegin(), (mData.cend() - 1)->cend(),
-                       tOther.mData.cbegin(), mData.begin()->begin(), std::minus<U>());
-
-    }
-
-
-//    friend dVector<T, N> dot(const dVector<T, M> &vec, const dMatrix <T, M, N> &mat) {
-//        dVector<T, N> Temp;
-//        Temp.fill(0);
-////        TODO add fast algorithm
-//        for(std::size_t j = 0; j < N; ++j) {
-//            for(std::size_t k = 0; k < M; ++k) {
-//                Temp[j] += vec[k] * mat[k][j];
-//            }
-//        }
+#ifndef DMATH_ONLY_MATRIX
+//    template<typename U = T>
+//    is_vector_t < Matrix <U, M, N> > operator+(const Vector <U, M*N>& tOther) const {
+//        Matrix <T, M, N> Temp;
+//        std::transform(mData.cbegin()->cbegin(), (mData.cend() - 1)->cend(),
+//                       tOther.mData.cbegin(), Temp.mData.begin()->begin(), std::plus<U>());
+//        return Temp;
+//    }
+//
+//    template<typename U = T>
+//    is_vector_t <void> operator+=(const Vector <U, M*N>& tOther) {
+//        std::transform(mData.cbegin()->cbegin(), (mData.cend() - 1)->cend(),
+//                       tOther.mData.cbegin(), mData.begin()->begin(), std::plus<U>());
+//    }
+//
+//    template<typename U = T>
+//    is_vector_t <Matrix <U, M, N> > operator-(const Vector <U, M*N>& tOther) const {
+//        Matrix <T, M, N> Temp;
+//        std::transform(mData.cbegin()->cbegin(), (mData.cend() - 1)->cend(),
+//                       tOther.mData.cbegin(), Temp.mData.begin()->begin(), std::minus<U>());
+//        return Temp;
+//    }
+//
+//    template<typename Q = T>
+//    is_vector_t <void> operator-=(const Vector <Q, M*N>& tOther) {
+//        std::transform(mData.cbegin()->cbegin(), (mData.cend() - 1)->cend(),
+//                       tOther.mData.cbegin(), mData.begin()->begin(), std::minus<Q>());
+//    }
+//
+//
+//    operator is_vector_t <Vector <T, M*N> > () const {
+//        Vector <T, M*N> Temp;
+//        std::copy(mData.cbegin(), mData.cend(), Temp.mData.begin());
 //        return Temp;
 //    }
 
-    operator is_vector_t <dVector <T, SizeOnlyForVector> > () const {
-        dVector <T, SizeOnlyForVector> Temp;
-        std::copy(mData.cbegin(), mData.cend(), Temp.mData.begin());
+    friend Vector<T, N> dot(const Vector<T, M> &vec, const Matrix <T, M, N> &mat) {
+        Vector<T, N> Temp(T(0));
+//      TODO implement fast algorithm.
+        for(std::size_t j = 0; j < N; ++j) {
+            for(std::size_t k = 0; k < M; ++k) {
+                Temp[j] += vec[k] * mat[k][j];
+            }
+        }
         return Temp;
     }
+#endif // DMATH_ONLY_MATRIX
 
 
 protected:
     std::array<std::array<T, N>, M> mData;
 };
 
-#endif //DMATH_DMATRIX_H
+} // dmath
+#endif //DMATH_MATRIX_H

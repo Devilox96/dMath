@@ -1,8 +1,8 @@
 #include <iostream>
 #include <cmath>
 #include <utility>
-#include "Core/dVector.h"
-#include "Core/dMatrix.h"
+#include "Core/Vector.h"
+#include "Core/Matrix.h"
 
 #include <functional>
 #include <ctime>

@@ -1,5 +1,5 @@
 #include <benchmark/benchmark.h>
-#include "../dVector.h"
+#include "../Vector.h"
 #include <random>
 
 
@@ -16,37 +16,37 @@ public:
     }
     std::default_random_engine generator_;
     std::uniform_real_distribution<double> distr_ = std::uniform_real_distribution<double>(-10.0, 10.0);
-    dVector<T, N> vector_;
+    dmath::Vector<T, N> vector_;
 };
 
-using dVectorDobule100 = VectorFixture<double, 100>;
+using VectorDobule100 = VectorFixture<double, 100>;
 
-BENCHMARK_DEFINE_F(dVectorDobule100, plusLambda)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(VectorDobule100, plusLambda)(benchmark::State& state) {
     for (auto _ : state) {
         vector_ = plusLambda(distr_(generator_), vector_);
     }
 }
-BENCHMARK_REGISTER_F(dVectorDobule100, plusLambda)->Iterations(NUM)->Repetitions(REP);
+BENCHMARK_REGISTER_F(VectorDobule100, plusLambda)->Iterations(NUM)->Repetitions(REP);
 
-BENCHMARK_DEFINE_F(dVectorDobule100, plusFunctor)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(VectorDobule100, plusFunctor)(benchmark::State& state) {
     for (auto _ : state) {
         vector_ = plusFunctor(distr_(generator_), vector_);
     }
 }
-BENCHMARK_REGISTER_F(dVectorDobule100, plusFunctor)->Iterations(NUM)->Repetitions(REP);
+BENCHMARK_REGISTER_F(VectorDobule100, plusFunctor)->Iterations(NUM)->Repetitions(REP);
 
-BENCHMARK_DEFINE_F(dVectorDobule100, plusForSub)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(VectorDobule100, plusForSub)(benchmark::State& state) {
     for (auto _ : state) {
         vector_ = plusForSub(distr_(generator_), vector_);
     }
 }
-BENCHMARK_REGISTER_F(dVectorDobule100, plusForSub)->Iterations(NUM)->Repetitions(REP);
+BENCHMARK_REGISTER_F(VectorDobule100, plusForSub)->Iterations(NUM)->Repetitions(REP);
 
-BENCHMARK_DEFINE_F(dVectorDobule100, plusForPtr)(benchmark::State& state) {
+BENCHMARK_DEFINE_F(VectorDobule100, plusForPtr)(benchmark::State& state) {
     for (auto _ : state) {
         vector_ = plusForPtr(distr_(generator_), vector_);
     }
 }
-BENCHMARK_REGISTER_F(dVectorDobule100, plusForPtr)->Iterations(NUM)->Repetitions(REP);
+BENCHMARK_REGISTER_F(VectorDobule100, plusForPtr)->Iterations(NUM)->Repetitions(REP);
 
 BENCHMARK_MAIN();

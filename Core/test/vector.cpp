@@ -1,7 +1,7 @@
 #include <sstream>
 
 #include "gtest/gtest.h"
-#include "../dVector.h"
+#include "../Vector.h"
 
 class TestVector : public ::testing::Test  {
 protected:
@@ -11,7 +11,7 @@ protected:
 
     }
 
-    typedef dVector<double, 2> doubleVector2D;
+    using doubleVector2D = dmath::Vector<double, 2>;
 
 };
 TEST_F(TestVector, Constructor) {
@@ -181,7 +181,7 @@ TEST_F(TestVector, DivisionAssignment) {
 
 TEST_F(TestVector, Print) {
     std::stringstream out;
-    out << dVector<int, 2>(10.);
+    out << dmath::Vector<int, 2>(10.);
 
-    EXPECT_EQ(out.str(), ("dVector<i, 2>({10, 10})"));
+    EXPECT_EQ(out.str(), ("Vector<i, 2>({10, 10})"));
 }

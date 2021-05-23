@@ -2,7 +2,7 @@
 #define DMATH_UTIL_H
 
 #include <functional>
-
+namespace dmath {
 template<typename T>
 struct RightUnaryPlus {
     T val_;
@@ -74,5 +74,7 @@ struct LeftUnaryDivides {
 
     constexpr T operator()(const T& val) const { return val_ / val; }
 };
+
+} // dmath
 
 #endif //DMATH_UTIL_H

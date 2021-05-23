@@ -1,5 +1,5 @@
-#ifndef DMATH_DVECTOR_H
-#define DMATH_DVECTOR_H
+#ifndef DMATH_VECTOR_H
+#define DMATH_VECTOR_H
 //-----------------------------//
 #include <iostream>
 #include <algorithm>
@@ -13,20 +13,26 @@
 //-----------------------------//
 #include "util.h"
 //-----------------------------//
+namespace dmath {
+
+#ifndef DMATH_ONLY_VECTOR
+    template<typename T, std::size_t M, std::size_t N>
+    class Matrix;
+#endif // DMATH_ONLY_VECTOR
+
 template <typename T, std::size_t SizeT>
-class dVector;
-template<typename T, std::size_t M, std::size_t N>
-class dMatrix;
+class Vector;
+
 //-----------------------------//
 template <typename T>
-using dVector2D = dVector<T, 2>;
+using Vector2D = Vector<T, 2>;
 template <typename T>
-using dVector3D = dVector<T, 3>;
+using Vector3D = Vector<T, 3>;
 template <typename T>
-using dVector4D = dVector<T, 4>;
+using Vector4D = Vector<T, 4>;
 //-----------------------------//
 template <typename T, std::size_t SizeT>
-class dVector {
+class Vector {
 public:
     typedef T                                               value_type;
     typedef value_type*                                     pointer;
@@ -40,74 +46,77 @@ public:
     typedef std::reverse_iterator<iterator>	                reverse_iterator;
     typedef std::reverse_iterator<const_iterator>           const_reverse_iterator;
 public:
-    dVector(const std::array<T, SizeT>& tArr): mData(tArr) {}
+    constexpr
+    explicit Vector(const std::array<T, SizeT>& tArr): mData(tArr) {}
+    constexpr
+    explicit Vector(std::array<T, SizeT>&& tArr): mData(std::move(tArr)) {}
 
-
-    dVector(const T& tVal) {
+    constexpr
+    explicit Vector(const T& tVal) {
         fill(tVal);
     }
 
     constexpr
-    dVector() = default;
+    Vector() = default;
     constexpr
-    dVector(const dVector& tCopy) = default;
+    Vector(const Vector&) = default;
     constexpr
-    dVector(dVector&& tMove) noexcept = default;
+    Vector(Vector&&) noexcept = default;
 
-    ~dVector() = default;
+    ~Vector() = default;
 
     //----------//
 
     constexpr
-    dVector& operator=(const dVector& tCopy) = default;
+    Vector& operator=(const Vector&) = default;
     constexpr
-    dVector& operator=(dVector&& tMove) noexcept = default;
+    Vector& operator=(Vector&&) noexcept = default;
 
     // Addition --->
     constexpr
-    dVector operator+() const {
+    Vector operator+() const {
         return *this;
     }
 
     constexpr
-    dVector operator+(const dVector& tOther) const {
-        dVector Temp;
+    Vector operator+(const Vector& tOther) const {
+        Vector Temp;
         std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::plus<T>());
         return Temp;
     }
 
-    constexpr friend
-    dVector operator+(const dVector& tVec, const T& tScalar) {
-        dVector Temp;
+    constexpr
+    friend Vector operator+(const Vector& tVec, const T& tScalar) {
+        Vector Temp;
         std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryPlus<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    friend dVector operator+(const T& tScalar, const dVector& tVec) {
-        dVector Temp;
+    friend Vector operator+(const T& tScalar, const Vector& tVec) {
+        Vector Temp;
         std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryPlus<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    friend dVector plusLambda(const T& tScalar, const dVector& tVec) {
-        dVector Temp;
+    friend Vector plusLambda(const T& tScalar, const Vector& tVec) {
+        Vector Temp;
         std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), [&tScalar](const T& val) { return tScalar + val; });
         return Temp;
     }
 
     constexpr
-    friend dVector plusFunctor(const T& tScalar, const dVector& tVec) {
-        dVector Temp;
+    friend Vector plusFunctor(const T& tScalar, const Vector& tVec) {
+        Vector Temp;
         std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryPlus<T>(tScalar));
         return Temp;
     }
 
 
     constexpr
-    friend dVector plusForSub(const T& tScalar, const dVector& tVec) {
-        dVector Temp;
+    friend Vector plusForSub(const T& tScalar, const Vector& tVec) {
+        Vector Temp;
         for (std::size_t i = 0; i < tVec.size(); ++i) {
             Temp[i] = tScalar + tVec[i] ;
         }
@@ -115,8 +124,8 @@ public:
     }
 
     constexpr
-    friend dVector plusForPtr(const T& tScalar, const dVector& tVec) {
-        dVector Temp;
+    friend Vector plusForPtr(const T& tScalar, const Vector& tVec) {
+        Vector Temp;
         auto r = Temp.begin();
         auto f = tVec.cbegin();
         auto l = tVec.cend();
@@ -127,13 +136,13 @@ public:
     }
 
     constexpr
-    dVector& operator+=(const dVector& tAdd) {
+    Vector& operator+=(const Vector& tAdd) {
         std::transform(cbegin(), cend(), tAdd.cbegin(), begin(), std::plus<T>());
         return *this;
     }
 
     constexpr
-    dVector& operator+=(const T& tScalar) {
+    Vector& operator+=(const T& tScalar) {
         std::transform(cbegin(), cend(), begin(), RightUnaryPlus<T>(tScalar));
         return *this;
     }
@@ -141,42 +150,42 @@ public:
 
     // Subtraction --->
     constexpr
-    dVector operator-() const {
-        dVector Temp;
+    Vector operator-() const {
+        Vector Temp;
         std::transform(cbegin(), cend(), Temp.begin(), std::negate<T>());
         return Temp;
     }
 
     constexpr
-    dVector operator-(const dVector& tOther) const {
-        dVector Temp;
+    Vector operator-(const Vector& tOther) const {
+        Vector Temp;
         std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::minus<T>());
         return Temp;
     }
 
     constexpr
-    friend dVector operator-(const dVector& tVec, const T& tScalar) {
-        dVector Temp;
+    friend Vector operator-(const Vector& tVec, const T& tScalar) {
+        Vector Temp;
         std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryMinus<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    friend dVector operator-(const T& tScalar, const dVector& tVec) {
-        dVector Temp;
+    friend Vector operator-(const T& tScalar, const Vector& tVec) {
+        Vector Temp;
         std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryMinus<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    dVector& operator-=(const dVector& tOther) {
+    Vector& operator-=(const Vector& tOther) {
         std::transform(cbegin(), cend(), tOther.cbegin(), begin(), std::minus<T>());
 
         return *this;
     }
 
     constexpr
-    dVector& operator-=(const T& tScalar) {
+    Vector& operator-=(const T& tScalar) {
         std::transform(cbegin(), cend(), begin(), RightUnaryMinus<T>(tScalar));
 
         return *this;
@@ -184,38 +193,38 @@ public:
     // <--- Subtraction
 
     // Multiplication --->
-    friend T dot(const dVector& lhs, const dVector& rhs) {
+    friend T dot(const Vector& lhs, const Vector& rhs) {
         return std::inner_product(lhs.cbegin(), lhs.cend(), rhs.cbegin(), T(0));
     }
 
     constexpr
-    dVector operator*(const dVector& tOther) const {
-        dVector Temp;
+    Vector operator*(const Vector& tOther) const {
+        Vector Temp;
         std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::multiplies<T>());
         return Temp;
     }
 
 
-    friend dVector operator*(const dVector& tVec, const T& tScalar) {
-        dVector Temp;
+    friend Vector operator*(const Vector& tVec, const T& tScalar) {
+        Vector Temp;
         std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryMultiplies<T>(tScalar));
         return Temp;
     }
 
-    friend dVector operator*(const T& tScalar, const dVector& tVec) {
-        dVector Temp;
+    friend Vector operator*(const T& tScalar, const Vector& tVec) {
+        Vector Temp;
         std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryMultiplies<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    dVector& operator*=(const dVector& tOther) {
+    Vector& operator*=(const Vector& tOther) {
         std::transform(cbegin(), cend(), tOther.begin(), begin(), std::multiplies<T>());
         return *this;
     }
 
     constexpr
-    dVector& operator*=(const T& tScalar) {
+    Vector& operator*=(const T& tScalar) {
         std::transform(cbegin(), cend(), begin(), RightUnaryMultiplies<T>(tScalar));
         return *this;
     }
@@ -223,34 +232,34 @@ public:
 
     // Division --->
     constexpr
-    dVector operator/(const dVector& tOther) const {
-        dVector Temp;
+    Vector operator/(const Vector& tOther) const {
+        Vector Temp;
         std::transform(cbegin(), cend(), tOther.begin(), Temp.begin(), std::divides<T>());
         return Temp;
     }
 
 
-    friend dVector operator/(const dVector& tVec, const T& tScalar) {
-        dVector Temp;
+    friend Vector operator/(const Vector& tVec, const T& tScalar) {
+        Vector Temp;
         std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), RightUnaryDivides<T>(tScalar));
         return Temp;
     }
 
-    friend dVector operator/(const T& tScalar, const dVector& tVec) {
-        dVector Temp;
+    friend Vector operator/(const T& tScalar, const Vector& tVec) {
+        Vector Temp;
         std::transform(tVec.cbegin(), tVec.cend(), Temp.begin(), LeftUnaryDivides<T>(tScalar));
         return Temp;
     }
 
     constexpr
-    dVector& operator/=(const dVector& tOther) {
+    Vector& operator/=(const Vector& tOther) {
         std::transform(cbegin(), cend(), tOther.begin(), begin(), std::divides<T>());
         return *this;
     }
 
 
     constexpr
-    dVector& operator/=(const T& tScalar) {
+    Vector& operator/=(const T& tScalar) {
         std::transform(cbegin(), cend(), begin(), RightUnaryDivides<T>(tScalar));
         return *this;
     }
@@ -259,49 +268,52 @@ public:
     //----------//
 
     constexpr
-    bool operator==(const dVector& tOther) const {
+    bool operator==(const Vector& tOther) const {
         return mData == tOther.mData;
     }
     constexpr
-    bool operator!=(const dVector& tOther) const {
+    bool operator!=(const Vector& tOther) const {
         return mData != tOther.mData;
     }
 
     //----------//
 
-    [[nodiscard]] constexpr
+    [[nodiscard]]
+    constexpr
     double abs() const {
         return std::sqrt(std::inner_product(cbegin(), cend(), cbegin(), double(0)));
     }
 
-    [[nodiscard]] constexpr
+    [[nodiscard]]
+    constexpr
     float absf() const {
         return std::sqrt(std::inner_product(cbegin(), cend(), cbegin(), float(0)));
     }
 
-    [[nodiscard]] constexpr
+    [[nodiscard]]
+    constexpr
     T abs2() const {
         return std::inner_product(cbegin(), cend(), cbegin(), T(0));
     }
 
     //----------//
     constexpr
-    static dVector zero() {
-        return dVector{T(0)};
+    static Vector zero() {
+        return Vector{T(0)};
     }
 
     //----------//
 
     constexpr
-    dVector<double, SizeT> norm() const {
-        dVector<double, SizeT> Temp;
+    Vector<double, SizeT> norm() const {
+        Vector<double, SizeT> Temp;
         std::transform(cbegin(), cend(), Temp.begin(), RightUnaryDivides<double>(abs()));
         return Temp;
     }
 
     constexpr
-    dVector<float, SizeT> normf() const {
-        dVector<float, SizeT> Temp;
+    Vector<float, SizeT> normf() const {
+        Vector<float, SizeT> Temp;
         std::transform(cbegin(), cend(), Temp.begin(), RightUnaryDivides<float>(absf()));
         return Temp;
     }
@@ -347,7 +359,8 @@ public:
         return mData.at(tInd);
     }
 
-    [[nodiscard]] constexpr
+    [[nodiscard]]
+    constexpr
     std::size_t size() const noexcept  {
         return SizeT;
     }
@@ -413,30 +426,30 @@ public:
     }
 
     constexpr
-    void swap(dVector& tOther) {
+    void swap(Vector& tOther) {
         mData.swap(tOther.data);
     }
 
     //----------//
 
-    friend std::ostream &operator<<(std::ostream &tStream, const dVector &tVec) {
+    friend std::ostream &operator<<(std::ostream &tStream, const Vector &tVec) {
         auto i = tVec.cbegin();
-        tStream << "dVector<" << typeid(T).name() << ", " << SizeT << ">({" << *i++;
+        tStream << "Vector<" << typeid(T).name() << ", " << SizeT << ">({" << *i++;
         for (; i != tVec.cend(); ++i) {
             tStream << ", " << *i;
         }
         return tStream << "})";
     }
 
-    friend std::istream& operator>>(std::istream& tStream, dVector& tVec) {
+    friend std::istream& operator>>(std::istream& tStream, Vector& tVec) {
         for(T& item : tVec.mData) {
             tStream >> item;
         }
         return tStream;
     }
 
-    friend dVector <double, SizeT> pow(const dVector <T, SizeT>& tVec, double tDegree) {
-        dVector <double, SizeT> Temp;
+    friend Vector <double, SizeT> pow(const Vector <T, SizeT>& tVec, double tDegree) {
+        Vector <double, SizeT> Temp;
 
         for (int i = 0; i < tVec.size(); i++) {
             Temp[i] = pow(tVec[i], tDegree);
@@ -450,20 +463,25 @@ public:
         return mData[0];
     }
 
-    explicit operator dMatrix <T, 1, SizeT> () const {
-        dMatrix <T, 1, SizeT> Temp;
-        std::copy(mData.cbegin(), mData.cend(), Temp.mData.begin()->begin());
+#ifndef DMATH_ONLY_VECTOR
+    explicit operator Matrix <T, 1, SizeT> () const {
+        Matrix <T, 1, SizeT> Temp;
+        std::copy(mData.cbegin(), mData.cend(), Temp.mData.begin());
         return Temp;
     }
-    explicit operator std::enable_if <SizeT != 1, dMatrix <T, SizeT, 1> > () const {
-        dMatrix <T, SizeT, 1> Temp;
-        std::copy(mData.cbegin(), mData.cend(), Temp.mData.begin()->begin());
+    explicit operator std::enable_if <SizeT != 1, Matrix <T, SizeT, 1> > () const {
+        Matrix <T, SizeT, 1> Temp;
+        std::copy(mData.cbegin(), mData.cend(), Temp.mData.begin());
         return Temp;
     }
+#endif // DMATH_ONLY_VECTOR
+
 
 
 protected:
     std::array<T, SizeT> mData;
 };
 
-#endif // DMATH_DVECTOR_H
+} //dmath
+
+#endif // DMATH_VECTOR_H
